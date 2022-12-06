@@ -3,6 +3,7 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
+    "noImplicitAny": true,
     "rootDir": "./src",
     "skipLibCheck": true,
     "strict": true
