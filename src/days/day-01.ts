@@ -15,8 +15,9 @@ export default async function solution() {
   )
   const bags = parseFile(file)
   const totalCaloriesByBag = bags.map(bag => getSum(bag))
-  const highest = getHighestNumber(totalCaloriesByBag)
-  return highest
+  const answer1 = getSum(getNHighestNumbers(totalCaloriesByBag, 1))
+  const answer2 = getSum(getNHighestNumbers(totalCaloriesByBag, 3))
+  return { answer1, answer2 }
 }
 
 function parseFile(file: string): Bag[] {
@@ -29,6 +30,6 @@ function getSum(numbers: number[]): number {
   return numbers.reduce((result, number) => result + number, 0)
 }
 
-function getHighestNumber(numbers: number[]): number {
-  return numbers.sort((a, b) => b - a)?.[0] ?? 0
+function getNHighestNumbers(numbers: number[], n: number): number[] {
+  return numbers.sort((a, b) => b - a).slice(0, n)
 }
