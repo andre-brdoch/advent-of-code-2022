@@ -27,7 +27,8 @@ async function getInputFile(): Promise<string | undefined> {
     const filePath = path.join(__dirname, `./inputs/input-${day}.txt`)
     const file = await fs.readFile(filePath, 'utf8')
     return file
-  } catch (err) {
+  }
+  catch (err) {
     return undefined
   }
 }
