@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const [, , day, mode] = process.argv
+const [, , day, mode, cliInput] = process.argv
 
 if (!day) {
   throw new Error('No day selected')
@@ -41,8 +41,8 @@ function printAnswers(answer1: unknown, answer2: unknown): void {
 const solutionModule = await import(
   `./day-${dayFormatted}/solution-${dayFormatted}.js`
 )
-const inputsFile = await getInputFile()
+const inputs = cliInput ?? await getInputFile()
 
-const { answer1, answer2 } = await solutionModule.default(inputsFile)
+const { answer1, answer2 } = await solutionModule.default(inputs)
 
 printAnswers(answer1, answer2)
