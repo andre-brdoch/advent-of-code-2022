@@ -1,4 +1,9 @@
-export default async function solution(inputsFile: string) {
+interface Solution1 {
+  answer1: number
+  answer2: number
+}
+
+export default async function solution(inputsFile: string): Promise<Solution1> {
   const bags = parseFile(inputsFile)
   const totalCaloriesByBag = bags.map(bag => getSum(bag))
   const answer1 = getSum(getNHighestNumbers(totalCaloriesByBag, 1))
