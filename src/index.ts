@@ -2,10 +2,12 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const day = getFormattedDay()
-console.log(`Running solution for day ${day}...`)
-
-const solutionModule = await import(`./days/day-${day}.js`)
+const [, , day] = process.argv
+if (!day) {
+  throw new Error('No day selected')
+}
+const dayFormatted = day.padStart(2, '0')
+const solutionModule = await import(`./days/day-${dayFormatted}.js`)
 const inputsFile = await getInputFile()
 
 const { answer1, answer2 } = await solutionModule.default(inputsFile)
@@ -21,22 +23,13 @@ if (answer2 !== undefined) {
 async function getInputFile(): Promise<string | undefined> {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = path.dirname(__filename)
-  const day = getFormattedDay()
 
   try {
-    const filePath = path.join(__dirname, `./inputs/input-${day}.txt`)
+    const filePath = path.join(__dirname, `./inputs/input-${dayFormatted}.txt`)
     const file = await fs.readFile(filePath, 'utf8')
     return file
   }
   catch (err) {
     return undefined
   }
-}
-
-function getFormattedDay(): string {
-  const [, , day] = process.argv
-  if (!day) {
-    throw new Error('No day selected')
-  }
-  return day.padStart(2, '0')
 }
