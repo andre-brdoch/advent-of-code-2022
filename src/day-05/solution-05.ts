@@ -1,5 +1,6 @@
 interface Solution5 {
   answer1: string
+  answer2: string
 }
 type Stack = string[]
 interface Instruction {
@@ -10,20 +11,25 @@ interface Instruction {
 
 export default async function solution(input: string): Promise<Solution5> {
   const { stacks, instructions } = parseFile(input)
-  const newStacks = moveStacks(stacks, instructions)
-  const solution = getTopCrates(newStacks).join('')
+  const newStacks9000 = moveStacks(stacks, instructions)
+  const newStacks9001 = moveStacks(stacks, instructions, true)
+  const answer1 = getTopCrates(newStacks9000).join('')
+  const answer2 = getTopCrates(newStacks9001).join('')
 
-  return { answer1: solution }
+  return { answer1, answer2 }
 }
 
-function moveStacks(stacks: Stack[], instructions: Instruction[]): Stack[] {
+function moveStacks(
+  stacks: Stack[],
+  instructions: Instruction[],
+  preserveOrder = false
+): Stack[] {
   // copy
   const newStacks = stacks.map(stack => [...stack])
   instructions.forEach(({ from, to, amount }) => {
     const fromStack = newStacks[from - 1]
-    const cratesToMove = fromStack
-      .splice(fromStack.length - amount, amount)
-      .reverse()
+    const cratesToMove = fromStack.splice(fromStack.length - amount, amount)
+    if (!preserveOrder) cratesToMove.reverse()
     newStacks[to - 1] = [...newStacks[to - 1], ...cratesToMove]
   })
   return newStacks
