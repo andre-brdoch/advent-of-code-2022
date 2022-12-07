@@ -24,6 +24,8 @@ function countTillMarker(code: string, markerLength: number): number {
     // if done
     if (candidates.length === markerLength) break
   }
+  // if not solved
+  if (candidates.length < markerLength || count < markerLength) return -1
 
   return count
 }
