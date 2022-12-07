@@ -9,14 +9,28 @@ interface Instruction {
 }
 
 export default async function solution(input: string): Promise<Solution5> {
-  console.log(input)
-  console.log('---')
-  const {stacks, instructions} = parseFile(input)
-  console.log(stacks);
-  console.log(instructions);
-  
+  const { stacks, instructions } = parseFile(input)
+  const newStacks = moveStacks(stacks, instructions)
+  const solution = getTopCrates(newStacks).join('')
 
-  return { answer1: 'hello world' }
+  return { answer1: solution }
+}
+
+function moveStacks(stacks: Stack[], instructions: Instruction[]): Stack[] {
+  // copy
+  const newStacks = stacks.map(stack => [...stack])
+  instructions.forEach(({ from, to, amount }) => {
+    const fromStack = newStacks[from - 1]
+    const cratesToMove = fromStack
+      .splice(fromStack.length - amount, amount)
+      .reverse()
+    newStacks[to - 1] = [...newStacks[to - 1], ...cratesToMove]
+  })
+  return newStacks
+}
+
+function getTopCrates(stacks: Stack[]): string[] {
+  return stacks.map(stack => stack[stack.length - 1])
 }
 
 function parseFile(file: string): {
