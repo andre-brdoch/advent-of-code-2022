@@ -11,19 +11,6 @@ if (!day) {
 const dayFormatted = day.padStart(2, '0')
 const isTest = mode === 'test'
 
-const solutionModule = await import(`./days/day-${dayFormatted}.js`)
-const inputsFile = await getInputFile()
-
-const { answer1, answer2 } = await solutionModule.default(inputsFile)
-
-console.log(`Solution 1 for day ${day} is:`)
-console.log(answer1, isTest ? '(TEST)' : '')
-
-if (answer2 !== undefined) {
-  console.log(`...and solution 2 is:`)
-  console.log(answer2, isTest ? '(TEST)' : '')
-}
-
 async function getInputFile(): Promise<string | undefined> {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = path.dirname(__filename)
@@ -31,7 +18,7 @@ async function getInputFile(): Promise<string | undefined> {
   try {
     const filePath = path.join(
       __dirname,
-      `./inputs/input-${isTest ? 'test-' : ''}${dayFormatted}.txt`
+      `./day-${dayFormatted}/input-${isTest ? 'test-' : ''}${dayFormatted}.txt`
     )
     const file = await fs.readFile(filePath, 'utf8')
     return file
@@ -40,3 +27,22 @@ async function getInputFile(): Promise<string | undefined> {
     return undefined
   }
 }
+
+function printAnswers(answer1: unknown, answer2: unknown): void {
+  console.log(`Solution 1 for day ${day} is:`)
+  console.log(answer1, isTest ? '(TEST)' : '')
+
+  if (answer2 !== undefined) {
+    console.log(`...and solution 2 is:`)
+    console.log(answer2, isTest ? '(TEST)' : '')
+  }
+}
+
+const solutionModule = await import(
+  `./day-${dayFormatted}/solution-${dayFormatted}.js`
+)
+const inputsFile = await getInputFile()
+
+const { answer1, answer2 } = await solutionModule.default(inputsFile)
+
+printAnswers(answer1, answer2)
