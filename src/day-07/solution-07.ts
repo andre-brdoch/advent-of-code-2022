@@ -24,10 +24,12 @@ type Data = File | Directory
 interface File {
   name: string
   size: number
+  parent: Directory
 }
 interface Directory {
   name: string
   children: Data[]
+  parent?: Directory
 }
 
 export default async function solution(inputsFile: string): Promise<Solution7> {
@@ -61,6 +63,10 @@ function processLines(lines: Line[]): void {
       else if (line.targetDir === '..') {
         // TODO
         console.log('go backwards')
+        if (currentDirectory.parent === undefined) {
+          throw new Error('Can not execute command"cd .." - Already in root')
+        }
+        currentDirectory = currentDirectory.parent
       }
       else {
         // move to next dir
@@ -89,7 +95,7 @@ function processLines(lines: Line[]): void {
         nextCommandIndex >= 0 ? nextCommandIndex : undefined
       const childLines = remainingLines.slice(firstChildIndex, lastChildIndex)
       const children: Data[] = childLines
-        .map(lineToData)
+        .map(line => lineToData(line, currentDirectory))
         .filter(data => data !== undefined) as Data[]
       console.log('start:', firstChildIndex, 'end:', lastChildIndex)
       console.log('childLines:')
@@ -104,17 +110,19 @@ function processLines(lines: Line[]): void {
   console.log(tree)
 }
 
-function lineToData(line: Line): Data | undefined {
+function lineToData(line: Line, previousDir: Directory): Data | undefined {
   if (lineIsFile(line)) {
     return {
       name: line.name,
       size: line.size,
+      parent: previousDir,
     }
   }
   else if (lineIsDir(line)) {
     return {
       name: line.name,
       children: [],
+      parent: previousDir,
     }
   }
   return undefined
