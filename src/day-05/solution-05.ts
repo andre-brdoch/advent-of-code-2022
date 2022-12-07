@@ -1,7 +1,7 @@
 interface Solution5 {
   answer1: string
 }
-type Stacks = string[][]
+type Stack = string[]
 interface Instruction {
   from: number
   to: number
@@ -11,16 +11,28 @@ interface Instruction {
 export default async function solution(input: string): Promise<Solution5> {
   console.log(input)
   console.log('---')
-  const { instructions } = parseFile(input)
-  console.log(instructions)
+  const {stacks, instructions} = parseFile(input)
+  console.log(stacks);
+  console.log(instructions);
+  
 
   return { answer1: 'hello world' }
 }
 
-function parseFile(file: string): { instructions: Instruction[] } {
-  const [, instructionString] = file.split('\n\n')
+function parseFile(file: string): {
+  stacks: Stack[]
+  instructions: Instruction[]
+} {
+  const [stackString, instructionString] = file.split('\n\n')
+  const stacks = parseStacks(stackString)
   const instructions = parseInstructions(instructionString)
-  return { instructions }
+  return { stacks, instructions }
+}
+
+function parseStacks(stackString: string): Stack[] {
+  const lines = stackString.split('\n')
+  const stackCount = getStackCountFromLines(lines)
+  return Array.from(Array(stackCount)).map((n, i) => parseStack(lines, i))
 }
 
 function parseInstructions(instructionString: string): Instruction[] {
@@ -32,4 +44,26 @@ function parseInstructions(instructionString: string): Instruction[] {
     const [, amount, from, to] = match
     return { from: Number(from), to: Number(to), amount: Number(amount) }
   })
+}
+
+function parseStack(lines: string[], i: number): Stack {
+  return (
+    lines
+      // remove line number
+      .slice(0, lines.length - 1)
+      // flip for easier array handling
+      .reverse()
+      // find char by offsetting depending on i
+      .map(line => line.charAt(i * 4 + 1))
+      .filter(char => char !== ' ')
+  )
+}
+
+function getStackCountFromLines(lines: string[]): number {
+  // read stack amount from last number in last line
+  const numbersLine = lines[lines.length - 1]
+  const match = numbersLine.match(/(\d+)\s*$/)
+  if (match === null) throw new Error('Could not get stack count')
+  const [, count] = match
+  return Number(count)
 }
