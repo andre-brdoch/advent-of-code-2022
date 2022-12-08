@@ -4,6 +4,11 @@ interface Solution8 {
 interface Tree {
   size: number
   hidden?: boolean
+  topViewDistance?: number
+  leftViewDistance?: number
+  rightViewDistance?: number
+  bottomViewDistance?: number
+  scenicScore?: number
 }
 
 export default async function solution(input: string): Promise<Solution8> {
@@ -18,42 +23,107 @@ export default async function solution(input: string): Promise<Solution8> {
   // console.log('--- COLUMNS:')
   // console.log(columns)
 
-  addVisibility(rows, columns)
+  addStatsToTrees(rows, columns)
 
-  // console.log('WITH VISIBILITY:')
-  // console.log('--- ROWS:')
-  // console.log(rows)
+  console.log('WITH VISIBILITY:')
+  console.log('--- ROWS:')
+  const test = rows[1][2]
+  console.log(test)
+  console.log(`
+  top: ${test.topViewDistance} (1)
+  left: ${test.leftViewDistance} (1)
+  right: ${test.rightViewDistance} (2)
+  bottom: ${test.bottomViewDistance} (2)
+  `)
+
   // console.log('--- COLUMNS:')
   // console.log(columns)
 
-  const answer1 = getVisibleCount(rows)
+  const answer1 = getVisibleTreeCount(rows)
 
   return { answer1 }
 }
 
-function getVisibleCount(rows: Tree[][]): number {
+function getVisibleTreeCount(rows: Tree[][]): number {
   return rows.reduce(
     (total, row) => total + row.filter(tree => !tree.hidden).length,
     0
   )
 }
 
-function addVisibility(rows: Tree[][], columns: Tree[][]): void {
+function addStatsToTrees(rows: Tree[][], columns: Tree[][]): void {
   rows.forEach(row =>
     row.forEach((tree, j) => {
       if (isLargerThanNeighbors(row, j)) {
         tree.hidden = false
       }
       else tree.hidden = true
+
+      // tree.leftViewDistance = getViewDistance(row, j, 'after')
+      // tree.rightViewDistance = getViewDistance(row, j, 'before')
+      tree.leftViewDistance = getViewDistance(row, j, 'before')
+      tree.rightViewDistance = getViewDistance(row, j, 'after')
     })
   )
   columns.forEach(column =>
-    column.forEach((tree, i) => {
-      if (isLargerThanNeighbors(column, i)) {
+    column.forEach((tree, j) => {
+      if (isLargerThanNeighbors(column, j)) {
         tree.hidden = false
       }
+
+      // tree.topViewDistance = getViewDistance(column, j, 'after')
+      // tree.bottomViewDistance = getViewDistance(column, j, 'before')
+      tree.topViewDistance = getViewDistance(column, j, 'before')
+      tree.bottomViewDistance = getViewDistance(column, j, 'after')
+
+      tree.scenicScore = getScenicScore(tree)
     })
   )
+}
+
+function getScenicScore(tree: Tree): number {
+  if (
+    tree.topViewDistance === undefined ||
+    tree.leftViewDistance === undefined ||
+    tree.rightViewDistance === undefined ||
+    tree.bottomViewDistance === undefined
+  ) {
+    throw new Error('Need view distances to calculate scenic score')
+  }
+  return (
+    tree.topViewDistance *
+    tree.leftViewDistance *
+    tree.rightViewDistance *
+    tree.bottomViewDistance
+  )
+}
+
+function getViewDistance(
+  list: Tree[],
+  index: number,
+  direction: 'before' | 'after'
+): number {
+  const tree = list[index]
+  let neighbors: Tree[]
+  let visibleNeighbors: Tree[]
+  if (direction === 'before') {
+    neighbors = list.slice(0, index).reverse()
+  }
+  else {
+    neighbors = index < list.length ? list.slice(index + 1) : []
+  }
+  const foundIndex = neighbors.findIndex(neighbor => neighbor.size >= tree.size)
+  const blockIndex = foundIndex !== -1 ? foundIndex : undefined
+  if (direction === 'before') {
+    const blockingNeighbor =
+      blockIndex !== undefined ? neighbors[blockIndex] : undefined
+    const from = blockingNeighbor ? list.indexOf(blockingNeighbor) : 0
+    visibleNeighbors = list.slice(from, index)
+  }
+  else {
+    visibleNeighbors = neighbors.slice(0, blockIndex)
+  }
+  return visibleNeighbors.length
 }
 
 function isLargerThanNeighbors(list: Tree[], index: number): boolean {
