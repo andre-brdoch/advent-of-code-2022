@@ -20,30 +20,37 @@ interface LineCommand extends Line {
 interface LineCdCommand extends LineCommand {
   targetDir: string
 }
-type Data = File | Directory
+type Data = File | Dir
 interface File {
   name: string
   size: number
-  parent: Directory
+  parent: Dir
 }
-interface Directory {
+interface Dir {
   name: string
   children: Data[]
-  parent?: Directory
+  parent?: Dir
+  size?: number
 }
+interface AnalyzedDir extends Dir {
+  size: number
+}
+type AnalyzedData = File | AnalyzedDir
 
 export default async function solution(inputsFile: string): Promise<Solution7> {
   const lines = parseFile(inputsFile)
   console.log(lines)
-  processLines(lines)
+  const tree = buildTree(lines)
+  addSizesToDirectories(tree)
+  console.log(tree)
 
   const answer1 = 0
   return { answer1 }
 }
 
-function processLines(lines: Line[]): void {
-  const tree: Directory = { name: '/', children: [] }
-  let currentDirectory: Directory = tree
+function buildTree(lines: Line[]): Dir {
+  const tree: Dir = { name: '/', children: [] }
+  let currentDirectory: Dir = tree
 
   if (
     !lines.length ||
@@ -72,7 +79,7 @@ function processLines(lines: Line[]): void {
         // move to next dir
         const targetChild = currentDirectory.children.find(
           child => child.name === line.targetDir
-        ) as Directory
+        ) as Dir
         if (targetChild === undefined) {
           throw new Error(
             `Can not execute "${line.command}" - directory "${line.targetDir}" does not exist.`
@@ -102,15 +109,27 @@ function processLines(lines: Line[]): void {
       console.log(childLines)
       console.log('children:')
       console.log(children)
+
       currentDirectory.children = children
     }
   })
 
   console.log('==== TREE')
   console.log(tree)
+  return tree
 }
 
-function lineToData(line: Line, previousDir: Directory): Data | undefined {
+function addSizesToDirectories(dir: Dir): void {
+  dir.size = 0
+  dir.children.forEach(child => {
+    if (dataIsDir(child)) {
+      addSizesToDirectories(child)
+    }
+    ;(dir as AnalyzedDir).size += (child as AnalyzedData).size
+  })
+}
+
+function lineToData(line: Line, previousDir: Dir): Data | undefined {
   if (lineIsFile(line)) {
     return {
       name: line.name,
@@ -142,6 +161,10 @@ function lineIsCommand(line: Line): line is LineCommand {
 
 function lineIsCdCommand(line: Line): line is LineCdCommand {
   return lineIsCommand(line) && line.command === 'cd'
+}
+
+function dataIsDir(data: Data): data is Dir {
+  return Array.isArray((data as Dir).children)
 }
 
 function parseFile(file: string): Line[] {
