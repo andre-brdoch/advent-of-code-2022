@@ -47,8 +47,10 @@ export default async function solution(inputsFile: string): Promise<Solution7> {
   const dirList = getDirList(tree as AnalyzedDir)
   console.log('list:')
   console.log(dirList)
+  const largeDirs = getSmallDirs(dirList, 100000)
+  console.log(largeDirs)
+  const answer1 = getTotalSize(largeDirs)
 
-  const answer1 = 0
   return { answer1 }
 }
 
@@ -145,6 +147,14 @@ function getDirList(dir: AnalyzedDir): AnalyzedDir[] {
     // use dir as default if root
     dir.name === '/' ? [dir] : ([] as AnalyzedDir[])
   )
+}
+
+function getSmallDirs(dirList: AnalyzedDir[], maxSize: number): AnalyzedDir[] {
+  return dirList.filter(dir => dir.size <= maxSize)
+}
+
+function getTotalSize(dataList: AnalyzedData[]): number {
+  return dataList.reduce((result, data) => result + data.size, 0)
 }
 
 function lineToData(line: Line, previousDir: Dir): Data | undefined {
