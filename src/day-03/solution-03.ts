@@ -4,14 +4,35 @@ interface Solution3 {
 type Compartment = string[]
 type Bag = [Compartment, Compartment]
 
+const LOWER_A_ASCII_CODE = 97
+const UPPER_A_ASCII_CODE = 65
+const ALPHABET_NUMBERS = 26
+
 export default async function solution(input: string): Promise<Solution3> {
   console.log(input)
   console.log('---')
   const bags = parseBags(input)
+  const duplicates = bags.map(findDuplicate)
+  const priorities = duplicates.map(getPriority)
   console.log(bags)
-  console.log(bags.map(findDuplicate))
+  console.log(duplicates)
+  console.log(priorities)
+  const answer1 = getSum(priorities)
 
-  return { answer1: 0 }
+  return { answer1 }
+}
+
+function getSum(numbers: number[]): number {
+  return numbers.reduce((result, current) => result + current, 0)
+}
+
+function getPriority(char: string): number {
+  const asciiCode = char.charCodeAt(0)
+  const isUpperCase = asciiCode < LOWER_A_ASCII_CODE
+  const offset =
+    (isUpperCase ? UPPER_A_ASCII_CODE - ALPHABET_NUMBERS : LOWER_A_ASCII_CODE) -
+    1
+  return asciiCode - offset
 }
 
 function findDuplicate(bag: Bag): string {
