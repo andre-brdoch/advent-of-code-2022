@@ -11,50 +11,20 @@ interface Tree {
   bottomViewDistance?: number
   scenicScore?: number
 }
+type AnalyzedTree = Required<Tree>
 
 export default async function solution(input: string): Promise<Solution8> {
-  console.log('---')
-  console.log(input)
-  console.log('---')
-
   const rows = parseFile(input)
-  // console.log('--- ROWS:')
-  // console.log(rows)
   const columns = getColumnsFromRows(rows)
-  // console.log('--- COLUMNS:')
-  // console.log(columns)
-
   addStatsToTrees(rows, columns)
 
-  console.log('WITH VISIBILITY:')
-  console.log('--- ROWS:')
-  console.log(rows)
-
-  // const test = rows[1
-  // console.log(test)
-  // console.log(`
-  // top: ${test.topViewDistance} (1)
-  // left: ${test.leftViewDistance} (1)
-  // right: ${test.rightViewDistance} (2)
-  // bottom: ${test.bottomViewDistance} (2)
-  // `)
-
-  // console.log('--- COLUMNS:')
-  // console.log(columns)
-
   const answer1 = getVisibleTreeCount(rows)
-  const answer2 = getMostScenicTree(rows).scenicScore
+  const answer2 = getMostScenicTree(rows as AnalyzedTree[][]).scenicScore
 
   return { answer1, answer2 }
 }
 
-function getMostScenicTree(rows: Tree[][]): Tree {
-  const flattened = rows.flat()
-  flattened.some(tree => {
-    if (tree.scenicScore === undefined) {
-      throw new Error('All trees must have scenic score')
-    }
-  })
+function getMostScenicTree(rows: AnalyzedTree[][]): AnalyzedTree {
   const sorted = rows.flat().sort((a, b) => b.scenicScore - a.scenicScore)
   if (sorted.length === 0) {
     throw new Error('Where are the trees?')
@@ -77,8 +47,6 @@ function addStatsToTrees(rows: Tree[][], columns: Tree[][]): void {
       }
       else tree.hidden = true
 
-      // tree.leftViewDistance = getViewDistance(row, j, 'after')
-      // tree.rightViewDistance = getViewDistance(row, j, 'before')
       tree.leftViewDistance = getViewDistance(row, j, 'before')
       tree.rightViewDistance = getViewDistance(row, j, 'after')
     })
@@ -89,8 +57,6 @@ function addStatsToTrees(rows: Tree[][], columns: Tree[][]): void {
         tree.hidden = false
       }
 
-      // tree.topViewDistance = getViewDistance(column, j, 'after')
-      // tree.bottomViewDistance = getViewDistance(column, j, 'before')
       tree.topViewDistance = getViewDistance(column, j, 'before')
       tree.bottomViewDistance = getViewDistance(column, j, 'after')
 
