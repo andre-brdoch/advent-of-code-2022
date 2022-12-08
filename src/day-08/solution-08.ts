@@ -1,5 +1,6 @@
 interface Solution8 {
   answer1: number
+  answer2: number
 }
 interface Tree {
   size: number
@@ -27,21 +28,38 @@ export default async function solution(input: string): Promise<Solution8> {
 
   console.log('WITH VISIBILITY:')
   console.log('--- ROWS:')
-  const test = rows[1][2]
-  console.log(test)
-  console.log(`
-  top: ${test.topViewDistance} (1)
-  left: ${test.leftViewDistance} (1)
-  right: ${test.rightViewDistance} (2)
-  bottom: ${test.bottomViewDistance} (2)
-  `)
+  console.log(rows)
+
+  // const test = rows[1
+  // console.log(test)
+  // console.log(`
+  // top: ${test.topViewDistance} (1)
+  // left: ${test.leftViewDistance} (1)
+  // right: ${test.rightViewDistance} (2)
+  // bottom: ${test.bottomViewDistance} (2)
+  // `)
 
   // console.log('--- COLUMNS:')
   // console.log(columns)
 
   const answer1 = getVisibleTreeCount(rows)
+  const answer2 = getMostScenicTree(rows).scenicScore
 
-  return { answer1 }
+  return { answer1, answer2 }
+}
+
+function getMostScenicTree(rows: Tree[][]): Tree {
+  const flattened = rows.flat()
+  flattened.some(tree => {
+    if (tree.scenicScore === undefined) {
+      throw new Error('All trees must have scenic score')
+    }
+  })
+  const sorted = rows.flat().sort((a, b) => b.scenicScore - a.scenicScore)
+  if (sorted.length === 0) {
+    throw new Error('Where are the trees?')
+  }
+  return sorted[0]
 }
 
 function getVisibleTreeCount(rows: Tree[][]): number {
@@ -108,14 +126,11 @@ function getViewDistance(
 
   if (direction === 'before') {
     const neighbors = list.slice(0, index).reverse()
-    const foundIndex = neighbors.findIndex(
+    const blockingNeighbor = neighbors.find(
       neighbor => neighbor.size >= tree.size
     )
-    const blockIndex = foundIndex !== -1 ? foundIndex : undefined
-    const blockingNeighbor =
-      blockIndex !== undefined ? neighbors[blockIndex] : undefined
-    const from = blockingNeighbor ? list.indexOf(blockingNeighbor) : 0
-    visibleNeighbors = list.slice(from, index)
+    const startIndex = blockingNeighbor ? list.indexOf(blockingNeighbor) : 0
+    visibleNeighbors = list.slice(startIndex, index)
   }
 
   // after
