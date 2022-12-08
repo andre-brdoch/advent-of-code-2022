@@ -104,23 +104,27 @@ function getViewDistance(
   direction: 'before' | 'after'
 ): number {
   const tree = list[index]
-  let neighbors: Tree[]
   let visibleNeighbors: Tree[]
+
   if (direction === 'before') {
-    neighbors = list.slice(0, index).reverse()
-  }
-  else {
-    neighbors = index < list.length ? list.slice(index + 1) : []
-  }
-  const foundIndex = neighbors.findIndex(neighbor => neighbor.size >= tree.size)
-  const blockIndex = foundIndex !== -1 ? foundIndex : undefined
-  if (direction === 'before') {
+    const neighbors = list.slice(0, index).reverse()
+    const foundIndex = neighbors.findIndex(
+      neighbor => neighbor.size >= tree.size
+    )
+    const blockIndex = foundIndex !== -1 ? foundIndex : undefined
     const blockingNeighbor =
       blockIndex !== undefined ? neighbors[blockIndex] : undefined
     const from = blockingNeighbor ? list.indexOf(blockingNeighbor) : 0
     visibleNeighbors = list.slice(from, index)
   }
+
+  // after
   else {
+    const neighbors = index < list.length ? list.slice(index + 1) : []
+    const foundIndex = neighbors.findIndex(
+      neighbor => neighbor.size >= tree.size
+    )
+    const blockIndex = foundIndex !== -1 ? foundIndex + 1 : undefined
     visibleNeighbors = neighbors.slice(0, blockIndex)
   }
   return visibleNeighbors.length
