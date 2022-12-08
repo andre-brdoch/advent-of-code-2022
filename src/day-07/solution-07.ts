@@ -34,6 +34,7 @@ interface Dir {
 }
 interface AnalyzedDir extends Dir {
   size: number
+  children: AnalyzedData[]
 }
 type AnalyzedData = File | AnalyzedDir
 
@@ -43,6 +44,9 @@ export default async function solution(inputsFile: string): Promise<Solution7> {
   const tree = buildTree(lines)
   addSizesToDirectories(tree)
   console.log(tree)
+  const dirList = getDirList(tree as AnalyzedDir)
+  console.log('list:')
+  console.log(dirList)
 
   const answer1 = 0
   return { answer1 }
@@ -127,6 +131,20 @@ function addSizesToDirectories(dir: Dir): void {
     }
     ;(dir as AnalyzedDir).size += (child as AnalyzedData).size
   })
+}
+
+function getDirList(dir: AnalyzedDir): AnalyzedDir[] {
+  return dir.children.reduce(
+    (result, child) => {
+      if (dataIsDir(child)) {
+        return [...result, child, ...getDirList(child)]
+      }
+      // file
+      else return result
+    },
+    // use dir as default if root
+    dir.name === '/' ? [dir] : ([] as AnalyzedDir[])
+  )
 }
 
 function lineToData(line: Line, previousDir: Dir): Data | undefined {
