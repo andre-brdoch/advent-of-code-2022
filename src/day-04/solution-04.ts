@@ -9,15 +9,8 @@ interface Range {
 type Pair = [Range, Range]
 
 export default async function solution(input: string): Promise<Solution4> {
-  console.log(input)
-  console.log('----')
   const pairs = parsePairs(input)
-  console.log(pairs)
-  pairs.forEach(pair => {
-    console.log(pair)
-    console.log(pairOverlaps(pair))
-    console.log('--')
-  })
+  
   const answer1 = countFullyOverlappingPairs(pairs)
   const answer2 = countOverlappingPairs(pairs)
 
