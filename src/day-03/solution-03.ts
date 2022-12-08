@@ -1,8 +1,6 @@
 interface Solution3 {
   answer1: number
 }
-type Compartment = string[]
-type Bag = [Compartment, Compartment]
 
 const LOWER_A_ASCII_CODE = 97
 const UPPER_A_ASCII_CODE = 65
@@ -12,7 +10,7 @@ export default async function solution(input: string): Promise<Solution3> {
   console.log(input)
   console.log('---')
   const bags = parseBags(input)
-  const duplicates = bags.map(findDuplicate)
+  const duplicates = bags.map(bag => findCommon(bag[0], bag[1]))
   const priorities = duplicates.map(getPriority)
   console.log(bags)
   console.log(duplicates)
@@ -35,23 +33,38 @@ function getPriority(char: string): number {
   return asciiCode - offset
 }
 
-function findDuplicate(bag: Bag): string {
-  const map: { [key: string]: true } = {}
-  const [compartmentA, compartmentB] = bag
-  compartmentA.forEach(key => {
-    map[key] = true
-  })
-  const duplicate = compartmentB.find(key => map[key] === true)
+function findCommon(...lists: string[][]): string {
+  const map: { [key: string]: { [key: string]: true } } = {}
+  let duplicate: string | undefined = undefined
+
+  outerLoop: for (let i = 0; i < lists.length; i += 1) {
+    const list = lists[i]
+    for (let j = 0; j < list.length; j += 1) {
+      const key = list[j]
+      if (map[key] === undefined) map[key] = {}
+      // save hit for current list
+      map[key][i] = true
+      // if last list and all lists had current char in common
+      if (
+        i === lists.length - 1 &&
+        Object.keys(map[key]).length === lists.length
+      ) {
+        duplicate = key
+        break outerLoop
+      }
+    }
+  }
+
   if (duplicate === undefined) throw new Error('The elf packed too well.')
   return duplicate
 }
 
-function parseBags(input: string): Bag[] {
+function parseBags(input: string): string[][][] {
   return input.split('\n').map(line => {
     const chars = Array.from(line)
     const halfSize = chars.length / 2
-    const compartmentA: Compartment = chars.slice(0, halfSize)
-    const compartmentB: Compartment = chars.slice(chars.length / 2)
+    const compartmentA: string[] = chars.slice(0, halfSize)
+    const compartmentB: string[] = chars.slice(chars.length / 2)
     if (compartmentA.length !== compartmentB.length) {
       throw new Error(
         `Both compartments must have the same amount of items, has ${compartmentA.length} and ${compartmentB.length}.`
