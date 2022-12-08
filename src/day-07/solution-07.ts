@@ -1,5 +1,6 @@
 interface Solution7 {
   answer1: number
+  answer2: number
 }
 type LineType = 'command' | 'dir' | 'file'
 type Command = 'cd' | 'ls'
@@ -38,6 +39,9 @@ interface AnalyzedDir extends Dir {
 }
 type AnalyzedData = File | AnalyzedDir
 
+const DISK_SIZE = 70000000
+const UPDATE_SIZE = 30000000
+
 export default async function solution(inputsFile: string): Promise<Solution7> {
   const lines = parseFile(inputsFile)
   console.log(lines)
@@ -50,8 +54,11 @@ export default async function solution(inputsFile: string): Promise<Solution7> {
   const largeDirs = getSmallDirs(dirList, 100000)
   console.log(largeDirs)
   const answer1 = getTotalSize(largeDirs)
+  const dirToDelete = getDirToDeleteForUpdate(dirList)
+  console.log('dirtodelete:', dirToDelete)
+  const answer2 = dirToDelete.size
 
-  return { answer1 }
+  return { answer1, answer2 }
 }
 
 function buildTree(lines: Line[]): Dir {
@@ -155,6 +162,28 @@ function getSmallDirs(dirList: AnalyzedDir[], maxSize: number): AnalyzedDir[] {
 
 function getTotalSize(dataList: AnalyzedData[]): number {
   return dataList.reduce((result, data) => result + data.size, 0)
+}
+
+function getDirToDeleteForUpdate(dirList: AnalyzedDir[]): AnalyzedDir {
+  const availableSpace = DISK_SIZE - dirList[0].size
+  const spaceToFree = UPDATE_SIZE - availableSpace
+  console.log('available: ', availableSpace)
+  console.log('spaceToFree: ', spaceToFree)
+  console.log(
+    'dirs:',
+    dirList.map(d => `${d.name}: ${d.size}`)
+  )
+
+  console.log(dirList.sort((a, b) => a.size - b.size))
+
+  const dir = dirList
+    // sort from small to large
+    .sort((a, b) => a.size - b.size)
+    .find(dir => dir.size >= spaceToFree)
+  if (dir === undefined) {
+    throw new Error('Your computer is full and there is nothing you can do!')
+  }
+  return dir
 }
 
 function lineToData(line: Line, previousDir: Dir): Data | undefined {
