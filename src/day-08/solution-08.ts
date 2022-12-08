@@ -12,10 +12,31 @@ export default async function solution(input: string): Promise<Solution8> {
   console.log(input)
   console.log('---')
 
-  const parsedRows = parseFile(input)
-  console.log(parsedRows)
+  const rows = parseFile(input)
+  console.log('--- ROWS:')
+  console.log(rows)
+  const columns = getColumnsFromRows(rows)
+  console.log('--- COLUMNS:')
+  console.log(columns)
 
   return { answer1: 0 }
+}
+
+// for ease of use, also create a column view, referencing the same trees
+function getColumnsFromRows(rows: Tree[][]): Tree[][] {
+  // create empty array grid
+  const columns: Tree[][] = Array.from(Array(rows[0].length)).map(() => [])
+  rows.forEach(trees => {
+    trees.forEach((tree, j) => {
+      const column = columns[j]
+      // if first or last column
+      if (j === 0 || j === columns.length - 1) {
+        tree.edge = true
+      }
+      column.push(tree)
+    })
+  })
+  return columns
 }
 
 function parseFile(input: string): Tree[][] {
