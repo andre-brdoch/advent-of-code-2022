@@ -3,7 +3,7 @@ interface Solution8 {
 }
 interface Tree {
   size: number
-  visible?: boolean
+  hidden?: boolean
 }
 
 export default async function solution(input: string): Promise<Solution8> {
@@ -12,42 +12,57 @@ export default async function solution(input: string): Promise<Solution8> {
   console.log('---')
 
   const rows = parseFile(input)
-  console.log('--- ROWS:')
-  console.log(rows)
+  // console.log('--- ROWS:')
+  // console.log(rows)
   const columns = getColumnsFromRows(rows)
-  console.log('--- COLUMNS:')
-  console.log(columns)
+  // console.log('--- COLUMNS:')
+  // console.log(columns)
 
   addVisibility(rows, columns)
 
-  console.log('WITH VISIBILITY:')
-  console.log('--- ROWS:')
-  console.log(rows)
-  console.log('--- COLUMNS:')
-  console.log(columns)
+  // console.log('WITH VISIBILITY:')
+  // console.log('--- ROWS:')
+  // console.log(rows)
+  // console.log('--- COLUMNS:')
+  // console.log(columns)
 
-  return { answer1: 0 }
+  const answer1 = getVisibleCount(rows)
+
+  return { answer1 }
+}
+
+function getVisibleCount(rows: Tree[][]): number {
+  return rows.reduce(
+    (total, row) => total + row.filter(tree => !tree.hidden).length,
+    0
+  )
 }
 
 function addVisibility(rows: Tree[][], columns: Tree[][]): void {
   rows.forEach(row =>
     row.forEach((tree, j) => {
-      if (isHiddenByNeighbors(row, j)) {
-        tree.visible = true
+      if (isLargerThanNeighbors(row, j)) {
+        tree.hidden = false
+      }
+      else tree.hidden = true
+    })
+  )
+  columns.forEach(column =>
+    column.forEach((tree, i) => {
+      if (isLargerThanNeighbors(column, i)) {
+        tree.hidden = false
       }
     })
   )
 }
 
-function isHiddenByNeighbors(list: Tree[], index: number): boolean {
+function isLargerThanNeighbors(list: Tree[], index: number): boolean {
   const tree = list[index]
-  const neighbors = list.filter(neighbor => neighbor !== tree)
-  return neighbors.some(neighbor => neighbor.size >= tree.size)
-  // const prev = list.length ? list.slice(0, index - 1) : []
-  // const next = index < list.length ? list.slice(index + 1) : []
-  // const prevIsLarger = prev.some(tree => tree.size > size)
-  // const nextIsLarger = next.some(tree => tree.size > size)
-  // return prevIsLarger || nextIsLarger
+  const prev = list.slice(0, index)
+  const next = index < list.length ? list.slice(index + 1) : []
+  const isLargerThanPrev = prev.every(neighbor => tree.size > neighbor.size)
+  const isLargerThanNext = next.every(neighbor => tree.size > neighbor.size)
+  return isLargerThanPrev || isLargerThanNext
 }
 
 // for ease of use, also create a column view, referencing the same trees
@@ -59,7 +74,7 @@ function getColumnsFromRows(rows: Tree[][]): Tree[][] {
       const column = columns[j]
       // if first or last column
       if (j === 0 || j === columns.length - 1) {
-        tree.visible = true
+        tree.hidden = false
       }
       column.push(tree)
     })
@@ -79,7 +94,7 @@ function parseFile(input: string): Tree[][] {
         }
         // if first or last row
         if (i === 0 || i === rows.length - 1) {
-          tree.visible = true
+          tree.hidden = false
         }
         return tree
       })
