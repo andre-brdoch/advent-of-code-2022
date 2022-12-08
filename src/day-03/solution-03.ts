@@ -1,5 +1,8 @@
+type Answer1 = number
+type Answer2 = number
 interface Solution3 {
-  answer1: number
+  answer1: Answer1
+  answer2: Answer2
 }
 
 const LOWER_A_ASCII_CODE = 97
@@ -9,15 +12,27 @@ const ALPHABET_NUMBERS = 26
 export default async function solution(input: string): Promise<Solution3> {
   console.log(input)
   console.log('---')
+  const answer1 = getAnswer1(input)
+  const answer2 = getAnswer2(input)
+  return { answer1, answer2 }
+}
+
+function getAnswer1(input: string): Answer1 {
   const bags = parseBags(input)
   const duplicates = bags.map(bag => findCommon(bag[0], bag[1]))
   const priorities = duplicates.map(getPriority)
-  console.log(bags)
-  console.log(duplicates)
-  console.log(priorities)
-  const answer1 = getSum(priorities)
+  return getSum(priorities)
+}
 
-  return { answer1 }
+function getAnswer2(input: string): Answer2 {
+  const groups = parseGroups(input)
+  //   const duplicates = bags.map(bag => findCommon(bag[0], bag[1]))
+  //   const priorities = duplicates.map(getPriority)
+  console.log(groups)
+  //   console.log(duplicates)
+  //   console.log(priorities)
+  //   return getSum(priorities)
+  return 0
 }
 
 function getSum(numbers: number[]): number {
@@ -72,4 +87,20 @@ function parseBags(input: string): string[][][] {
     }
     return [compartmentA, compartmentB]
   })
+}
+
+function parseGroups(input: string): string[][] {
+  return input.split('\n').reduce(
+    (result, line) => {
+      const lastGroup = result[result.length - 1]
+      if (lastGroup.length < 3) {
+        lastGroup.push(line)
+      }
+      else {
+        result.push([line])
+      }
+      return result
+    },
+    [[]] as string[][]
+  )
 }
