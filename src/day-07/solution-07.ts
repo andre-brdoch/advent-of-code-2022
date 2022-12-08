@@ -1,5 +1,6 @@
 interface Solution7 {
   answer1: number
+  answer2: number
 }
 type LineType = 'command' | 'dir' | 'file'
 type Command = 'cd' | 'ls'
@@ -20,30 +21,43 @@ interface LineCommand extends Line {
 interface LineCdCommand extends LineCommand {
   targetDir: string
 }
-type Data = File | Directory
+type Data = File | Dir
 interface File {
   name: string
   size: number
-  parent: Directory
+  parent: Dir
 }
-interface Directory {
+interface Dir {
   name: string
   children: Data[]
-  parent?: Directory
+  parent?: Dir
+  size?: number
 }
+interface AnalyzedDir extends Dir {
+  size: number
+  children: AnalyzedData[]
+}
+type AnalyzedData = File | AnalyzedDir
+
+const DISK_SIZE = 70000000
+const UPDATE_SIZE = 30000000
 
 export default async function solution(inputsFile: string): Promise<Solution7> {
   const lines = parseFile(inputsFile)
-  console.log(lines)
-  processLines(lines)
+  const tree = buildTree(lines)
+  addSizesToDirectories(tree)
+  const dirList = getDirList(tree as AnalyzedDir)
+  const largeDirs = getSmallDirs(dirList, 100000)
+  const answer1 = getTotalSize(largeDirs)
+  const dirToDelete = getDirToDeleteForUpdate(dirList)
+  const answer2 = dirToDelete.size
 
-  const answer1 = 0
-  return { answer1 }
+  return { answer1, answer2 }
 }
 
-function processLines(lines: Line[]): void {
-  const tree: Directory = { name: '/', children: [] }
-  let currentDirectory: Directory = tree
+function buildTree(lines: Line[]): Dir {
+  const tree: Dir = { name: '/', children: [] }
+  let currentDirectory: Dir = tree
 
   if (
     !lines.length ||
@@ -61,8 +75,6 @@ function processLines(lines: Line[]): void {
         console.log('Starting from root')
       }
       else if (line.targetDir === '..') {
-        // TODO
-        console.log('go backwards')
         if (currentDirectory.parent === undefined) {
           throw new Error('Can not execute command"cd .." - Already in root')
         }
@@ -72,20 +84,16 @@ function processLines(lines: Line[]): void {
         // move to next dir
         const targetChild = currentDirectory.children.find(
           child => child.name === line.targetDir
-        ) as Directory
+        ) as Dir
         if (targetChild === undefined) {
           throw new Error(
             `Can not execute "${line.command}" - directory "${line.targetDir}" does not exist.`
           )
         }
-        console.log('targetChild')
-        console.log(targetChild)
         currentDirectory = targetChild
       }
     }
     else if (lineIsCommand(line)) {
-      console.log('--- ls')
-
       // ls
       const nextCommandIndex = remainingLines.findIndex(line =>
         lineIsCommand(line)
@@ -97,20 +105,59 @@ function processLines(lines: Line[]): void {
       const children: Data[] = childLines
         .map(line => lineToData(line, currentDirectory))
         .filter(data => data !== undefined) as Data[]
-      console.log('start:', firstChildIndex, 'end:', lastChildIndex)
-      console.log('childLines:')
-      console.log(childLines)
-      console.log('children:')
-      console.log(children)
+
       currentDirectory.children = children
     }
   })
-
-  console.log('==== TREE')
-  console.log(tree)
+  return tree
 }
 
-function lineToData(line: Line, previousDir: Directory): Data | undefined {
+function addSizesToDirectories(dir: Dir): void {
+  dir.size = 0
+  dir.children.forEach(child => {
+    if (dataIsDir(child)) {
+      addSizesToDirectories(child)
+    }
+    ;(dir as AnalyzedDir).size += (child as AnalyzedData).size
+  })
+}
+
+function getDirList(dir: AnalyzedDir): AnalyzedDir[] {
+  return dir.children.reduce(
+    (result, child) => {
+      if (dataIsDir(child)) {
+        return [...result, child, ...getDirList(child)]
+      }
+      // file
+      else return result
+    },
+    // use dir as default if root
+    dir.name === '/' ? [dir] : ([] as AnalyzedDir[])
+  )
+}
+
+function getSmallDirs(dirList: AnalyzedDir[], maxSize: number): AnalyzedDir[] {
+  return dirList.filter(dir => dir.size <= maxSize)
+}
+
+function getTotalSize(dataList: AnalyzedData[]): number {
+  return dataList.reduce((result, data) => result + data.size, 0)
+}
+
+function getDirToDeleteForUpdate(dirList: AnalyzedDir[]): AnalyzedDir {
+  const availableSpace = DISK_SIZE - dirList[0].size
+  const spaceToFree = UPDATE_SIZE - availableSpace
+  const dir = dirList
+    // sort from small to large
+    .sort((a, b) => a.size - b.size)
+    .find(dir => dir.size >= spaceToFree)
+  if (dir === undefined) {
+    throw new Error('Your computer is full and there is nothing you can do!')
+  }
+  return dir
+}
+
+function lineToData(line: Line, previousDir: Dir): Data | undefined {
   if (lineIsFile(line)) {
     return {
       name: line.name,
@@ -126,22 +173,6 @@ function lineToData(line: Line, previousDir: Directory): Data | undefined {
     }
   }
   return undefined
-}
-
-function lineIsFile(line: Line): line is LineFile {
-  return line.type === 'file'
-}
-
-function lineIsDir(line: Line): line is LineDir {
-  return line.type === 'dir'
-}
-
-function lineIsCommand(line: Line): line is LineCommand {
-  return line.type === 'command'
-}
-
-function lineIsCdCommand(line: Line): line is LineCdCommand {
-  return lineIsCommand(line) && line.command === 'cd'
 }
 
 function parseFile(file: string): Line[] {
@@ -183,4 +214,26 @@ function parseFile(file: string): Line[] {
       return lineInfo
     }
   })
+}
+
+// === Typescript helpers ===
+
+function lineIsFile(line: Line): line is LineFile {
+  return line.type === 'file'
+}
+
+function lineIsDir(line: Line): line is LineDir {
+  return line.type === 'dir'
+}
+
+function lineIsCommand(line: Line): line is LineCommand {
+  return line.type === 'command'
+}
+
+function lineIsCdCommand(line: Line): line is LineCdCommand {
+  return lineIsCommand(line) && line.command === 'cd'
+}
+
+function dataIsDir(data: Data): data is Dir {
+  return Array.isArray((data as Dir).children)
 }
