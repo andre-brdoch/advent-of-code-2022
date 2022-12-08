@@ -12,8 +12,27 @@ export default async function solution(input: string): Promise<Solution4> {
   console.log('----')
   const pairs = parsePairs(input)
   console.log(pairs)
+  pairs.forEach(pair => {
+    console.log(pair)
+    console.log(pairFullyOverlaps(pair))
+    console.log('--')
+  })
+  const answer1 = countFullyOverlappingPairs(pairs)
 
-  return { answer1: 0 }
+  return { answer1 }
+}
+
+function countFullyOverlappingPairs(pairs: Pair[]): number {
+  return pairs.filter(pair => pairFullyOverlaps(pair)).length
+}
+
+function pairFullyOverlaps(pair: Pair): boolean {
+  const [left, right] = pair
+  return doesAContainB(left, right) || doesAContainB(right, left)
+}
+
+function doesAContainB(a: Range, b: Range): boolean {
+  return a.from <= b.from && a.to >= b.to
 }
 
 function parsePairs(input: string): Pair[] {
