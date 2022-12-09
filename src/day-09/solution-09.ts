@@ -1,5 +1,6 @@
 interface Solution9 {
   answer1: number
+  answer2: number
 }
 type Direction = 'U' | 'R' | 'D' | 'L'
 interface Motion {
@@ -16,16 +17,22 @@ export default async function solution(input: string): Promise<Solution9> {
   console.log('----')
 
   const motions = parseHeadMotions(input)
-  console.log(motions)
-  const headPositions = moveHead(motions)
-  console.log(headPositions)
-  const tailPositions = moveTail(headPositions)
-  console.log(tailPositions)
-  const x = tailPositions.map(position => `${position.x}/${position.y}`)
-  console.log(x)
-  const tailPositionsCount = countUniquePositions(tailPositions)
+  const answer1 = getAnswer1(motions)
+  const answer2 = getAnswer2(motions)
 
-  return { answer1: tailPositionsCount }
+  return { answer1, answer2 }
+}
+
+function getAnswer1(headMotions: Motion[]): number {
+  const headPositions = moveHead(headMotions)
+  const tailPositions = followKnot(headPositions)
+  return countUniquePositions(tailPositions)
+}
+
+function getAnswer2(headMotions: Motion[]): number {
+  const headPositions = moveHead(headMotions)
+  const tailPositions = followKnot(headPositions)
+  return countUniquePositions(tailPositions)
 }
 
 function moveHead(motions: Motion[]): Position[] {
@@ -38,29 +45,32 @@ function moveHead(motions: Motion[]): Position[] {
   return positions
 }
 
-function moveTail(headPositions: Position[]): Position[] {
-  // starts on the same field as head
-  const tailPositions: Position[] = headPositions.slice(0, 1)
-  headPositions.forEach((head, i) => {
-    const tail = tailPositions[tailPositions.length - 1]
-    if (areAdjacent(head, tail)) {
+function followKnot(prevKnotPositions: Position[]): Position[] {
+  // starts on the same field as previous knot
+  const currentPositions: Position[] = prevKnotPositions.slice(0, 1)
+
+  prevKnotPositions.forEach((prevKnot, i) => {
+    const current = currentPositions[currentPositions.length - 1]
+    if (areAdjacent(prevKnot, current)) {
       console.log(
-        `${stringifyPosition(tail)} - ${stringifyPosition(head)} - STAY`
+        `${stringifyPosition(current)} - ${stringifyPosition(prevKnot)} - STAY`
       )
     }
     else {
-      const recentHeadPositions = headPositions.slice(0, i + 1)
-      const prevHead = recentHeadPositions[recentHeadPositions.length - 2]
-      const newTail = { ...prevHead }
+      const recentPrevKnotPositions = prevKnotPositions.slice(0, i + 1)
+      const prevKnot =
+        recentPrevKnotPositions[recentPrevKnotPositions.length - 2]
+      const newCurrent = { ...prevKnot }
       console.log(
-        `${stringifyPosition(newTail)} - ${stringifyPosition(
-          recentHeadPositions[recentHeadPositions.length - 1]
+        `${stringifyPosition(newCurrent)} - ${stringifyPosition(
+          recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
         )} - MOVE`
       )
-      tailPositions.push(newTail)
+      currentPositions.push(newCurrent)
     }
   })
-  return tailPositions
+
+  return currentPositions
 }
 
 function movePosition(position: Position, motion: Motion): Position[] {
