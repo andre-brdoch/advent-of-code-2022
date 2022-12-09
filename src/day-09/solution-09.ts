@@ -80,20 +80,20 @@ function followKnot(prevKnotPositions: Position[]): Position[] {
   prevKnotPositions.forEach((prevKnot, i) => {
     const current = currentPositions[currentPositions.length - 1]
     if (areAdjacent(prevKnot, current)) {
-      console.log(
-        `${stringifyPosition(current)} - ${stringifyPosition(prevKnot)} - STAY`
-      )
+      //   console.log(
+      //     `${stringifyPosition(current)} - ${stringifyPosition(prevKnot)} - STAY`
+      //   )
     }
     else {
       const recentPrevKnotPositions = prevKnotPositions.slice(0, i + 1)
       const prevKnot =
         recentPrevKnotPositions[recentPrevKnotPositions.length - 2]
       const newCurrent = { ...prevKnot }
-      console.log(
-        `${stringifyPosition(newCurrent)} - ${stringifyPosition(
-          recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
-        )} - MOVE`
-      )
+      //   console.log(
+      //     `${stringifyPosition(newCurrent)} - ${stringifyPosition(
+      //       recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
+      //     )} - MOVE`
+      //   )
       currentPositions.push(newCurrent)
     }
   })
@@ -141,6 +141,14 @@ function areAdjacent(a: Position, b: Position): boolean {
 
 function stringifyPosition(position: Position): string {
   return `${position.x}/${position.y}`
+}
+
+function printRope(knots: Position[]): void {
+  knots.forEach((knot, i) => {
+    const name = i === 0 ? 'H' : i === knots.length - 1 ? 'T' : i + 2
+    const msg = `${name}: stringifyPosition(knot)`
+    console.log(msg)
+  })
 }
 
 // === Typescript helpers ===
