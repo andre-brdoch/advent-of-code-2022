@@ -46,8 +46,6 @@ const pointsMap: Map<number> = {
 }
 
 export default async function (input: string): Promise<Solution2> {
-  console.log(input)
-  console.log('----')
 
   const signPairs = parseFile(input)
   const answer1 = getAnswer1(signPairs)
@@ -58,35 +56,25 @@ export default async function (input: string): Promise<Solution2> {
 
 function getAnswer1(signPairs: Sign[][]): number {
   const optionPairs = signsToOptions(signPairs)
-  console.log(signPairs)
-  console.log(optionPairs)
   const scores = optionPairs.map(([a, b]) => play(a, b))
-  console.log(scores)
-
   return getSum(scores)
 }
 
 function getAnswer2(signPairs: Sign[][]): number {
   const pairs = signsToOutcomes(signPairs)
-  console.log(signPairs)
-  console.log(pairs)
   const scores = pairs.map(([enemyOption, outcome]) =>
     playForOutcome(enemyOption, outcome)
   )
-  console.log(scores)
-
   return getSum(scores)
 }
 
 function playForOutcome(enemyOption: Option, outcome: Outcome): number {
   const myOption = getOptionForOutcome(enemyOption, outcome)
-  console.log('myOption', myOption)
   return pointsMap[myOption] + pointsMap[outcome]
 }
 
 function play(enemyOption: Option, myOption: Option): number {
   const outcome = getOutcome(enemyOption, myOption)
-  console.log(outcome)
   return pointsMap[myOption] + pointsMap[outcome]
 }
 
