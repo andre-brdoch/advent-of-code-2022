@@ -23,19 +23,9 @@ export default async function solution(input: string): Promise<Solution9> {
   console.log(tailPositions)
   const x = tailPositions.map(position => `${position.x}/${position.y}`)
   console.log(x)
+  const tailPositionsCount = countUniquePositions(tailPositions)
 
-  //   console.log(areAdjacent({ x: 0, y: 1 }, { x: 0, y: 1 }))
-  //   console.log(areAdjacent({ x: 1, y: 0 }, { x: 0, y: 1 }))
-  //   console.log(areAdjacent({ x: 5, y: 3 }, { x: 4, y: 4 }))
-  //   console.log(areAdjacent({ x: 0, y: -1 }, { x: 0, y: 1 }))
-
-  //   const p1 = { x: 0, y: 0 }
-  //   const ps = movePosition(p1, motions[0])
-  //   console.log(ps)
-  //   const ps2 = movePosition(ps[ps.length - 1], motions[1])
-  //   console.log(ps2)
-
-  return { answer1: 0 }
+  return { answer1: tailPositionsCount }
 }
 
 function moveHead(motions: Motion[]): Position[] {
@@ -81,6 +71,11 @@ function movePosition(position: Position, motion: Motion): Position[] {
     ...position,
     [coordinate]: position[coordinate] + (i + 1) * flipper,
   }))
+}
+
+function countUniquePositions(positions: Position[]): number {
+  const set = new Set(positions.map(stringifyPosition))
+  return set.size
 }
 
 function parseHeadMotions(input: string): Motion[] {
