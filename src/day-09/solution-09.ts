@@ -59,7 +59,14 @@ function moveTail(headPositions: Position[]): Position[] {
       )
     }
     else {
-      const newTail = tailFollowHead(tail, headPositions.slice(0, i + 1))
+      const recentHeadPositions = headPositions.slice(0, i + 1)
+      const prevHead = recentHeadPositions[recentHeadPositions.length - 2]
+      const newTail = { ...prevHead }
+      console.log(
+        `${stringifyPosition(newTail)} - ${stringifyPosition(
+          recentHeadPositions[recentHeadPositions.length - 1]
+        )} - MOVE`
+      )
       tailPositions.push(newTail)
     }
   })
@@ -74,35 +81,6 @@ function movePosition(position: Position, motion: Motion): Position[] {
     ...position,
     [coordinate]: position[coordinate] + (i + 1) * flipper,
   }))
-}
-
-function tailFollowHead(tail: Position, headPositions: Position[]): Position {
-  const head = headPositions[headPositions.length - 1]
-  const newTail = { ...tail }
-  const xDistance = head.x - tail.x
-  const yDistance = head.y - tail.y
-  const isDiagonal = xDistance && yDistance
-
-  if (isDiagonal) {
-    console.log('DIAGONAL')
-
-    // if diagonal, move to the heads PREVIOUS position
-    const { x, y } = headPositions[headPositions.length - 2]
-    newTail.x = x
-    newTail.y = y
-  }
-  else {
-    if (xDistance) {
-      newTail.x = newTail.x + xDistance - 1
-    }
-    if (yDistance) {
-      newTail.y = newTail.y + yDistance - 1
-    }
-  }
-  console.log(
-    `${stringifyPosition(newTail)} - ${stringifyPosition(head)} - MOVE`
-  )
-  return newTail
 }
 
 function parseHeadMotions(input: string): Motion[] {
