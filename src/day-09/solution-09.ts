@@ -18,9 +18,10 @@ export default async function solution(input: string): Promise<Solution9> {
   console.log('----')
 
   const motions = parseHeadMotions(input)
-  const answer1 = 1
-  //   const answer1 = getAnswer1(motions)
+  // const answer1 = 1
+  const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
+  // const answer2 = 0
 
   return { answer1, answer2 }
 }
@@ -79,21 +80,42 @@ function followKnot(prevKnotPositions: Position[]): Position[] {
 
   prevKnotPositions.forEach((prevKnot, i) => {
     const current = currentPositions[currentPositions.length - 1]
+    const recentPrevKnotPositions = prevKnotPositions.slice(0, i + 1)
+    const recentPrevKnot =
+      recentPrevKnotPositions[recentPrevKnotPositions.length - 2]
     if (areAdjacent(prevKnot, current)) {
-      //   console.log(
-      //     `${stringifyPosition(current)} - ${stringifyPosition(prevKnot)} - STAY`
-      //   )
+      console.log(
+        `${stringifyPosition(current)} - ${stringifyPosition(prevKnot)} - STAY`
+      )
     }
+    // if diagonal movement needed:
+    else if (current.x !== prevKnot.x && current.y !== prevKnot.y) {
+      const vector: Position = {
+        x: clamp(prevKnot.x - current.x, -1, 1),
+        y: clamp(prevKnot.y - current.y, -1, 1),
+      }
+      console.log(
+        'diagonal movement needed! distances: ',
+        `${stringifyPosition(vector)}`
+      )
+      const newCurrent = addPositions(current, vector)
+      console.log(
+        `moving diagonally from ${stringifyPosition(
+          current
+        )} to ${stringifyPosition(newCurrent)}`
+      )
+
+      currentPositions.push(newCurrent)
+    }
+    // if horizontal/vertical movement needed:
     else {
-      const recentPrevKnotPositions = prevKnotPositions.slice(0, i + 1)
-      const prevKnot =
-        recentPrevKnotPositions[recentPrevKnotPositions.length - 2]
-      const newCurrent = { ...prevKnot }
-      //   console.log(
-      //     `${stringifyPosition(newCurrent)} - ${stringifyPosition(
-      //       recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
-      //     )} - MOVE`
-      //   )
+      // move to previous' knots position:
+      const newCurrent = { ...recentPrevKnot }
+      console.log(
+        `${stringifyPosition(newCurrent)} - ${stringifyPosition(
+          recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
+        )} - MOVE`
+      )
       currentPositions.push(newCurrent)
     }
   })
@@ -141,6 +163,17 @@ function areAdjacent(a: Position, b: Position): boolean {
 
 function stringifyPosition(position: Position): string {
   return `${position.x}/${position.y}`
+}
+
+function clamp(number: number, min:number, max: number): number {
+  return Math.min( Math.max( number, min), max)
+}
+
+function addPositions(a: Position, b: Position): Position {
+  return {
+    x: a.x + b.x,
+    y: a.y + b.y,
+  }
 }
 
 function printRope(knots: Position[]): void {
