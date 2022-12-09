@@ -11,6 +11,9 @@ interface Position {
   x: number
   y: number
 }
+interface NamedPosition extends Position {
+  name: string
+}
 type RopeMovement = Position[][]
 
 export default async function solution(input: string): Promise<Solution9> {
@@ -18,8 +21,8 @@ export default async function solution(input: string): Promise<Solution9> {
   console.log('----')
 
   const motions = parseHeadMotions(input)
-  // const answer1 = 1
-  const answer1 = getAnswer1(motions)
+  const answer1 = 1
+  // const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
   // const answer2 = 0
 
@@ -33,7 +36,16 @@ function getAnswer1(headMotions: Motion[]): number {
 }
 
 function getAnswer2(headMotions: Motion[]): number {
-  const ropeMovement = moveRope(headMotions, 10)
+  const ropeMovement = moveRope(headMotions, 3)
+  // const inverted = invertNestedArray(ropeMovement)
+  // console.log('by knots');
+  // console.log(ropeMovement);
+  // console.log('by time');
+  // console.log(inverted);
+
+  printKnotsAccrossTime(ropeMovement)
+  // console.log(ropeMovement)
+
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
@@ -42,23 +54,14 @@ function moveRope(headMotions: Motion[], ropeLength: number): RopeMovement {
   if (ropeLength < 2) throw new Error('Rope is too short!')
   const headPositions = moveHead(headMotions)
   const ropeMovement: RopeMovement = [headPositions]
-  console.log('other knots:', ropeLength - 1)
+  // console.log('other knots:', ropeLength - 1)
 
   Array.from(Array(ropeLength - 1)).forEach((n, i) => {
-    console.log('----')
-    console.log(i)
-    console.log('knot', i + 2)
-
-    if (i === 0) {
-      console.log(ropeMovement)
-    }
+    // console.log('----')
+    // console.log(i)
+    // console.log('knot', i + 2)
 
     const prevKnotPositions: Position[] = ropeMovement[ropeMovement.length - 1]
-
-    if (i === 0) {
-      console.log(prevKnotPositions)
-    }
-
     ropeMovement.push(followKnot(prevKnotPositions))
   })
   return ropeMovement
@@ -83,11 +86,11 @@ function followKnot(knotPositions: Position[]): Position[] {
     const recentPrevKnotPositions = knotPositions.slice(0, i + 1)
     const prevKnotPosition = knotPositions[i - 1]
     if (areAdjacent(knotPosition, prevNewKnotPosition)) {
-      console.log(
-        `${stringifyPosition(prevNewKnotPosition)} - ${stringifyPosition(
-          knotPosition
-        )} - STAY`
-      )
+      // console.log(
+      //   `${stringifyPosition(prevNewKnotPosition)} - ${stringifyPosition(
+      //     knotPosition
+      //   )} - STAY`
+      // )
       newKnotPositions.push(prevNewKnotPosition)
     }
     // if diagonal movement needed:
@@ -99,16 +102,16 @@ function followKnot(knotPositions: Position[]): Position[] {
         x: clamp(knotPosition.x - prevNewKnotPosition.x, -1, 1),
         y: clamp(knotPosition.y - prevNewKnotPosition.y, -1, 1),
       }
-      console.log(
-        'diagonal movement needed! distances: ',
-        `${stringifyPosition(vector)}`
-      )
+      // console.log(
+      //   'diagonal movement needed! distances: ',
+      //   `${stringifyPosition(vector)}`
+      // )
       const newCurrent = addPositions(prevNewKnotPosition, vector)
-      console.log(
-        `moving diagonally from ${stringifyPosition(
-          prevNewKnotPosition
-        )} to ${stringifyPosition(newCurrent)}`
-      )
+      // console.log(
+      //   `moving diagonally from ${stringifyPosition(
+      //     prevNewKnotPosition
+      //   )} to ${stringifyPosition(newCurrent)}`
+      // )
 
       newKnotPositions.push(newCurrent)
     }
@@ -116,11 +119,11 @@ function followKnot(knotPositions: Position[]): Position[] {
     else {
       // move to previous' knots position:
       const newCurrent = { ...prevKnotPosition }
-      console.log(
-        `${stringifyPosition(newCurrent)} - ${stringifyPosition(
-          recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
-        )} - MOVE`
-      )
+      // console.log(
+      //   `${stringifyPosition(newCurrent)} - ${stringifyPosition(
+      //     recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
+      //   )} - MOVE`
+      // )
       newKnotPositions.push(newCurrent)
     }
   })
@@ -181,11 +184,56 @@ function addPositions(a: Position, b: Position): Position {
   }
 }
 
-function printRope(knots: Position[]): void {
-  knots.forEach((knot, i) => {
-    const name = i === 0 ? 'H' : i === knots.length - 1 ? 'T' : i + 2
-    const msg = `${name}: stringifyPosition(knot)`
-    console.log(msg)
+function invertNestedArray<T>(nestedArr: T[][]): T[][] {
+  const inverted = []
+  for (let i = 0; i < nestedArr[0].length; i += 1) {
+    const row = []
+    for (let j = 0; j < nestedArr.length; j += 1) {
+      const cell = nestedArr[j][i]
+      row.push(cell)
+    }
+    inverted.push(row)
+  }
+  return inverted
+}
+
+function printKnotsAccrossTime(ropeMovement: RopeMovement): void {
+  const knotsAccrossTime = invertNestedArray(ropeMovement)
+  console.log(knotsAccrossTime)
+  const flat = knotsAccrossTime.flat()
+  const xVals = flat.map(position => position.x).sort((a, b) => a - b)
+  const yVals = flat.map(position => position.y).sort((a, b) => a - b)
+  const smallestX = xVals[0]
+  const largestX = xVals[xVals.length - 1]
+  const smallestY = yVals[0]
+  const largestY = yVals[yVals.length - 1]
+  const width = largestX - smallestX
+  const height = largestY - smallestY
+  const offsetX = smallestX * -1
+  const offsetY = smallestY * -1
+  console.log(`smallest x: ${smallestX}, largest x: ${largestX}`)
+  console.log(`smallest y: ${smallestY}, largest y: ${largestY}`)
+  console.log(`width: ${width}, height: ${height}`)
+  console.log(`offset x: ${offsetX}, offset y: ${offsetY}`)
+
+  knotsAccrossTime.slice().reverse().forEach((time, i) => {
+    console.log('-----------------')
+    console.log(`T${i + 1}`);
+    
+    const grid: any[][] = Array.from(Array(height)).map(() =>
+      Array.from(Array(width)).map(() => null)
+    )
+    console.log(grid)
+    
+
+    time.slice().reverse().forEach((knot, j) => {
+      const name = j === 0 ? 'H' : j === time.length - 1 ? 'T' : j + 1
+      console.log(name, knot)
+      grid[knot.y + offsetY - 1][knot.x + offsetX - 1] = name
+    })
+
+    console.log(grid)
+
   })
 }
 
