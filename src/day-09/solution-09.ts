@@ -11,28 +11,56 @@ interface Position {
   x: number
   y: number
 }
+type RopeMovement = Position[][]
 
 export default async function solution(input: string): Promise<Solution9> {
   console.log(input)
   console.log('----')
 
   const motions = parseHeadMotions(input)
-  const answer1 = getAnswer1(motions)
+  const answer1 = 1
+  //   const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
 
   return { answer1, answer2 }
 }
 
 function getAnswer1(headMotions: Motion[]): number {
-  const headPositions = moveHead(headMotions)
-  const tailPositions = followKnot(headPositions)
+  const ropeMovement = moveRope(headMotions, 2)
+  const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
 
 function getAnswer2(headMotions: Motion[]): number {
-  const headPositions = moveHead(headMotions)
-  const tailPositions = followKnot(headPositions)
+  const ropeMovement = moveRope(headMotions, 10)
+  const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
+}
+
+function moveRope(headMotions: Motion[], ropeLength: number): RopeMovement {
+  if (ropeLength < 2) throw new Error('Rope is too short!')
+  const headPositions = moveHead(headMotions)
+  const ropeMovement: RopeMovement = [headPositions]
+  console.log('other knots:', ropeLength - 1)
+
+  Array.from(Array(ropeLength - 1)).forEach((n, i) => {
+    console.log('----')
+    console.log(i)
+    console.log('knot', i + 2)
+
+    if (i === 0) {
+      console.log(ropeMovement)
+    }
+
+    const prevKnotPositions: Position[] = ropeMovement[ropeMovement.length - 1]
+
+    if (i === 0) {
+      console.log(prevKnotPositions)
+    }
+
+    ropeMovement.push(followKnot(prevKnotPositions))
+  })
+  return ropeMovement
 }
 
 function moveHead(motions: Motion[]): Position[] {
