@@ -9,10 +9,10 @@ type Packet = Value[]
 type Group = [Packet, Packet]
 type CompareResult = 1 | -1 | 0
 
-export default async function solution(input: string): Promise<Solution13> {
-  console.log(input)
-  console.log('-----')
+const DIVIDER_1 = [[2]]
+const DIVIDER_2 = [[6]]
 
+export default async function solution(input: string): Promise<Solution13> {
   const answer1 = getAnswer1(input)
   const answer2 = getAnswer2(input)
 
@@ -27,11 +27,20 @@ function getAnswer1(input: string): number {
 
 function getAnswer2(input: string): number {
   const packets = parseFile(input, false)
-  console.log(packets)
+  const decoderKey = getDecoderKey(packets)
+  return decoderKey
+}
 
-  const sorted = packets.sort((a, b) => compareLists(b, a))
-  console.log(sorted)
-  return 0
+function getDecoderKey(packets: Packet[]): number {
+  const packetsWithDividers = [...packets, DIVIDER_1, DIVIDER_2]
+  const sorted = packetsWithDividers.sort((a, b) => compareLists(b, a))
+
+  const index1 =
+    sorted.findIndex(packet => arraysAreEqual(packet, DIVIDER_1)) + 1
+  const index2 =
+    sorted.findIndex(packet => arraysAreEqual(packet, DIVIDER_2)) + 1
+
+  return index1 * index2
 }
 
 function compareLists(
@@ -84,6 +93,10 @@ function getSum(numbers: number[]): number {
   return numbers.reduce((result, number) => result + number, 0)
 }
 
+function arraysAreEqual(a: unknown[], b: unknown[]): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
 function parseFile(input: string, grouped: false): Packet[]
 function parseFile(input: string, grouped: true): Group[]
 function parseFile(input: string, grouped: boolean): Group[] | Packet[] {
@@ -93,5 +106,5 @@ function parseFile(input: string, grouped: boolean): Group[] | Packet[] {
   ) as Group[]
   return grouped
     ? groups
-    : groups.reduce((result, group) => [...result, group], [] as Packet[])
+    : groups.reduce((result, group) => [...result, ...group], [] as Packet[])
 }
