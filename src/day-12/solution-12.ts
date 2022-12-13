@@ -11,23 +11,50 @@ interface Coordinates {
   y: number
 }
 type Map = Square[][]
+type Path = Square[]
 
 export default async function solution(input: string): Promise<Solution12> {
   console.log(input)
   console.log('---')
 
   const map = parseMap(input)
-  console.log(map)
-  console.log(getSurroundingSquares(map[2][3], map))
+  // console.log(map)
+  // const s = map[0][3]
+  // console.log('s:')
+  // console.log(s)
+  // console.log('surrounding:')
+  // console.log(getSurroundingSquares(s, map))
+  // console.log('surrounding reachable:')
+  // console.log(
+  //   getSurroundingSquares(s, map).filter(neighbor => isReachable(neighbor, s))
+  // )
+  const end = map.flat().find(square => square.end)
+  if (!end) throw new Error('No end in sight!')
+  const possiblePaths = getPossiblePaths(end, map, [])
+  console.log('possiblePaths')
+  console.log(possiblePaths)
 
   return { answer1: 0 }
 }
 
-function getSteps(map: Map): Square[] {
-  const steps: Square[] = []
-  const end = map.flat().find(square => square.end)
-  if (!end) throw new Error('No end in sight!')
-  return steps
+function getPossiblePaths(
+  square: Square,
+  map: Map,
+  alreadyVisited: Square[]
+): Path[] {
+  const newAlreadyVisited = [...alreadyVisited]
+  const reachableNeighbors = getSurroundingSquares(square, map).filter(
+    neighbor =>
+      !alreadyVisited.includes(neighbor) && isReachable(neighbor, square)
+  )
+  newAlreadyVisited.push(...reachableNeighbors)
+  return reachableNeighbors.reduce(
+    (result, square) => [
+      ...result,
+      ...getPossiblePaths(square, map, newAlreadyVisited),
+    ],
+    [] as Path[]
+  )
 }
 
 function getSurroundingSquares(square: Square, map: Map): Square[] {
@@ -59,7 +86,8 @@ function getCoordinates(square: Square, map: Map): Coordinates {
 }
 
 function isReachable(target: Square, current: Square): boolean {
-  return target.elevation.charCodeAt(0) - current.elevation.charCodeAt(0) <= 1
+  const diff = target.elevation.charCodeAt(0) - current.elevation.charCodeAt(0)
+  return diff <= 1
 }
 
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
