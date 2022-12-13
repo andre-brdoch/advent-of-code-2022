@@ -1,5 +1,6 @@
 interface Solution13 {
   answer1: number
+  answer2: number
 }
 type ValueOrArray<T> = T | ValueOrArray<T>[]
 type Value = ValueOrArray<number>
@@ -12,13 +13,25 @@ export default async function solution(input: string): Promise<Solution13> {
   console.log(input)
   console.log('-----')
 
-  const groups = parseGroups(input)
-  console.log(groups)
-  const successIndices = getSuccessfullIndices(groups)
-  console.log(successIndices)
-  const answer1 = getSum(successIndices)
+  const answer1 = getAnswer1(input)
+  const answer2 = getAnswer2(input)
 
-  return { answer1 }
+  return { answer1, answer2 }
+}
+
+function getAnswer1(input: string): number {
+  const groups = parseFile(input, true)
+  const successIndices = getSuccessfullIndices(groups)
+  return getSum(successIndices)
+}
+
+function getAnswer2(input: string): number {
+  const packets = parseFile(input, false)
+  console.log(packets)
+
+  const sorted = packets.sort((a, b) => compareLists(b, a))
+  console.log(sorted)
+  return 0
 }
 
 function compareLists(
@@ -71,9 +84,14 @@ function getSum(numbers: number[]): number {
   return numbers.reduce((result, number) => result + number, 0)
 }
 
-function parseGroups(input: string): Group[] {
-  return input.split('\n\n').map(groupLines =>
+function parseFile(input: string, grouped: false): Packet[]
+function parseFile(input: string, grouped: true): Group[]
+function parseFile(input: string, grouped: boolean): Group[] | Packet[] {
+  const groups = input.split('\n\n').map(groupLines =>
     // I know this is cheating :)
     groupLines.split('\n').map(line => eval(line))
   ) as Group[]
+  return grouped
+    ? groups
+    : groups.reduce((result, group) => [...result, group], [] as Packet[])
 }
