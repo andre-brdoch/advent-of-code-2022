@@ -7,7 +7,7 @@ type Rock = '#'
 type Sand = 'o'
 type SandStart = '+'
 type Cell = Air | Rock | Sand | SandStart
-type Cave = Cell[][]
+type CaveGrid = Cell[][]
 interface Coordinates {
   x: number
   y: number
@@ -19,117 +19,147 @@ const SAND_START: Coordinates = { x: 500, y: 0 }
 
 export default async function solution(input: string): Promise<Solution14> {
   const cornerPaths = parsePaths(input)
-  const {
-    paths: cornerPathsNormalized,
-    offsetX,
-    offsetY,
-  } = normalizePaths(cornerPaths)
-  const sandStartNormalized: Coordinates = {
-    x: SAND_START.x + offsetX,
-    y: SAND_START.y + offsetY,
-  }
-  const paths = cornerPathsNormalized.map(fillPath)
 
-  const answer1 = getAnswer1(paths, sandStartNormalized)
-  const answer2 = getAnswer2(paths, sandStartNormalized)
+  const answer1 = getAnswer1(cornerPaths, SAND_START)
+  const answer2 = getAnswer2(cornerPaths, SAND_START)
 
   return { answer1, answer2 }
 }
 
-function getAnswer1(normalizePaths: Path[], sandStart: Coordinates): number {
-  const cave = getCave(normalizePaths)
-  return fillSand(cave, sandStart)
-}
-
-function getAnswer2(normalizePaths: Path[], sandStart: Coordinates): number {
-  const cave = getCave(normalizePaths, true)
-  printCave(cave)
-  const result = fillSand(cave, sandStart, false)
-  printCave(cave)
+function getAnswer1(cornerPaths: Path[], sandStart: Coordinates): number {
+  const cave = new Cave(cornerPaths, sandStart)
+  console.log(cave.toString())
+  const result = cave.fillSand()
+  console.log(cave.toString())
   return result
 }
 
-function fillSand(
-  cave: Cave,
-  sandStart: Coordinates,
-  withFloor = false
-): number {
-  cave[sandStart.x][sandStart.y] = '+'
-
-  let count = 0
-  let notFullYet = true
-  while (notFullYet) {
-    count += 1
-    notFullYet = addSandUnit(cave, sandStart, withFloor)
-  }
-  return count - 1
+function getAnswer2(cornerPaths: Path[], sandStart: Coordinates): number {
+  const cave = new Cave(cornerPaths, sandStart)
+  // console.log(cave.toString())
+  // const cave = getCave(normalizePaths, true)
+  // console.log(cave.toString())
+  // const result = fillSand(cave, sandStart, false)
+  // console.log(cave.toString())
+  // return result
+  return 0
 }
 
-function addSandUnit(
-  cave: Cave,
-  sandStart: Coordinates,
-  withFloor = false
-): boolean {
-  const target: Coordinates = getNextSandPosition(cave, sandStart)
-  if (!isInCave(cave, target)) {
-    if (!withFloor) {
-      return false
+class Cave {
+  public grid: CaveGrid
+  private paths: Path[]
+  public sandStart: Coordinates
+  private withFloor: boolean
+
+  constructor(cornerPaths: Path[], sandStart: Coordinates, withFloor = false) {
+    const {
+      paths: cornerPathsNormalized,
+      offsetX,
+      offsetY,
+    } = normalizePaths(cornerPaths)
+
+    this.paths = cornerPathsNormalized.map(fillPath)
+    this.sandStart = {
+      x: sandStart.x + offsetX,
+      y: sandStart.y + offsetY,
     }
-    else {
-      // increase cave
+    this.withFloor = withFloor
+    this.grid = this.getInitialCave()
+  }
+
+  public fillSand(): number {
+    this.grid[this.sandStart.x][this.sandStart.y] = '+'
+
+    let count = 0
+    let notFullYet = true
+    while (notFullYet) {
+      count += 1
+      notFullYet = this.addSandUnit()
     }
-  }
-  cave[target.x][target.y] = 'o'
-  return true
-}
-
-function getNextSandPosition(
-  cave: Cave,
-  sandCoordinates: Coordinates
-): Coordinates {
-  if (!isInCave(cave, sandCoordinates)) return sandCoordinates
-
-  const bottom: Coordinates = { ...sandCoordinates, y: sandCoordinates.y + 1 }
-  const bottomLeft: Coordinates = { ...bottom, x: bottom.x - 1 }
-  const bottomRight: Coordinates = { ...bottom, x: bottom.x + 1 }
-
-  const nextPosition = isFree(cave, bottom)
-    ? bottom
-    : isFree(cave, bottomLeft)
-      ? bottomLeft
-      : isFree(cave, bottomRight)
-        ? bottomRight
-        : undefined
-
-  if (nextPosition) {
-    return getNextSandPosition(cave, nextPosition)
-  }
-  return sandCoordinates
-}
-
-function getCave(normalizedRockPaths: Path[], withFloor = false): Cave {
-  const flatCoordinates = normalizedRockPaths.flat()
-  const width = getExtremeCoordinate(flatCoordinates, 'x', 'max') + 1
-  const height = getExtremeCoordinate(flatCoordinates, 'y', 'max') + 1
-  const cave: Cave = Array.from(Array(width)).map(() =>
-    Array.from(Array(height)).map(() => '.')
-  )
-
-  normalizedRockPaths.forEach(path =>
-    path.forEach(({ x, y }) => {
-      cave[x][y] = '#'
-    })
-  )
-
-  if (withFloor) {
-    // add floor 2 fields above previous highest point
-    cave.forEach(row => {
-      row.push('.')
-      row.push('#')
-    })
+    return count - 1
   }
 
-  return cave
+  public addSandUnit(): boolean {
+    const target: Coordinates = this.getNextSandPosition(this.sandStart)
+    if (!this.isInCave(target)) {
+      if (!this.withFloor) {
+        return false
+      }
+      else {
+        // increase cave
+      }
+    }
+    this.grid[target.x][target.y] = 'o'
+    return true
+  }
+
+  private getNextSandPosition(sandCoordinates: Coordinates): Coordinates {
+    if (!this.isInCave(sandCoordinates)) return sandCoordinates
+
+    const bottom: Coordinates = { ...sandCoordinates, y: sandCoordinates.y + 1 }
+    const bottomLeft: Coordinates = { ...bottom, x: bottom.x - 1 }
+    const bottomRight: Coordinates = { ...bottom, x: bottom.x + 1 }
+
+    const nextPosition = this.isFree(bottom)
+      ? bottom
+      : this.isFree(bottomLeft)
+        ? bottomLeft
+        : this.isFree(bottomRight)
+          ? bottomRight
+          : undefined
+
+    if (nextPosition) {
+      return this.getNextSandPosition(nextPosition)
+    }
+    return sandCoordinates
+  }
+
+  public isInCave(coordinates: Coordinates): boolean {
+    const { x, y } = coordinates
+    return 0 <= x && x < this.grid.length && 0 <= y && y < this.grid[0].length
+  }
+
+  public isFree(coordinates: Coordinates): boolean {
+    if (!this.isInCave(coordinates)) {
+      // outside of cave always counts as free
+      return true
+    }
+    const { x, y } = coordinates
+    return cellIsFree(this.grid[x][y])
+  }
+
+  public toString(): string {
+    let string = ''
+    for (let i = 0; i < this.grid[0].length; i++) {
+      string += '\n'
+      for (let j = 0; j < this.grid.length; j++) {
+        string += this.grid[j][i] + ' '
+      }
+    }
+    return string
+  }
+
+  private getInitialCave(): CaveGrid {
+    const flatCoordinates = this.paths.flat()
+    const width = getExtremeCoordinate(flatCoordinates, 'x', 'max') + 1
+    const height = getExtremeCoordinate(flatCoordinates, 'y', 'max') + 1
+    const cave: CaveGrid = Array.from(Array(width)).map(() =>
+      Array.from(Array(height)).map(() => '.')
+    )
+    this.paths.forEach(path =>
+      path.forEach(({ x, y }) => {
+        cave[x][y] = '#'
+      })
+    )
+    if (this.withFloor) {
+      // add floor 2 fields above previous highest point
+      cave.forEach(row => {
+        row.push('.')
+        row.push('#')
+      })
+    }
+    return cave
+  }
 }
 
 /** Adjust coordinate range to start from 0/0 */
@@ -160,20 +190,6 @@ function getExtremeCoordinate(
   return coordinates
     .map(c => c[axis])
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
-}
-
-function isInCave(cave: Cave, coordinates: Coordinates): boolean {
-  const { x, y } = coordinates
-  return 0 <= x && x < cave.length && 0 <= y && y < cave[0].length
-}
-
-function isFree(cave: Cave, coordinates: Coordinates): boolean {
-  if (!isInCave(cave, coordinates)) {
-    // outside of cave always counts as free
-    return true
-  }
-  const { x, y } = coordinates
-  return cellIsFree(cave[x][y])
 }
 
 function cellIsFree(cell: Cell): boolean {
@@ -220,15 +236,4 @@ function parsePaths(input: string): Path[] {
       return { x: Number(x), y: Number(y) }
     })
   )
-}
-
-function printCave(cave: Cave): void {
-  let string = ''
-  for (let i = 0; i < cave[0].length; i++) {
-    string += '\n'
-    for (let j = 0; j < cave.length; j++) {
-      string += cave[j][i] + ' '
-    }
-  }
-  console.log(string)
 }
