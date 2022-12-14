@@ -27,21 +27,19 @@ export default async function solution(input: string): Promise<Solution14> {
 }
 
 function getAnswer1(cornerPaths: Path[], sandStart: Coordinates): number {
-  const cave = new Cave(cornerPaths, sandStart)
-  console.log(cave.toString())
-  const result = cave.fillSand()
-  console.log(cave.toString())
-  return result
+  // const cave = new Cave(cornerPaths, sandStart)
+  // const result = cave.fillSand()
+  // return result
+  return 0
 }
 
 function getAnswer2(cornerPaths: Path[], sandStart: Coordinates): number {
-  const cave = new Cave(cornerPaths, sandStart)
-  // console.log(cave.toString())
-  // const cave = getCave(normalizePaths, true)
-  // console.log(cave.toString())
-  // const result = fillSand(cave, sandStart, false)
-  // console.log(cave.toString())
-  // return result
+  const cave = new Cave(cornerPaths, sandStart, true)
+  console.log(cave.toString())
+  // Array.from(Array(28)).forEach(() => cave.addSandUnit())
+  const result = cave.fillSand()
+  console.log(cave.toString())
+  return result
   return 0
 }
 
@@ -82,19 +80,36 @@ class Cave {
   public addSandUnit(): boolean {
     const target: Coordinates = this.getNextSandPosition(this.sandStart)
     if (!this.isInCave(target)) {
-      if (!this.withFloor) {
-        return false
-      }
-      else {
-        // increase cave
-      }
+      return false
     }
     this.grid[target.x][target.y] = 'o'
     return true
   }
 
   private getNextSandPosition(sandCoordinates: Coordinates): Coordinates {
-    if (!this.isInCave(sandCoordinates)) return sandCoordinates
+    const onLeftEdge = sandCoordinates.x === 0
+    const onRightEdge = sandCoordinates.x === this.grid.length - 1
+
+    if (!this.withFloor && !this.isInCave(sandCoordinates)) {
+      return sandCoordinates
+    }
+    else if (this.withFloor && (onLeftEdge || onRightEdge)) {
+      // increase cave
+      const newRow = this.grid[0].map((cell, i) =>
+        i === this.grid[0].length - 1 ? '#' : '.'
+      )
+      // increase to the left, and adjust coordinates
+      if (onLeftEdge) {
+        this.grid = [newRow, ...this.grid]
+        sandCoordinates.x += 1
+        this.sandStart.x += 1
+      }
+      // increase to the right
+      else if (onRightEdge) {
+        this.grid = [newRow, ...this.grid]
+      }
+      console.log(this.toString())
+    }
 
     const bottom: Coordinates = { ...sandCoordinates, y: sandCoordinates.y + 1 }
     const bottomLeft: Coordinates = { ...bottom, x: bottom.x - 1 }
@@ -126,6 +141,10 @@ class Cave {
     }
     const { x, y } = coordinates
     return cellIsFree(this.grid[x][y])
+  }
+
+  public sandIsBlocked(): boolean {
+    return this.grid[this.sandStart.x][this.sandStart.y] === 'o'
   }
 
   public toString(): string {
