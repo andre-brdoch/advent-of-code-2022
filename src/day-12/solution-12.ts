@@ -23,17 +23,40 @@ export default async function solution(input: string): Promise<Solution12> {
   const map = parseMap(input)
   const end = map.flat().find(square => square.end)
   if (!end) throw new Error('No end in sight!')
-  const possiblePaths = getPossiblePaths(end, map, [end])
-  // console.log('possiblePaths')
-  // console.log(possiblePaths)
-  const fullPaths = possiblePaths.filter(
-    path => path[0].end && path[path.length - 1].start
-  )
-  console.log('fullPaths')
-  console.log(fullPaths)
-  const answer1 = getShortestPath(fullPaths).length - 1
+  // const possiblePaths = getPossiblePaths(end, map, [end])
+  // // console.log('possiblePaths')
+  // // console.log(possiblePaths)
+  // const fullPaths = possiblePaths.filter(
+  //   path => path[0].end && path[path.length - 1].start
+  // )
+  // console.log('fullPaths')
+  // console.log(fullPaths)
+  // const answer1 = getShortestPath(fullPaths).length - 1
 
-  return { answer1 }
+  // const upper = findConnectors(map, 9, true)
+  const lowerI = findConnectors(map, 8, false)
+  const lowerJ = findConnectors(map, 9, false)
+  console.log('lowerI:', lowerI)
+  console.log('lowerJ:', lowerJ)
+
+  return { answer1: 0 }
+}
+
+function findConnectors(
+  map: Map,
+  elevationNum: number,
+  upper: boolean
+): Square[] {
+  return map
+    .flat()
+    .filter(
+      square =>
+        square.elevationNum === elevationNum &&
+        getSurroundingSquares(square, map).some(
+          neighbor =>
+            neighbor.elevationNum === square.elevationNum + (upper ? 1 : -1)
+        )
+    )
 }
 
 function getPossiblePaths(
