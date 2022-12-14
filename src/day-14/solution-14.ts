@@ -13,6 +13,8 @@ interface Coordinates {
 type Axis = keyof Coordinates
 type Path = Coordinates[]
 
+const SAND_START: Coordinates = { x: 500, y: 0 }
+
 export default async function solution(input: string): Promise<Solution14> {
   console.log(input)
   console.log('---')
@@ -56,7 +58,8 @@ function getCave(normalizedRockPaths: Path[]): Cave {
 
 /** Adjust coordinate range to start from 0/0 */
 function normalizePaths(paths: Path[]): Path[] {
-  const flatCoordinates = paths.flat()
+  // include sand start coordinates:
+  const flatCoordinates = [...paths.flat(), SAND_START]
   const xMin = getExtremeCoordinate(flatCoordinates, 'x', 'min')
   const yMin = getExtremeCoordinate(flatCoordinates, 'y', 'min')
   return paths.map(path =>
