@@ -24,8 +24,8 @@ export default async function solution(input: string): Promise<Solution12> {
   const end = map.flat().find(square => square.end)
   if (!end) throw new Error('No end in sight!')
   const possiblePaths = getPossiblePaths(end, map, [end])
-  console.log('possiblePaths')
-  console.log(possiblePaths)
+  // console.log('possiblePaths')
+  // console.log(possiblePaths)
   const fullPaths = possiblePaths.filter(
     path => path[0].end && path[path.length - 1].start
   )
@@ -44,10 +44,8 @@ function getPossiblePaths(
   const reachableNeighbors = getSurroundingSquares(square, map).filter(
     neighbor => !currentPath.includes(neighbor) && isReachable(neighbor, square)
   )
-  // .sort((a, b) => a.elevation - b.elevation)
   const start = reachableNeighbors.find(neighbor => neighbor.start)
   if (start) {
-    console.log('found an end!')
     return [[...currentPath, start]]
   }
 
@@ -75,9 +73,13 @@ function getSurroundingSquares(square: Square, map: Map): Square[] {
     { x: x, y: y - 1 },
     { x: x, y: y + 1 },
   ]
-  return targetCoordinates
-    .filter(coordinates => isOnMap(coordinates, map))
-    .map(({ x, y }) => map[y][x])
+  return (
+    targetCoordinates
+      .filter(coordinates => isOnMap(coordinates, map))
+      .map(({ x, y }) => map[y][x])
+      // prefer neighbors with lower elevation
+      .sort((a, b) => a.elevationNum - b.elevationNum)
+  )
 }
 
 function getCoordinates(square: Square, map: Map): Coordinates {
