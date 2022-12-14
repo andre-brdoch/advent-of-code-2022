@@ -3,6 +3,7 @@ interface Solution12 {
 }
 interface Square {
   elevation: string
+  elevationNum: number
   start?: boolean
   end?: boolean
 }
@@ -13,21 +14,13 @@ interface Coordinates {
 type Map = Square[][]
 type Path = Square[]
 
+const ASCII_OFFSET_A = 96
+
 export default async function solution(input: string): Promise<Solution12> {
   console.log(input)
   console.log('---')
 
   const map = parseMap(input)
-  // console.log(map)
-  // const s = map[0][3]
-  // console.log('s:')
-  // console.log(s)
-  // console.log('surrounding:')
-  // console.log(getSurroundingSquares(s, map))
-  // console.log('surrounding reachable:')
-  // console.log(
-  //   getSurroundingSquares(s, map).filter(neighbor => isReachable(neighbor, s))
-  // )
   const end = map.flat().find(square => square.end)
   if (!end) throw new Error('No end in sight!')
   const possiblePaths = getPossiblePaths(end, map, [end])
@@ -38,7 +31,7 @@ export default async function solution(input: string): Promise<Solution12> {
   )
   console.log('fullPaths')
   console.log(fullPaths)
-  const answer1 = getShortestPath(fullPaths).length
+  const answer1 = getShortestPath(fullPaths).length - 1
 
   return { answer1 }
 }
@@ -51,6 +44,7 @@ function getPossiblePaths(
   const reachableNeighbors = getSurroundingSquares(square, map).filter(
     neighbor => !currentPath.includes(neighbor) && isReachable(neighbor, square)
   )
+  // .sort((a, b) => a.elevation - b.elevation)
   const start = reachableNeighbors.find(neighbor => neighbor.start)
   if (start) {
     console.log('found an end!')
@@ -102,8 +96,9 @@ function getCoordinates(square: Square, map: Map): Coordinates {
 }
 
 function isReachable(target: Square, current: Square): boolean {
-  const diff = target.elevation.charCodeAt(0) - current.elevation.charCodeAt(0)
-  return diff <= 1
+  const diff = current.elevationNum - target.elevationNum
+  // go down 1 level, or stay on same elevation
+  return [0, 1].includes(diff)
 }
 
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
@@ -114,15 +109,23 @@ function isOnMap(coordinates: Coordinates, map: Map): boolean {
 function parseMap(input: string): Map {
   return input.split('\n').map(line =>
     line.split('').map(char => {
-      const square: Square = { elevation: char }
+      let elevation = char
+      let start
+      let end
       if (char === 'S') {
-        square.elevation = 'a'
-        square.start = true
+        elevation = 'a'
+        start = true
       }
       if (char === 'E') {
-        square.elevation = 'z'
-        square.end = true
+        elevation = 'z'
+        end = true
       }
+      const square: Square = {
+        elevation,
+        elevationNum: elevation.charCodeAt(0) - ASCII_OFFSET_A,
+      }
+      if (start) square.start = start
+      if (end) square.end = end
       return square
     })
   )
