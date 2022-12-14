@@ -27,25 +27,12 @@ export default async function solution(input: string): Promise<Solution14> {
     x: SAND_START.x + offsetX,
     y: SAND_START.y + offsetY,
   }
-  console.log('cornerPathsNormalized')
-  console.log(cornerPathsNormalized)
   const paths = cornerPathsNormalized.map(fillPath)
-  console.log('paths')
-  console.log(paths)
-
   const cave = getCave(paths)
   printCave(cave)
 
   const answer1 = fillSand(cave, sandStartNormalized)
-  // const answer1 = 0
-
-  // const between = getNumbersBetween(4,1)
-  // console.log(between);
-  
-
-  Array.from(Array(56)).forEach(() => addSandUnit(cave, sandStartNormalized))
-
-  // printCave(cave)
+  printCave(cave)
 
   return { answer1 }
 }
@@ -160,33 +147,34 @@ function cellIsFree(cell: Cell): boolean {
 
 /** Fills in all gaps in path with coordinates */
 function fillPath(path: Path): Path {
-  return path.reduce((result, pair, i) => {
-    if (i === 0) return [...result, pair]
-    const prevPair = result[i - 1]
+  return path.reduce((result, pair, i, array) => {
+    if (i === 0) return [pair]
+    const prevPair = array[i - 1]
     const vector: Coordinates = {
       x: pair.x - prevPair.x,
       y: pair.y - prevPair.y,
     }
     const axis: Axis = vector.x !== 0 ? 'x' : 'y'
-    // console.log(getNumbersBetween(prevPair[axis], pair[axis]))
-    const fillerPairs = getNumbersBetween(prevPair[axis], pair[axis]).map(number => ({
-      ...pair,
-      [axis]: number
-    }))
+    const fillerPairs = getNumbersBetween(prevPair[axis], pair[axis]).map(
+      number => ({
+        ...pair,
+        [axis]: number,
+      })
+    )
     return [...result, ...fillerPairs, pair]
   }, [] as Path)
 }
 
 function getNumbersBetween(a: number, b: number): number[] {
   const between: number[] = []
-  const max = Math.max(a,b)
-  let min = Math.min(a,b)
+  const max = Math.max(a, b)
+  let min = Math.min(a, b)
   if (max - min <= 1) return between
   while (min < max - 1) {
-    min = min + 1;
+    min = min + 1
     between.push(min)
   }
-  if (max === a) return between.slice().reverse()
+  if (max === a) between.reverse()
   return between
 }
 
