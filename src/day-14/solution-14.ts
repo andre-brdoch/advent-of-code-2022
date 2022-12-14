@@ -4,7 +4,8 @@ interface Solution14 {
 type Air = '.'
 type Rock = '#'
 type Sand = 'o'
-type Cell = Air | Rock | Sand
+type SandStart = '+'
+type Cell = Air | Rock | Sand | SandStart
 type Cave = Cell[][]
 interface Coordinates {
   x: number
@@ -26,45 +27,32 @@ export default async function solution(input: string): Promise<Solution14> {
     x: SAND_START.x + offsetX,
     y: SAND_START.y + offsetY,
   }
+  console.log('cornerPathsNormalized')
+  console.log(cornerPathsNormalized)
   const paths = cornerPathsNormalized.map(fillPath)
+  console.log('paths')
+  console.log(paths)
+
   const cave = getCave(paths)
   printCave(cave)
 
   const answer1 = fillSand(cave, sandStartNormalized)
   // const answer1 = 0
 
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // // should fall over
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  // addSandUnit(cave, sandStartNormalized)
-  printCave(cave)
+  // const between = getNumbersBetween(4,1)
+  // console.log(between);
+  
+
+  Array.from(Array(56)).forEach(() => addSandUnit(cave, sandStartNormalized))
+
+  // printCave(cave)
 
   return { answer1 }
 }
 
 function fillSand(cave: Cave, sandStart: Coordinates): number {
+  cave[sandStart.x][sandStart.y] = '+'
+
   let count = 0
   let notFullYet = true
   while (notFullYet) {
@@ -167,7 +155,7 @@ function isFree(cave: Cave, coordinates: Coordinates): boolean {
 }
 
 function cellIsFree(cell: Cell): boolean {
-  return cell === '.'
+  return ['.', '+'].includes(cell)
 }
 
 /** Fills in all gaps in path with coordinates */
@@ -180,14 +168,26 @@ function fillPath(path: Path): Path {
       y: pair.y - prevPair.y,
     }
     const axis: Axis = vector.x !== 0 ? 'x' : 'y'
-    const directionModifier = vector[axis] > 0 ? -1 : 1
-    const fillerPairCount = Math.abs(vector[axis]) - 1
-    const fillerPairs = Array.from(Array(fillerPairCount)).map((_n, i) => ({
+    // console.log(getNumbersBetween(prevPair[axis], pair[axis]))
+    const fillerPairs = getNumbersBetween(prevPair[axis], pair[axis]).map(number => ({
       ...pair,
-      [axis]: pair[axis] + (i + 1) * directionModifier,
+      [axis]: number
     }))
     return [...result, ...fillerPairs, pair]
   }, [] as Path)
+}
+
+function getNumbersBetween(a: number, b: number): number[] {
+  const between: number[] = []
+  const max = Math.max(a,b)
+  let min = Math.min(a,b)
+  if (max - min <= 1) return between
+  while (min < max - 1) {
+    min = min + 1;
+    between.push(min)
+  }
+  if (max === a) return between.slice().reverse()
+  return between
 }
 
 function parsePaths(input: string): Path[] {
@@ -204,7 +204,7 @@ function printCave(cave: Cave): void {
   for (let i = 0; i < cave[0].length; i++) {
     string += '\n'
     for (let j = 0; j < cave.length; j++) {
-      string += cave[j][i]
+      string += cave[j][i] + ' '
     }
   }
   console.log(string)
