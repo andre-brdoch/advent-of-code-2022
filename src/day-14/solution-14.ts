@@ -3,7 +3,7 @@ interface Solution14 {
 }
 type Air = '.'
 type Rock = '#'
-type Sand = '+'
+type Sand = 'o'
 type Cell = Air | Rock | Sand
 type Cave = Cell[][]
 interface Coordinates {
@@ -16,33 +16,99 @@ type Path = Coordinates[]
 const SAND_START: Coordinates = { x: 500, y: 0 }
 
 export default async function solution(input: string): Promise<Solution14> {
-  console.log(input)
-  console.log('---')
-
   const cornerPaths = parsePaths(input)
-  console.log('vectors:')
-  console.log(cornerPaths)
-  const cornerPathsNormalized = normalizePaths(cornerPaths)
-  console.log('vectorsNormalized:')
-  console.log(cornerPathsNormalized)
+  const {
+    paths: cornerPathsNormalized,
+    offsetX,
+    offsetY,
+  } = normalizePaths(cornerPaths)
+  const sandStartNormalized: Coordinates = {
+    x: SAND_START.x + offsetX,
+    y: SAND_START.y + offsetY,
+  }
   const paths = cornerPathsNormalized.map(fillPath)
-  console.log('paths')
-  console.log(paths)
-
   const cave = getCave(paths)
-  console.log(cave)
   printCave(cave)
 
-  return { answer1: 0 }
+  const answer1 = fillSand(cave, sandStartNormalized)
+  //   const answer1 = 0
+
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   addSandUnit(cave, sandStartNormalized)
+  //   //   should fall over
+  //   addSandUnit(cave, sandStartNormalized)
+  printCave(cave)
+
+  return { answer1 }
+}
+
+function fillSand(cave: Cave, sandStart: Coordinates): number {
+  let count = 0
+  let notFullYet = true
+  while (notFullYet) {
+    count += 1
+    notFullYet = addSandUnit(cave, sandStart)
+  }
+  return count
+}
+
+function addSandUnit(cave: Cave, sandStart: Coordinates): boolean {
+  const target: Coordinates = getNextSandPosition(cave, sandStart)
+  if (!isInCave(cave, target)) return false
+  cave[target.x][target.y] = 'o'
+  return true
+}
+
+function getNextSandPosition(
+  cave: Cave,
+  sandCoordinates: Coordinates
+): Coordinates {
+  if (!isInCave(cave, sandCoordinates)) return sandCoordinates
+
+  // fall vertically
+  const bottomY = cave[sandCoordinates.x].findIndex(cell => !cellIsFree(cell))
+  if (bottomY === -1 || bottomY <= sandCoordinates.y) {
+    return sandCoordinates
+  }
+  const bottom: Coordinates = { ...sandCoordinates, y: bottomY - 1 }
+  const left: Coordinates = { ...bottom, x: bottom.x - 1 }
+  const bottomLeft: Coordinates = { ...left, y: bottom.y + 1 }
+  const right: Coordinates = { ...bottom, x: bottom.x + 1 }
+  const bottomRight: Coordinates = { ...right, y: bottom.y + 1 }
+
+  if (isFree(cave, bottomLeft)) {
+    return getNextSandPosition(cave, bottomLeft)
+  }
+  else if (isFree(cave, bottomRight)) {
+    return bottomRight
+  }
+  return bottom
 }
 
 function getCave(normalizedRockPaths: Path[]): Cave {
   const flatCoordinates = normalizedRockPaths.flat()
   const width = getExtremeCoordinate(flatCoordinates, 'x', 'max') + 1
   const height = getExtremeCoordinate(flatCoordinates, 'y', 'max') + 1
-  console.log('width:', width)
-  console.log('height:', height)
-
   const cave: Cave = Array.from(Array(width)).map(() =>
     Array.from(Array(height)).map(() => '.')
   )
@@ -57,14 +123,23 @@ function getCave(normalizedRockPaths: Path[]): Cave {
 }
 
 /** Adjust coordinate range to start from 0/0 */
-function normalizePaths(paths: Path[]): Path[] {
+function normalizePaths(paths: Path[]): {
+  paths: Path[]
+  offsetX: number
+  offsetY: number
+} {
   // include sand start coordinates:
   const flatCoordinates = [...paths.flat(), SAND_START]
   const xMin = getExtremeCoordinate(flatCoordinates, 'x', 'min')
   const yMin = getExtremeCoordinate(flatCoordinates, 'y', 'min')
-  return paths.map(path =>
+  const normalizePaths = paths.map(path =>
     path.map(({ x, y }) => ({ x: x - xMin, y: y - yMin }))
   )
+  return {
+    paths: normalizePaths,
+    offsetX: -xMin,
+    offsetY: -yMin,
+  }
 }
 
 function getExtremeCoordinate(
@@ -75,6 +150,24 @@ function getExtremeCoordinate(
   return coordinates
     .map(c => c[axis])
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
+}
+
+function isInCave(cave: Cave, coordinates: Coordinates): boolean {
+  const { x, y } = coordinates
+  return 0 <= x && x < cave.length && 0 <= y && y < cave[0].length
+}
+
+function isFree(cave: Cave, coordinates: Coordinates): boolean {
+  if (!isInCave(cave, coordinates)) {
+    // outside of cave always counts as free
+    return true
+  }
+  const { x, y } = coordinates
+  return cellIsFree(cave[x][y])
+}
+
+function cellIsFree(cell: Cell): boolean {
+  return cell === '.'
 }
 
 /** Fills in all gaps in path with coordinates */
