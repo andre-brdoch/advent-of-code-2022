@@ -31,32 +31,32 @@ export default async function solution(input: string): Promise<Solution14> {
   printCave(cave)
 
   const answer1 = fillSand(cave, sandStartNormalized)
-  //   const answer1 = 0
+  // const answer1 = 0
 
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   addSandUnit(cave, sandStartNormalized)
-  //   //   should fall over
-  //   addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
+  // //   should fall over
+  // addSandUnit(cave, sandStartNormalized)
   printCave(cave)
 
   return { answer1 }
@@ -85,24 +85,21 @@ function getNextSandPosition(
 ): Coordinates {
   if (!isInCave(cave, sandCoordinates)) return sandCoordinates
 
-  // fall vertically
-  const bottomY = cave[sandCoordinates.x].findIndex(cell => !cellIsFree(cell))
-  if (bottomY === -1 || bottomY <= sandCoordinates.y) {
-    return sandCoordinates
-  }
-  const bottom: Coordinates = { ...sandCoordinates, y: bottomY - 1 }
-  const left: Coordinates = { ...bottom, x: bottom.x - 1 }
-  const bottomLeft: Coordinates = { ...left, y: bottom.y + 1 }
-  const right: Coordinates = { ...bottom, x: bottom.x + 1 }
-  const bottomRight: Coordinates = { ...right, y: bottom.y + 1 }
+  const bottom: Coordinates = { ...sandCoordinates, y: sandCoordinates.y + 1 }
+  const bottomLeft: Coordinates = { x: bottom.x - 1, y: bottom.y + 1 }
+  const bottomRight: Coordinates = { x: bottom.x + 1, y: bottom.y + 1 }
 
-  if (isFree(cave, bottomLeft)) {
+  if (isFree(cave, bottom)) {
+    return getNextSandPosition(cave, bottom)
+  }
+  else if (isFree(cave, bottomLeft)) {
     return getNextSandPosition(cave, bottomLeft)
   }
   else if (isFree(cave, bottomRight)) {
-    return bottomRight
+    return getNextSandPosition(cave, bottomRight)
   }
-  return bottom
+
+  return sandCoordinates
 }
 
 function getCave(normalizedRockPaths: Path[]): Cave {
