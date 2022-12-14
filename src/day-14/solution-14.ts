@@ -1,5 +1,6 @@
 interface Solution14 {
   answer1: number
+  answer2: number
 }
 type Air = '.'
 type Rock = '#'
@@ -28,30 +29,56 @@ export default async function solution(input: string): Promise<Solution14> {
     y: SAND_START.y + offsetY,
   }
   const paths = cornerPathsNormalized.map(fillPath)
-  const cave = getCave(paths)
-  printCave(cave)
 
-  const answer1 = fillSand(cave, sandStartNormalized)
-  printCave(cave)
+  const answer1 = getAnswer1(paths, sandStartNormalized)
+  const answer2 = getAnswer2(paths, sandStartNormalized)
 
-  return { answer1 }
+  return { answer1, answer2 }
 }
 
-function fillSand(cave: Cave, sandStart: Coordinates): number {
+function getAnswer1(normalizePaths: Path[], sandStart: Coordinates): number {
+  const cave = getCave(normalizePaths)
+  return fillSand(cave, sandStart)
+}
+
+function getAnswer2(normalizePaths: Path[], sandStart: Coordinates): number {
+  const cave = getCave(normalizePaths, true)
+  printCave(cave)
+  const result = fillSand(cave, sandStart, false)
+  printCave(cave)
+  return result
+}
+
+function fillSand(
+  cave: Cave,
+  sandStart: Coordinates,
+  withFloor = false
+): number {
   cave[sandStart.x][sandStart.y] = '+'
 
   let count = 0
   let notFullYet = true
   while (notFullYet) {
     count += 1
-    notFullYet = addSandUnit(cave, sandStart)
+    notFullYet = addSandUnit(cave, sandStart, withFloor)
   }
   return count - 1
 }
 
-function addSandUnit(cave: Cave, sandStart: Coordinates): boolean {
+function addSandUnit(
+  cave: Cave,
+  sandStart: Coordinates,
+  withFloor = false
+): boolean {
   const target: Coordinates = getNextSandPosition(cave, sandStart)
-  if (!isInCave(cave, target)) return false
+  if (!isInCave(cave, target)) {
+    if (!withFloor) {
+      return false
+    }
+    else {
+      // increase cave
+    }
+  }
   cave[target.x][target.y] = 'o'
   return true
 }
@@ -80,7 +107,7 @@ function getNextSandPosition(
   return sandCoordinates
 }
 
-function getCave(normalizedRockPaths: Path[]): Cave {
+function getCave(normalizedRockPaths: Path[], withFloor = false): Cave {
   const flatCoordinates = normalizedRockPaths.flat()
   const width = getExtremeCoordinate(flatCoordinates, 'x', 'max') + 1
   const height = getExtremeCoordinate(flatCoordinates, 'y', 'max') + 1
@@ -93,6 +120,14 @@ function getCave(normalizedRockPaths: Path[]): Cave {
       cave[x][y] = '#'
     })
   )
+
+  if (withFloor) {
+    // add floor 2 fields above previous highest point
+    cave.forEach(row => {
+      row.push('.')
+      row.push('#')
+    })
+  }
 
   return cave
 }
