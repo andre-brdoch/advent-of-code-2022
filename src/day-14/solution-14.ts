@@ -79,7 +79,7 @@ class Cave {
 
   public addSandUnit(): boolean {
     const target: Coordinates = this.getNextSandPosition(this.sandStart)
-    if (!this.isInCave(target)) {
+    if (!this.isInCave(target) || this.sandIsBlocked()) {
       return false
     }
     this.grid[target.x][target.y] = 'o'
@@ -87,29 +87,10 @@ class Cave {
   }
 
   private getNextSandPosition(sandCoordinates: Coordinates): Coordinates {
-    const onLeftEdge = sandCoordinates.x === 0
-    const onRightEdge = sandCoordinates.x === this.grid.length - 1
-
     if (!this.withFloor && !this.isInCave(sandCoordinates)) {
       return sandCoordinates
     }
-    else if (this.withFloor && (onLeftEdge || onRightEdge)) {
-      // increase cave
-      const newRow = this.grid[0].map((cell, i) =>
-        i === this.grid[0].length - 1 ? '#' : '.'
-      )
-      // increase to the left, and adjust coordinates
-      if (onLeftEdge) {
-        this.grid = [newRow, ...this.grid]
-        sandCoordinates.x += 1
-        this.sandStart.x += 1
-      }
-      // increase to the right
-      else if (onRightEdge) {
-        this.grid = [newRow, ...this.grid]
-      }
-      console.log(this.toString())
-    }
+    this.increaseGridIfNecessary(sandCoordinates)
 
     const bottom: Coordinates = { ...sandCoordinates, y: sandCoordinates.y + 1 }
     const bottomLeft: Coordinates = { ...bottom, x: bottom.x - 1 }
@@ -127,6 +108,33 @@ class Cave {
       return this.getNextSandPosition(nextPosition)
     }
     return sandCoordinates
+  }
+
+  private increaseGridIfNecessary(target: Coordinates): void {
+    if (!this.withFloor) return
+
+    const onLeftEdge = target.x === 0
+    const onRightEdge = target.x === this.grid.length - 1
+
+    if (!onLeftEdge && !onRightEdge) {
+      return
+    }
+
+    const newRow = this.grid[0].map((cell, i) =>
+      i === this.grid[0].length - 1 ? '#' : '.'
+    )
+
+    // increase to the left, and adjust coordinates
+    if (onLeftEdge) {
+      this.grid = [newRow, ...this.grid]
+      target.x += 1
+      this.sandStart.x += 1
+    }
+    // increase to the right
+    else if (onRightEdge) {
+      this.grid = [newRow, ...this.grid]
+    }
+    console.log(this.toString())
   }
 
   public isInCave(coordinates: Coordinates): boolean {
