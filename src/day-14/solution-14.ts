@@ -27,20 +27,24 @@ export default async function solution(input: string): Promise<Solution14> {
 }
 
 function getAnswer1(cornerPaths: Path[], sandStart: Coordinates): number {
-  // const cave = new Cave(cornerPaths, sandStart)
-  // const result = cave.fillSand()
-  // return result
-  return 0
+  const cave = new Cave(cornerPaths, sandStart)
+  console.log('\nbefore answering 1:')
+  console.log(cave.toString())
+  const result = cave.fillSand()
+  console.log('\nafter answering 1:')
+  console.log(cave.toString())
+  console.log('-----')
+  return result
 }
 
 function getAnswer2(cornerPaths: Path[], sandStart: Coordinates): number {
   const cave = new Cave(cornerPaths, sandStart, true)
+  console.log('\nbefore answering 2:')
   console.log(cave.toString())
-  // Array.from(Array(28)).forEach(() => cave.addSandUnit())
   const result = cave.fillSand()
+  console.log('\nafter answering 2:')
   console.log(cave.toString())
   return result
-  return 0
 }
 
 class Cave {
@@ -132,9 +136,8 @@ class Cave {
     }
     // increase to the right
     else if (onRightEdge) {
-      this.grid = [newRow, ...this.grid]
+      this.grid = [...this.grid, newRow]
     }
-    console.log(this.toString())
   }
 
   public isInCave(coordinates: Coordinates): boolean {
