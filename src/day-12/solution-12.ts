@@ -30,7 +30,7 @@ export default async function solution(input: string): Promise<Solution12> {
   // )
   const end = map.flat().find(square => square.end)
   if (!end) throw new Error('No end in sight!')
-  const possiblePaths = getPossiblePaths(end, map, [])
+  const possiblePaths = getPossiblePaths(end, map)
   console.log('possiblePaths')
   console.log(possiblePaths)
 
@@ -40,20 +40,14 @@ export default async function solution(input: string): Promise<Solution12> {
 function getPossiblePaths(
   square: Square,
   map: Map,
-  alreadyVisited: Square[]
+  paths: Path[] = []
 ): Path[] {
-  const newAlreadyVisited = [...alreadyVisited]
   const reachableNeighbors = getSurroundingSquares(square, map).filter(
-    neighbor =>
-      !alreadyVisited.includes(neighbor) && isReachable(neighbor, square)
+    neighbor => isReachable(neighbor, square)
   )
-  newAlreadyVisited.push(...reachableNeighbors)
   return reachableNeighbors.reduce(
-    (result, square) => [
-      ...result,
-      ...getPossiblePaths(square, map, newAlreadyVisited),
-    ],
-    [] as Path[]
+    (result, square) => [...result, ...getPossiblePaths(square, map)],
+    paths
   )
 }
 
