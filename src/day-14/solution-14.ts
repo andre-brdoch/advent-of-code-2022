@@ -55,7 +55,9 @@ export default async function solution(input: string): Promise<Solution14> {
   // addSandUnit(cave, sandStartNormalized)
   // addSandUnit(cave, sandStartNormalized)
   // addSandUnit(cave, sandStartNormalized)
-  // //   should fall over
+  // // should fall over
+  // addSandUnit(cave, sandStartNormalized)
+  // addSandUnit(cave, sandStartNormalized)
   // addSandUnit(cave, sandStartNormalized)
   printCave(cave)
 
@@ -69,7 +71,7 @@ function fillSand(cave: Cave, sandStart: Coordinates): number {
     count += 1
     notFullYet = addSandUnit(cave, sandStart)
   }
-  return count
+  return count - 1
 }
 
 function addSandUnit(cave: Cave, sandStart: Coordinates): boolean {
@@ -86,19 +88,20 @@ function getNextSandPosition(
   if (!isInCave(cave, sandCoordinates)) return sandCoordinates
 
   const bottom: Coordinates = { ...sandCoordinates, y: sandCoordinates.y + 1 }
-  const bottomLeft: Coordinates = { x: bottom.x - 1, y: bottom.y + 1 }
-  const bottomRight: Coordinates = { x: bottom.x + 1, y: bottom.y + 1 }
+  const bottomLeft: Coordinates = { ...bottom, x: bottom.x - 1 }
+  const bottomRight: Coordinates = { ...bottom, x: bottom.x + 1 }
 
-  if (isFree(cave, bottom)) {
-    return getNextSandPosition(cave, bottom)
-  }
-  else if (isFree(cave, bottomLeft)) {
-    return getNextSandPosition(cave, bottomLeft)
-  }
-  else if (isFree(cave, bottomRight)) {
-    return getNextSandPosition(cave, bottomRight)
-  }
+  const nextPosition = isFree(cave, bottom)
+    ? bottom
+    : isFree(cave, bottomLeft)
+      ? bottomLeft
+      : isFree(cave, bottomRight)
+        ? bottomRight
+        : undefined
 
+  if (nextPosition) {
+    return getNextSandPosition(cave, nextPosition)
+  }
   return sandCoordinates
 }
 
