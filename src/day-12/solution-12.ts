@@ -28,17 +28,15 @@ export default async function solution(input: string): Promise<Solution12> {
   // console.log(
   //   getSurroundingSquares(s, map).filter(neighbor => isReachable(neighbor, s))
   // )
-  const end = map.flat().find(square => square.end)
-  if (!end) throw new Error('No end in sight!')
-  const possiblePaths = getPossiblePaths(end, map, [end])
-  console.log('possiblePaths')
-  console.log(possiblePaths)
+  const start = map.flat().find(square => square.start)
+  if (!start) throw new Error('No start anywhere!')
+  const possiblePaths = getPossiblePaths(start, map, [start])
   const fullPaths = possiblePaths.filter(
-    path => path[0].end && path[path.length - 1].start
+    path => path[0].start && path[path.length - 1].end
   )
   console.log('fullPaths')
   console.log(fullPaths)
-  const answer1 = getShortestPath(fullPaths).length
+  const answer1 = getShortestPath(fullPaths).length - 1
 
   return { answer1 }
 }
@@ -103,7 +101,7 @@ function getCoordinates(square: Square, map: Map): Coordinates {
 
 function isReachable(target: Square, current: Square): boolean {
   const diff = target.elevation.charCodeAt(0) - current.elevation.charCodeAt(0)
-  return diff <= 1
+  return 0 <= diff && diff <= 1
 }
 
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
