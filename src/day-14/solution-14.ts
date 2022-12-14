@@ -10,18 +10,24 @@ interface Coordinates {
   x: number
   y: number
 }
+type Axis = keyof Coordinates
 type Path = Coordinates[]
 
 export default async function solution(input: string): Promise<Solution14> {
   console.log(input)
   console.log('---')
 
-  const paths = parsePaths(input)
+  const cornerPaths = parsePaths(input)
+  console.log('vectors:')
+  console.log(cornerPaths)
+  const cornerPathsNormalized = normalizePaths(cornerPaths)
+  console.log('vectorsNormalized:')
+  console.log(cornerPathsNormalized)
+  const paths = cornerPathsNormalized.map(fillPath)
+  console.log('paths')
   console.log(paths)
-  const pathsNormalized = normalizePaths(paths)
-  console.log(pathsNormalized)
 
-  const cave = getCave(pathsNormalized)
+  const cave = getCave(paths)
   console.log(cave)
   printCave(cave)
 
@@ -38,8 +44,6 @@ function getCave(normalizedRockPaths: Path[]): Cave {
   const cave: Cave = Array.from(Array(width)).map(() =>
     Array.from(Array(height)).map(() => '.')
   )
-
-  console.log(cave)
 
   normalizedRockPaths.forEach(path =>
     path.forEach(({ x, y }) => {
@@ -62,7 +66,7 @@ function normalizePaths(paths: Path[]): Path[] {
 
 function getExtremeCoordinate(
   coordinates: Coordinates[],
-  axis: 'x' | 'y',
+  axis: Axis,
   type: 'min' | 'max'
 ): number {
   return coordinates
@@ -70,9 +74,24 @@ function getExtremeCoordinate(
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
 }
 
-function printCave(cave: Cave): void {
-  const string = cave.map(row => row.join(' ')).join('\n\n')
-  console.log(string)
+/** Fills in all gaps in path with coordinates */
+function fillPath(path: Path): Path {
+  return path.reduce((result, pair, i) => {
+    if (i === 0) return [...result, pair]
+    const prevPair = result[i - 1]
+    const vector: Coordinates = {
+      x: pair.x - prevPair.x,
+      y: pair.y - prevPair.y,
+    }
+    const axis: Axis = vector.x !== 0 ? 'x' : 'y'
+    const directionModifier = vector[axis] > 0 ? -1 : 1
+    const fillerPairCount = Math.abs(vector[axis]) - 1
+    const fillerPairs = Array.from(Array(fillerPairCount)).map((_n, i) => ({
+      ...pair,
+      [axis]: pair[axis] + (i + 1) * directionModifier,
+    }))
+    return [...result, ...fillerPairs, pair]
+  }, [] as Path)
 }
 
 function parsePaths(input: string): Path[] {
@@ -82,4 +101,15 @@ function parsePaths(input: string): Path[] {
       return { x: Number(x), y: Number(y) }
     })
   )
+}
+
+function printCave(cave: Cave): void {
+  let string = ''
+  for (let i = 0; i < cave[0].length; i++) {
+    string += '\n'
+    for (let j = 0; j < cave.length; j++) {
+      string += cave[j][i]
+    }
+  }
+  console.log(string)
 }
