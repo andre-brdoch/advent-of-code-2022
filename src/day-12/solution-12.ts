@@ -92,7 +92,7 @@ function isReachable(target: Square, current: Square): boolean {
 
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
   const { x, y } = coordinates
-  return x >= 0 && x < map[0].length && y >= 0 && y <= map.length
+  return x >= 0 && x < map[0].length && y >= 0 && y < map.length
 }
 
 function parseMap(input: string): Map {
