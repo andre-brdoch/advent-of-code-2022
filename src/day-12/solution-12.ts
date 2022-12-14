@@ -30,25 +30,47 @@ export default async function solution(input: string): Promise<Solution12> {
   // )
   const end = map.flat().find(square => square.end)
   if (!end) throw new Error('No end in sight!')
-  const possiblePaths = getPossiblePaths(end, map)
+  const possiblePaths = getPossiblePaths(end, map, [end])
   console.log('possiblePaths')
   console.log(possiblePaths)
+  const fullPaths = possiblePaths.filter(
+    path => path[0].end && path[path.length - 1].start
+  )
+  console.log('fullPaths')
+  console.log(fullPaths)
+  const answer1 = getShortestPath(fullPaths).length
 
-  return { answer1: 0 }
+  return { answer1 }
 }
 
 function getPossiblePaths(
   square: Square,
   map: Map,
-  paths: Path[] = []
+  currentPath: Path = []
 ): Path[] {
   const reachableNeighbors = getSurroundingSquares(square, map).filter(
-    neighbor => isReachable(neighbor, square)
+    neighbor => !currentPath.includes(neighbor) && isReachable(neighbor, square)
   )
+  const start = reachableNeighbors.find(neighbor => neighbor.start)
+  if (start) {
+    console.log('found an end!')
+    return [[...currentPath, start]]
+  }
+
+  console.log('paths so far:', currentPath)
+  console.log('reachableNeighbors:', reachableNeighbors)
+
   return reachableNeighbors.reduce(
-    (result, square) => [...result, ...getPossiblePaths(square, map)],
-    paths
+    (result, square) => [
+      ...result,
+      ...getPossiblePaths(square, map, [...currentPath, square]),
+    ],
+    [currentPath]
   )
+}
+
+function getShortestPath(paths: Path[]): Path {
+  return paths.sort((a, b) => a.length - b.length)[0]
 }
 
 function getSurroundingSquares(square: Square, map: Map): Square[] {
