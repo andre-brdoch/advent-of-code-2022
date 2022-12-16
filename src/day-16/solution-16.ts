@@ -24,14 +24,16 @@ export default async function solution(input: string): Promise<Solution16> {
   const valves = parseValves(input)
 
   const current = getByName('AA', valves)
-  //   console.log('current')
-  //   console.log(current)
-  //   const remaining = getClosed(valves)
-  //   console.log('remaining')
-  //   console.log(remaining)
-  //   const d = getShortestDistance(current, getByName('CC', valves))
-  //   console.log('d')
-  //   console.log(d)
+  console.log('current')
+  console.log(current)
+  const remaining = getClosed(valves)
+  console.log('remaining')
+  console.log(remaining)
+  const d = getShortestDistance(current, getByName('BB', valves))
+  console.log('d')
+  console.log(d)
+
+  // TODO: implement Dijkstras algorithm to find shortest path to all other nodes
 
   //   const rated = remaining.map(valve => rateValve(valve, current))
   //   console.log('rated')
@@ -44,12 +46,14 @@ export default async function solution(input: string): Promise<Solution16> {
 //   //
 // }
 
-// function getShortestDistance(targetName: string, currentName: string, valves: Valve[]): number {
-//   let count = 0
-//   count = 0
-//   a.neighborNames.map(name => getByName(name, valves)).some(neighbor => neighbor === b)
-//   return count
-// }
+function getShortestDistance(a: Valve, b: Valve): number {
+  let count = 0
+  count = 0
+  if (a.neighbors.includes(b)) {
+    return count + 1
+  }
+  return count
+}
 
 function getByName(name: string, valves: Valve[]): Valve
 function getByName(name: string, valves: ValveParsed[]): ValveParsed
