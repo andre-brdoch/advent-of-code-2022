@@ -1,11 +1,17 @@
 interface Solution11 {
   answer1: number
 }
-interface Monkey {
+interface MonkeyParsed {
   name: string
   items: number[]
-  inspect: (item: number) => number
   divisableBy: number
+  inspect: (item: number) => number
+  targetAName?: string
+  targetBName?: string
+  targetA?: Monkey | MonkeyParsed
+  targetB?: Monkey | MonkeyParsed
+}
+interface Monkey extends MonkeyParsed {
   targetA: Monkey
   targetB: Monkey
 }
@@ -20,10 +26,26 @@ export default async function solution(input: string): Promise<Solution11> {
   return { answer1: 0 }
 }
 
+function getByName<T>(name: string, items: T[]): T {
+  const result = items.find(
+    item =>
+      item != null &&
+      typeof item === 'object' &&
+      'name' in item &&
+      item.name === name
+  )
+  if (!result) throw new Error(`Monkey with name "${name}" does not exist.`)
+  return result
+}
+
+function capitalizeFirstChar(string: string): string {
+  return `${string.charAt(0).toUpperCase()}${string.slice(1)}`
+}
+
 function parseMonkeys(input: string): any {
-  const monkeys = input.split('\n\n').map(group => {
+  const monkeys: MonkeyParsed[] = input.split('\n\n').map(group => {
     const match = group.match(
-      /(Monkey \d+):\n\s*Starting items: (.*)\n\s*Operation: new = (old|\d+) (.) (old|\d+)\n\s*Test: divisible by (\d+)/
+      /(Monkey \d+):\n\s*Starting items: (.*)\n\s*Operation: new = (old|\d+) (.) (old|\d+)\n\s*Test: divisible by (\d+)\n\s*If true: throw to (.*)\n\s*If false: throw to (.*)/
     )
 
     if (match == null) throw new Error(`Invalid group: "${group}"`)
@@ -35,6 +57,8 @@ function parseMonkeys(input: string): any {
       operand,
       rightHand,
       divisableByString,
+      targetAName,
+      targetBName,
     ] = match
 
     const items = itemsString.split(', ').map(str => Number(str))
@@ -53,7 +77,13 @@ function parseMonkeys(input: string): any {
       items,
       divisableBy,
       inspect,
+      targetAName: capitalizeFirstChar(targetAName),
+      targetBName: capitalizeFirstChar(targetBName),
     }
+  })
+  monkeys.forEach(monkey => {
+    monkey.targetA = getByName(monkey.targetAName ?? '', monkeys)
+    monkey.targetB = getByName(monkey.targetBName ?? '', monkeys)
   })
   return monkeys
 }
