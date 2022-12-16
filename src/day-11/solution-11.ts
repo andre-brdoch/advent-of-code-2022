@@ -4,7 +4,7 @@ interface Solution11 {
 interface Monkey {
   name: string
   items: number[]
-  inspection: () => number
+  inspect: (item: number) => number
   divisableBy: number
   targetA: Monkey
   targetB: Monkey
@@ -21,19 +21,39 @@ export default async function solution(input: string): Promise<Solution11> {
 }
 
 function parseMonkeys(input: string): any {
-  return input.split('\n\n').map(group => {
-    const parts = group.split('\n').map(line => line.trim())
-    const name = parts[0].replace(':', '')
-    const items = parts[1]
-      .replace(/Starting items:\s/, '')
-      .split(', ')
-      .map(str => Number(str))
-    const formula = parts[2].split('new =').pop()
-    const divisableBy = Number(parts[3].split('by ').pop())
+  const monkeys = input.split('\n\n').map(group => {
+    const match = group.match(
+      /(Monkey \d+):\n\s*Starting items: (.*)\n\s*Operation: new = (old|\d+) (.) (old|\d+)\n\s*Test: divisible by (\d+)/
+    )
+
+    if (match == null) throw new Error(`Invalid group: "${group}"`)
+    const [
+      ,
+      name,
+      itemsString,
+      leftHand,
+      operand,
+      rightHand,
+      divisableByString,
+    ] = match
+
+    const items = itemsString.split(', ').map(str => Number(str))
+    const divisableBy = Number(divisableByString)
+
+    const inspect = (item: number): number => {
+      const left = leftHand === 'old' ? item : Number(leftHand)
+      const right = rightHand === 'old' ? item : Number(rightHand)
+      if (operand === '+') return left + right
+      else if (operand === '*') return left * right
+      throw new Error(`Invalid operand: "${operand}"`)
+    }
+
     return {
       name,
       items,
       divisableBy,
+      inspect,
     }
   })
+  return monkeys
 }
