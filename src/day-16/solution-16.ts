@@ -33,6 +33,7 @@ interface Evaluation {
 }
 
 const MAX_TURNS = 30
+const START_NAME = 'AA'
 
 export default async function solution(input: string): Promise<Solution16> {
   console.log(input)
@@ -41,44 +42,40 @@ export default async function solution(input: string): Promise<Solution16> {
   const valves = parseValves(input)
 
   const analyzedValves = analyzeValves(valves)
-  const startingValve = getByName('AA', analyzedValves)
-  // const remaining = getRemaining(analyzedValves)
-  // const valveCombinations = getAllCombinations(remaining)
-  // const sequences = valveCombinations.map(targetsToActions)
-  // const evaluated = sequences.map(sequence =>
-  //   evaluateSequence(startingValve, sequence)
-  // )
-  // const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
-  // const answer1 = bestSequence.potential
-  // console.log(bestSequence)
+  const startingValve = getByName(START_NAME, analyzedValves)
+  const remaining = getRemaining(analyzedValves)
+  const valveCombinations = getAllCombinations(remaining)
+  const sequences = valveCombinations.map(targetsToActions)
+  const evaluated = sequences.map(sequence =>
+    evaluateSequence(startingValve, sequence)
+  )
+  const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
+  const answer1 = bestSequence.potential
+  console.log(bestSequence)
 
-  breathFirstSearch(startingValve)
-
-  return { answer1: 1 }
+  return { answer1 }
 }
 
-function breathFirstSearch(startingValve: Valve): any {
+function getDistances(startingValve: Valve): DistanceMap {
   const frontier = [startingValve]
-  const cameFrom = { [startingValve.name]: null }
+  const distances = { [startingValve.name]: 0 }
+  // @ts-ignore
   let current
 
   while (frontier.length) {
     current = frontier.shift()
     // @ts-ignore
-    for (let i = 0; i < current.neighbors.length; i++) {
-      // @ts-ignore
-      const next = current.neighbors[i]
-      console.log(next in cameFrom)
-
-      if (!(next.name in cameFrom)) {
+    current.neighbors.forEach(next => {
+      if (!(next.name in distances)) {
         frontier.push(next)
         // @ts-ignore
-        cameFrom[next.name] = current
+        distances[next.name] = distances[current.name] + 1
       }
-    }
+    })
   }
 
-  console.log(cameFrom)
+  console.log(distances)
+  return distances
 }
 
 function evaluateSequence(
@@ -176,139 +173,13 @@ function parseValves(input: string): Valve[] {
   return valvesParsed as Valve[]
 }
 
-const hardcoded = {
-  AA: {
-    AA: 0,
-    BB: 1,
-    CC: 2,
-    DD: 1,
-    EE: 2,
-    FF: 3,
-    GG: 4,
-    HH: 5,
-    II: 1,
-    JJ: 2,
-  },
-  BB: {
-    AA: 1,
-    BB: 0,
-    CC: 1,
-    DD: 2,
-    EE: 3,
-    FF: 4,
-    GG: 5,
-    HH: 6,
-    II: 2,
-    JJ: 3,
-  },
-  CC: {
-    AA: 2,
-    BB: 1,
-    CC: 0,
-    DD: 1,
-    EE: 2,
-    FF: 3,
-    GG: 4,
-    HH: 5,
-    II: 3,
-    JJ: 4,
-  },
-  DD: {
-    AA: 1,
-    BB: 2,
-    CC: 1,
-    DD: 0,
-    EE: 1,
-    FF: 2,
-    GG: 3,
-    HH: 4,
-    II: 2,
-    JJ: 3,
-  },
-  EE: {
-    AA: 2,
-    BB: 3,
-    CC: 2,
-    DD: 1,
-    EE: 0,
-    FF: 1,
-    GG: 2,
-    HH: 3,
-    II: 3,
-    JJ: 4,
-  },
-  FF: {
-    AA: 3,
-    BB: 4,
-    CC: 3,
-    DD: 2,
-    EE: 1,
-    FF: 0,
-    GG: 1,
-    HH: 2,
-    II: 4,
-    JJ: 5,
-  },
-  GG: {
-    AA: 4,
-    BB: 5,
-    CC: 4,
-    DD: 3,
-    EE: 2,
-    FF: 1,
-    GG: 0,
-    HH: 1,
-    II: 5,
-    JJ: 6,
-  },
-  HH: {
-    AA: 5,
-    BB: 6,
-    CC: 5,
-    DD: 4,
-    EE: 3,
-    FF: 2,
-    GG: 1,
-    HH: 0,
-    II: 6,
-    JJ: 7,
-  },
-  II: {
-    AA: 1,
-    BB: 2,
-    CC: 3,
-    DD: 2,
-    EE: 3,
-    FF: 4,
-    GG: 5,
-    HH: 6,
-    II: 0,
-    JJ: 1,
-  },
-  JJ: {
-    AA: 2,
-    BB: 3,
-    CC: 4,
-    DD: 3,
-    EE: 4,
-    FF: 5,
-    GG: 6,
-    HH: 7,
-    II: 1,
-    JJ: 0,
-  },
-}
-function getShortestDistance(a: Valve, b: Valve): number {
-  // TODO: implement Dijkstras algorithm to find shortest path to all other nodes
-
-  // @ts-ignore
-  return hardcoded[a.name][b.name]
+function getShortestDistance(a: ValveAnalyzed, b: ValveAnalyzed): number {
+  return a.distances[b.name]
 }
 
 function analyzeValves(valves: Valve[]): ValveAnalyzed[] {
   return valves.map(valve => {
-    // @ts-ignore
-    const distances: DistanceMap = hardcoded[valve.name]
+    const distances: DistanceMap = getDistances(valve)
     const potentialByRound = Array.from(Array(MAX_TURNS))
       .map((_, i) => i)
       .reduce(
