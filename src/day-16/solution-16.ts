@@ -62,6 +62,19 @@ function getByName(
   valves: (Valve | ValveParsed)[]
 ): Valve | ValveParsed {
   const result = valves.find(valve => valve.name === name)
+
+function getAllCombinations<V>(list: Array<V>): Array<Array<V>> {
+  if (list.length === 1) return [list]
+  else if (list.length === 2) return [list, [list[1], list[0]]]
+  else {
+    return list.flatMap(item => {
+      return getAllCombinations(list.filter(el => el !== item)).map(y => [
+        item,
+        ...y,
+      ])
+    })
+  }
+}
   if (!result) throw new Error(`Valve with name "${name}" does not exist.`)
   return result
 }
