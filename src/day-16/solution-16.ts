@@ -21,9 +21,18 @@ interface ValveAnalyzed extends Valve {
   distances: DistanceMap
   potentialByRound: PotentialMap
 }
-type Decision = 'move' | 'open'
+interface Action {
+  type: 'move' | 'open'
+  target: ValveAnalyzed
+}
+type Sequence = Array<Action>
+interface Evaluation {
+  sequence: Sequence
+  potential: number
+  turns: number
+}
 
-const TURNS = 30
+const MAX_TURNS = 30
 
 export default async function solution(input: string): Promise<Solution16> {
   console.log(input)
@@ -31,37 +40,55 @@ export default async function solution(input: string): Promise<Solution16> {
 
   const valves = parseValves(input)
 
-  const current = getByName('AA', valves)
-  console.log('current')
-  console.log(current)
-  const remaining = getClosed(valves)
-  console.log('remaining')
-  console.log(remaining)
-  const d = getShortestDistance(current, getByName('HH', valves))
-  console.log('d')
-  console.log(d)
   const analyzedValves = analyzeValves(valves)
-  console.log('analyzedValves')
-  console.log(analyzedValves)
+  const startingValve = getByName('AA', analyzedValves)
+  const remaining = getRemaining(analyzedValves)
+  const combos = getAllCombinations(remaining)
+  const sequences = combos.map(targetsToActions)
+  const evaluated = sequences.map(sequence =>
+    evaluateSequence(startingValve, sequence)
+  )
+  const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
+  const answer1 = bestSequence.potential
+  console.log(bestSequence)
 
-  //   const rated = remaining.map(valve => rateValve(valve, current))
-  //   console.log('rated')
-  //   console.log(rated)
-
-  return { answer1: 0 }
+  return { answer1 }
 }
 
-// function rateValve(target: Valve, current: Valve): ValveRated {
-//   //
-// }
+function evaluateSequence(
+  startingValve: ValveAnalyzed,
+  sequence: Sequence
+): Evaluation {
+  let current = startingValve
+  let turn = 0
+  let potential = 0
+  for (let i = 0; i < sequence.length; i++) {
+    const action = sequence[i]
+    const { type, target } = action
+    if (type === 'move' && target !== current) {
+      const distance = getShortestDistance(current, target)
+      const newTurn = turn + distance
+      if (newTurn > MAX_TURNS) break
+      turn = newTurn
+      // move to target
+      current = target
+    }
+    else if (type === 'open' && target === current) {
+      const newTurn = turn + 1
+      if (newTurn > MAX_TURNS) break
+      turn = newTurn
+      const targetPotential = target.potentialByRound[turn]
+      potential += targetPotential
+    }
+    else throw new Error(`Invalid action: '${JSON.stringify(action)}'`)
+  }
 
-function getByName(name: string, valves: Valve[]): Valve
-function getByName(name: string, valves: ValveParsed[]): ValveParsed
-function getByName(
-  name: string,
-  valves: (Valve | ValveParsed)[]
-): Valve | ValveParsed {
-  const result = valves.find(valve => valve.name === name)
+  return {
+    sequence,
+    potential,
+    turns: turn,
+  }
+}
 
 function getAllCombinations<V>(list: Array<V>): Array<Array<V>> {
   if (list.length === 1) return [list]
@@ -75,12 +102,27 @@ function getAllCombinations<V>(list: Array<V>): Array<Array<V>> {
     })
   }
 }
+
+function targetsToActions(targetValves: ValveAnalyzed[]): Sequence {
+  return targetValves.reduce(
+    (result, target) => [
+      ...result,
+      { type: 'move', target },
+      { type: 'open', target },
+    ],
+    [] as Sequence
+  )
+}
+
+function getByName<V extends { name: string }>(name: string, items: V[]): V {
+  const result = items.find(item => item.name === name)
   if (!result) throw new Error(`Valve with name "${name}" does not exist.`)
   return result
 }
 
-function getClosed(valves: Valve[]): Valve[] {
-  return valves.filter(valve => !valve.open)
+function getRemaining<V>(valves: Array<V>): Array<V> {
+  // @ts-ignore
+  return valves.filter(valve => !valve.open && valve.flowRate > 0)
 }
 
 function parseValves(input: string): Valve[] {
@@ -238,12 +280,12 @@ function analyzeValves(valves: Valve[]): ValveAnalyzed[] {
   return valves.map(valve => {
     // @ts-ignore
     const distances: DistanceMap = hardcoded[valve.name]
-    const potentialByRound = Array.from(Array(TURNS))
+    const potentialByRound = Array.from(Array(MAX_TURNS))
       .map((_, i) => i)
       .reduce(
         (result, number) => ({
           ...result,
-          [number]: valve.flowRate * number,
+          [number]: valve.flowRate * (MAX_TURNS - number),
         }),
         {} as PotentialMap
       )
