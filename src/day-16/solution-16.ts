@@ -42,17 +42,43 @@ export default async function solution(input: string): Promise<Solution16> {
 
   const analyzedValves = analyzeValves(valves)
   const startingValve = getByName('AA', analyzedValves)
-  const remaining = getRemaining(analyzedValves)
-  const valveCombinations = getAllCombinations(remaining)
-  const sequences = valveCombinations.map(targetsToActions)
-  const evaluated = sequences.map(sequence =>
-    evaluateSequence(startingValve, sequence)
-  )
-  const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
-  const answer1 = bestSequence.potential
-  console.log(bestSequence)
+  // const remaining = getRemaining(analyzedValves)
+  // const valveCombinations = getAllCombinations(remaining)
+  // const sequences = valveCombinations.map(targetsToActions)
+  // const evaluated = sequences.map(sequence =>
+  //   evaluateSequence(startingValve, sequence)
+  // )
+  // const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
+  // const answer1 = bestSequence.potential
+  // console.log(bestSequence)
 
-  return { answer1 }
+  breathFirstSearch(startingValve)
+
+  return { answer1: 1 }
+}
+
+function breathFirstSearch(startingValve: Valve): any {
+  const frontier = [startingValve]
+  const cameFrom = { [startingValve.name]: null }
+  let current
+
+  while (frontier.length) {
+    current = frontier.shift()
+    // @ts-ignore
+    for (let i = 0; i < current.neighbors.length; i++) {
+      // @ts-ignore
+      const next = current.neighbors[i]
+      console.log(next in cameFrom)
+
+      if (!(next.name in cameFrom)) {
+        frontier.push(next)
+        // @ts-ignore
+        cameFrom[next.name] = current
+      }
+    }
+  }
+
+  console.log(cameFrom)
 }
 
 function evaluateSequence(
