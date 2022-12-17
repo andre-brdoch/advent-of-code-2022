@@ -15,22 +15,17 @@ interface ValveParsed {
 }
 interface Valve extends Omit<ValveParsed, 'neighborNames'> {
   neighbors: Valve[]
-  open?: boolean
 }
 interface ValveAnalyzed extends Valve {
   distances: DistanceMap
   potentialByRound: PotentialMap
 }
-interface Action {
-  type: 'move' | 'open'
-  target: ValveAnalyzed
+interface Turn {
+  valve: ValveAnalyzed
+  turnOpened: number
+  flowRateTotal: number
 }
-type Sequence = Array<Action>
-interface Evaluation {
-  sequence: Sequence
-  potential: number
-  turns: number
-}
+type Sequence = Array<Turn>
 
 const MAX_TURNS = 30
 const START_NAME = 'AA'
@@ -40,23 +35,89 @@ export default async function solution(input: string): Promise<Solution16> {
   console.log('----')
 
   const valves = parseValves(input)
-
   const analyzedValves = analyzeValves(valves)
   const startingValve = getByName(START_NAME, analyzedValves)
   const remaining = getRemaining(analyzedValves)
-  const valveCombinations = getAllCombinations(remaining)
-  const sequences = valveCombinations.map(targetsToActions)
-  const evaluated = sequences.map(sequence =>
-    evaluateSequence(startingValve, sequence)
-  )
-  const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
-  const answer1 = bestSequence.potential
-  console.log(bestSequence)
+  const sequence = buildSequence(startingValve, remaining, 0)
+  console.log(sequence)
+  console.log(stringifySequence(sequence))
 
-  return { answer1 }
+  // console.log('best sequence:', sequence.map(y => y.name).join(', '))
+  // const evaluated = evaluateSequence(startingValve, sequence)
+  // console.log(evaluated.potential)
+
+  // const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
+  // console.log(
+  //   'best sequence:',
+  //   bestSequence.sequence
+  //     .filter(action => action.type === 'open')
+  //     .map(action => action.target.name)
+  //     .join(', ')
+  // )
+
+  // console.log('start combining...')
+  // const valveCombinations = getAllCombinations(remaining)
+  // console.log('done combining')
+  // const sequences = valveCombinations.map(targetsToActions)
+  // const evaluated = sequences.map(sequence =>
+  //   evaluateSequence(startingValve, sequence)
+  // )
+
+  // const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
+  // console.log(
+  //   'best sequence:',
+  //   bestSequence.sequence
+  //     .filter(action => action.type === 'open')
+  //     .map(action => action.target.name)
+  //     .join(', ')
+  // )
+
+  // const answer1 = bestSequence.potential
+
+  return { answer1: 0 }
+}
+
+function buildSequence(
+  currentValve: ValveAnalyzed,
+  remainingValves: ValveAnalyzed[],
+  currentTurn: number
+): Sequence {
+  if (remainingValves.length === 0) return []
+
+  // find best next valve
+  const prioritized = remainingValves
+    .map(valve => {
+      const distance = getShortestDistance(currentValve, valve)
+      const turnOpened = distance + currentTurn + 1
+      const flowRateTotal = valve.potentialByRound[currentTurn + turnOpened]
+      const priority = flowRateTotal / turnOpened
+      return {
+        turnOpened,
+        flowRateTotal,
+        priority,
+        valve,
+      }
+    })
+    .sort((a, b) => b.priority - a.priority)
+  const [selectedTurn, ...discardedTurns] = prioritized
+  const otherValves = discardedTurns.map(turn => turn.valve)
+  const nextTurns = buildSequence(
+    selectedTurn.valve,
+    otherValves,
+    selectedTurn.turnOpened
+  )
+  return [
+    selectedTurn,
+    ...buildSequence(
+      selectedTurn.valve,
+      nextTurns.map(turn => turn.valve),
+      selectedTurn.turnOpened
+    ),
+  ]
 }
 
 function getDistances(startingValve: Valve): DistanceMap {
+  // breath first search
   const frontier = [startingValve]
   const distances = { [startingValve.name]: 0 }
   // @ts-ignore
@@ -74,70 +135,7 @@ function getDistances(startingValve: Valve): DistanceMap {
     })
   }
 
-  console.log(distances)
   return distances
-}
-
-function evaluateSequence(
-  startingValve: ValveAnalyzed,
-  sequence: Sequence
-): Evaluation {
-  let current = startingValve
-  let turn = 0
-  let potential = 0
-
-  for (let i = 0; i < sequence.length; i++) {
-    const action = sequence[i]
-    const { type, target } = action
-
-    if (type === 'move' && target !== current) {
-      const distance = getShortestDistance(current, target)
-      const newTurn = turn + distance
-      if (newTurn > MAX_TURNS) break
-      turn = newTurn
-      // move to target
-      current = target
-    }
-    else if (type === 'open' && target === current) {
-      const newTurn = turn + 1
-      if (newTurn > MAX_TURNS) break
-      turn = newTurn
-      const targetPotential = target.potentialByRound[turn]
-      potential += targetPotential
-    }
-    else throw new Error(`Invalid action: '${JSON.stringify(action)}'`)
-  }
-
-  return {
-    sequence,
-    potential,
-    turns: turn,
-  }
-}
-
-function getAllCombinations<V>(list: Array<V>): Array<Array<V>> {
-  if (list.length === 1) return [list]
-  else if (list.length === 2) return [list, [list[1], list[0]]]
-  else {
-    return list.flatMap(item => {
-      // keep item constant in first position, and repeat on remaining elements
-      return getAllCombinations(list.filter(el => el !== item)).map(y => [
-        item,
-        ...y,
-      ])
-    })
-  }
-}
-
-function targetsToActions(targetValves: ValveAnalyzed[]): Sequence {
-  return targetValves.reduce(
-    (result, target) => [
-      ...result,
-      { type: 'move', target },
-      { type: 'open', target },
-    ],
-    [] as Sequence
-  )
 }
 
 function getByName<V extends { name: string }>(name: string, items: V[]): V {
@@ -148,7 +146,15 @@ function getByName<V extends { name: string }>(name: string, items: V[]): V {
 
 function getRemaining<V>(valves: Array<V>): Array<V> {
   // @ts-ignore
-  return valves.filter(valve => !valve.open && valve.flowRate > 0)
+  return valves.filter(valve => valve.flowRate > 0)
+}
+
+function stringifySequence(sequence: Sequence): string {
+  return sequence
+    .map(
+      turn => `${turn.valve.name}: ${String(turn.turnOpened).padStart(2, '0')}`
+    )
+    .join('\n')
 }
 
 function parseValves(input: string): Valve[] {
