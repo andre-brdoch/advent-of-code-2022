@@ -55,14 +55,17 @@ function buildSequence(
 ): Sequence {
   if (remainingValves.length === 0) return []
 
+  if (currentTurn === 2) {
+    console.log('CURRENT:')
+    console.log(currentValve.name)
+    console.log('---')
+  }
+
   // find best next valve
   const prioritized = remainingValves
     .map(valve => {
       const distance = getShortestDistance(currentValve, valve)
       const turnOpened = distance + currentTurn + 1
-      if (valve.name === 'DD') console.log(valve.potentialByRound)
-      if (valve.name === 'BB') console.log(valve.potentialByRound)
-
       const flowRateTotal = valve.potentialByRound[turnOpened]
       const priority = flowRateTotal / turnOpened
       return {
@@ -73,6 +76,16 @@ function buildSequence(
       }
     })
     .sort((a, b) => b.priority - a.priority)
+
+  if (currentTurn === 2) {
+    prioritized.slice(0, 3).forEach(({ valve, flowRateTotal, priority }) => {
+      console.log(valve.name)
+      console.log('flowRateTotal:', flowRateTotal)
+      console.log('priority:', priority)
+      console.log('---')
+    })
+  }
+
   const [selectedTurn, ...discardedTurns] = prioritized
   const otherValves = discardedTurns.map(turn => turn.valve)
   const nextTurns = buildSequence(
