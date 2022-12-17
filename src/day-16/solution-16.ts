@@ -43,8 +43,8 @@ export default async function solution(input: string): Promise<Solution16> {
   const analyzedValves = analyzeValves(valves)
   const startingValve = getByName('AA', analyzedValves)
   const remaining = getRemaining(analyzedValves)
-  const combos = getAllCombinations(remaining)
-  const sequences = combos.map(targetsToActions)
+  const valveCombinations = getAllCombinations(remaining)
+  const sequences = valveCombinations.map(targetsToActions)
   const evaluated = sequences.map(sequence =>
     evaluateSequence(startingValve, sequence)
   )
@@ -62,9 +62,11 @@ function evaluateSequence(
   let current = startingValve
   let turn = 0
   let potential = 0
+
   for (let i = 0; i < sequence.length; i++) {
     const action = sequence[i]
     const { type, target } = action
+
     if (type === 'move' && target !== current) {
       const distance = getShortestDistance(current, target)
       const newTurn = turn + distance
@@ -95,6 +97,7 @@ function getAllCombinations<V>(list: Array<V>): Array<Array<V>> {
   else if (list.length === 2) return [list, [list[1], list[0]]]
   else {
     return list.flatMap(item => {
+      // keep item constant in first position, and repeat on remaining elements
       return getAllCombinations(list.filter(el => el !== item)).map(y => [
         item,
         ...y,
