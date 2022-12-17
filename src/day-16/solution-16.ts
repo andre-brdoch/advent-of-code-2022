@@ -39,42 +39,13 @@ export default async function solution(input: string): Promise<Solution16> {
   const startingValve = getByName(START_NAME, analyzedValves)
   const remaining = getRemaining(analyzedValves)
   const sequence = buildSequence(startingValve, remaining, 0)
-  console.log(sequence)
   console.log(stringifySequence(sequence))
+  const answer1 = sequence.reduce(
+    (result, turn) => result + turn.flowRateTotal,
+    0
+  )
 
-  // console.log('best sequence:', sequence.map(y => y.name).join(', '))
-  // const evaluated = evaluateSequence(startingValve, sequence)
-  // console.log(evaluated.potential)
-
-  // const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
-  // console.log(
-  //   'best sequence:',
-  //   bestSequence.sequence
-  //     .filter(action => action.type === 'open')
-  //     .map(action => action.target.name)
-  //     .join(', ')
-  // )
-
-  // console.log('start combining...')
-  // const valveCombinations = getAllCombinations(remaining)
-  // console.log('done combining')
-  // const sequences = valveCombinations.map(targetsToActions)
-  // const evaluated = sequences.map(sequence =>
-  //   evaluateSequence(startingValve, sequence)
-  // )
-
-  // const bestSequence = evaluated.sort((a, b) => b.potential - a.potential)[0]
-  // console.log(
-  //   'best sequence:',
-  //   bestSequence.sequence
-  //     .filter(action => action.type === 'open')
-  //     .map(action => action.target.name)
-  //     .join(', ')
-  // )
-
-  // const answer1 = bestSequence.potential
-
-  return { answer1: 0 }
+  return { answer1 }
 }
 
 function buildSequence(
@@ -89,7 +60,10 @@ function buildSequence(
     .map(valve => {
       const distance = getShortestDistance(currentValve, valve)
       const turnOpened = distance + currentTurn + 1
-      const flowRateTotal = valve.potentialByRound[currentTurn + turnOpened]
+      if (valve.name === 'DD') console.log(valve.potentialByRound)
+      if (valve.name === 'BB') console.log(valve.potentialByRound)
+
+      const flowRateTotal = valve.potentialByRound[turnOpened]
       const priority = flowRateTotal / turnOpened
       return {
         turnOpened,
@@ -152,7 +126,11 @@ function getRemaining<V>(valves: Array<V>): Array<V> {
 function stringifySequence(sequence: Sequence): string {
   return sequence
     .map(
-      turn => `${turn.valve.name}: ${String(turn.turnOpened).padStart(2, '0')}`
+      turn =>
+        `${turn.valve.name}: ${String(turn.turnOpened).padStart(
+          2,
+          '0'
+        )}, releasing gas totalling ${turn.flowRateTotal}`
     )
     .join('\n')
 }
