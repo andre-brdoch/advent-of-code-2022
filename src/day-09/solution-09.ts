@@ -161,8 +161,12 @@ async function animateRope(
   }
 }
 
-function stringifyAllRopeTurns(ropeMovement: RopeMovement): string {
+function stringifyAllRopeTurns(
+  ropeMovement: RopeMovement,
+  untilTurn: number | undefined = undefined
+): string {
   return ropeMovement[0]
+    .slice(0, untilTurn)
     .map((_, i) => `TURN ${i}:${stringifyRopeAtTurn(ropeMovement, i)}`)
     .join('\n\n\n')
 }
