@@ -13,10 +13,13 @@ interface Sensor extends Coordinate {
   closestBeacon: Beacon
   type: 'sensor'
 }
+interface UnknownCell extends Coordinate {
+  type: 'unknown'
+}
 interface EmptyCell extends Coordinate {
   type: 'empty'
 }
-type Cell = Sensor | Beacon | EmptyCell
+type Cell = Sensor | Beacon | EmptyCell | UnknownCell
 type CaveGrid = Cell[][]
 
 export default async function solution(input: string): Promise<Solution15> {
@@ -28,9 +31,8 @@ export default async function solution(input: string): Promise<Solution15> {
   console.log(sensors)
   console.log(cave.toString())
 
-  const r = cave.getAllReachableCells(sensors[2])
-  console.log('reachable:')
-  console.log(r)
+  cave.identifyGuaranteedFreeCells()
+  console.log(cave.toString())
 
   return { answer1: 0 }
 }
@@ -52,7 +54,18 @@ class Cave {
     this.grid = this.getInitialCave()
   }
 
-  public getAllReachableCells(sensor: Sensor): Cell[] {
+  public identifyGuaranteedFreeCells = () => {
+    const forSureEmptyCells = [
+      ...new Set(this.sensors.flatMap(this.getAllReachableCells)),
+    ].filter(cell => cell && cell.type === 'unknown')
+
+    forSureEmptyCells.forEach(cell => {
+      this.grid[cell.x][cell.y] = { ...cell, type: 'empty' }
+    })
+    console.log(forSureEmptyCells)
+  }
+
+  public getAllReachableCells = (sensor: Sensor): Cell[] => {
     const { closestBeacon: beacon, x, y } = sensor
     const distance = getManhattanDistance(sensor, beacon)
     console.log('sensor:', `${x}/${y}`)
@@ -93,7 +106,14 @@ class Cave {
       string += '\n'
       for (let j = 0; j < this.grid.length; j++) {
         const type = this.grid[j][i].type
-        const marker = type === 'sensor' ? 'S' : type === 'beacon' ? 'B' : '.'
+        const marker =
+          type === 'sensor'
+            ? 'S'
+            : type === 'beacon'
+              ? 'B'
+              : type === 'empty'
+                ? '#'
+                : '.'
         string += marker + ' '
       }
     }
@@ -106,7 +126,7 @@ class Cave {
     const height = getExtremeCoordinate(combined, 'y', 'max') + 1
     const cave: CaveGrid = Array.from(Array(width)).map((_, x) =>
       Array.from(Array(height)).map((_, y) => ({
-        type: 'empty',
+        type: 'unknown',
         x,
         y,
       }))
