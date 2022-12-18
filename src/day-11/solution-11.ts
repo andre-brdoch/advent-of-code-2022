@@ -17,6 +17,7 @@ interface Monkey extends MonkeyParsed {
   targetA: Monkey
   targetB: Monkey
 }
+type ManageFrustrationFn = (item: number) => number
 
 export default async function solution(input: string): Promise<Solution11> {
   const answer1 = getAnswer1(input)
@@ -27,32 +28,45 @@ export default async function solution(input: string): Promise<Solution11> {
 
 function getAnswer1(input: string): number {
   const monkeys = parseMonkeys(input)
-  playRounds(monkeys, 20, true)
+  const manageFrustration: ManageFrustrationFn = item => Math.floor(item / 3)
+  playRounds(monkeys, 20, manageFrustration)
   return getMonkeyBusiness(monkeys)
 }
 
 function getAnswer2(input: string): number {
   const monkeys = parseMonkeys(input)
-  playRounds(monkeys, 10, false)
+  const manageFrustration: ManageFrustrationFn = item => {
+    const commonDividor = monkeys.reduce(
+      (result, monkey) => result * monkey.divisableBy,
+      1
+    )
+    return item % commonDividor
+  }
+  playRounds(monkeys, 10000, manageFrustration)
   return getMonkeyBusiness(monkeys)
 }
 
-function playRounds(monkeys: Monkey[], rounds: number, easy: boolean): void {
+function playRounds(
+  monkeys: Monkey[],
+  rounds: number,
+  manageFrustration: ManageFrustrationFn
+): void {
   Array.from(Array(rounds)).forEach(() => {
     monkeys.forEach(monkey => {
-      takeTurn(monkey, easy)
+      takeTurn(monkey, manageFrustration)
     })
   })
 }
 
-function takeTurn(monkey: Monkey, easy: boolean): void {
+function takeTurn(
+  monkey: Monkey,
+  manageFrustration: ManageFrustrationFn
+): void {
   const { items, inspect, divisableBy, targetA, targetB } = monkey
   items.forEach(item => {
     let itemInspected = inspect(item)
     monkey.activity += 1
-    if (easy) {
-      itemInspected = Math.floor(itemInspected / 3)
-    }
+    itemInspected = manageFrustration(itemInspected)
     const didPassTest = itemInspected % divisableBy === 0
     const target = didPassTest ? targetA : targetB
     throwTo(target, itemInspected)
