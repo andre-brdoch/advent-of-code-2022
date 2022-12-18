@@ -28,7 +28,10 @@ export default async function solution(input: string): Promise<Solution15> {
   console.log(sensors)
   console.log(cave.toString())
 
-  console.log(getManhattanDistance(sensors[0], sensors[0].closestBeacon))
+  const r = cave.getAllReachableCells(sensors[2])
+  console.log('reachable:')
+  console.log(r)
+
   return { answer1: 0 }
 }
 
@@ -47,6 +50,41 @@ class Cave {
       normalizeCoordinate(sensor, offsetX, offsetY)
     )
     this.grid = this.getInitialCave()
+  }
+
+  public getAllReachableCells(sensor: Sensor): Cell[] {
+    const { closestBeacon: beacon, x, y } = sensor
+    const distance = getManhattanDistance(sensor, beacon)
+    console.log('sensor:', `${x}/${y}`)
+    console.log('distance:', distance)
+    const xRange = range(x - distance, x + distance)
+    const yRange = range(y - distance, y + distance)
+    console.log(xRange)
+    console.log(yRange)
+
+    const rows: Coordinate[][] = []
+
+    let radius = 0
+    Array.from(Array(distance * 2 + 1)).forEach((_, i) => {
+      const coordinates = range(x - radius, x + radius).map(x => ({
+        x,
+        y: y - distance + i,
+      }))
+      console.log(i, radius)
+      rows.push(coordinates)
+
+      // go from distance to 0 and back to distance:
+      if (i < distance) radius += 1
+      else radius -= 1
+    })
+    const reachableCoordinates = rows
+      .flat()
+      .filter(
+        ({ x, y }) =>
+          0 <= x && x < this.grid.length && 0 <= y && y < this.grid.length
+      )
+
+    return reachableCoordinates.map(({ x, y }) => this.grid[x][y])
   }
 
   public toString(): string {
@@ -149,4 +187,12 @@ function parseCoordinates(string: string): Coordinate {
       }),
       {} as Coordinate
     )
+}
+
+function range(from: number, to: number): number[] {
+  const result = []
+  for (let number = from; number <= to; number++) {
+    result.push(number)
+  }
+  return result
 }
