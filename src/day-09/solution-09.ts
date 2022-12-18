@@ -66,35 +66,22 @@ function moveHead(motions: Motion[]): Position[] {
 }
 
 function followKnot(headPositions: Position[]): Position[] {
-  // starts on the same field as previous knot
+  // starts on the same field as head
   const tailPositions: Position[] = headPositions.slice(0, 1)
-
-  headPositions.forEach((headPosition, i) => {
-    const prevTailPosition = tailPositions[tailPositions.length - 1]
-    const prevHeadPosition = headPositions[i - 1]
-    if (areAdjacent(headPosition, prevTailPosition)) {
-      tailPositions.push(prevTailPosition)
+  headPositions.forEach((head, i) => {
+    if (i === 0) return
+    const prevTail = tailPositions[tailPositions.length - 1]
+    if (areAdjacent(head, prevTail)) {
+      // repeat last position
+      tailPositions.push(prevTail)
     }
-    // if diagonal movement needed:
-    else if (
-      prevTailPosition.x !== headPosition.x &&
-      prevTailPosition.y !== headPosition.y
-    ) {
-      const vector: Position = {
-        x: clamp(headPosition.x - prevTailPosition.x, -1, 1),
-        y: clamp(headPosition.y - prevTailPosition.y, -1, 1),
-      }
-      const currentTailPosition = addPositions(prevTailPosition, vector)
-      tailPositions.push(currentTailPosition)
-    }
-    // if horizontal/vertical movement needed:
     else {
-      // move to previous' knots position:
-      const currentTailPosition = { ...prevHeadPosition }
-      tailPositions.push(currentTailPosition)
+      const prevHead = headPositions[i - 1]
+      // move to previous turns head position
+      const newTail = { ...prevHead }
+      tailPositions.push(newTail)
     }
   })
-
   return tailPositions
 }
 
