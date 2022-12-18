@@ -13,7 +13,10 @@ interface Sensor extends Coordinate {
   closestBeacon: Beacon
   type: 'sensor'
 }
-type Cell = '.' | 'S' | 'B'
+interface EmptyCell extends Coordinate {
+  type: 'empty'
+}
+type Cell = Sensor | Beacon | EmptyCell
 type CaveGrid = Cell[][]
 
 export default async function solution(input: string): Promise<Solution15> {
@@ -22,9 +25,10 @@ export default async function solution(input: string): Promise<Solution15> {
 
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
-  console.log(cave.grid)
+  console.log(sensors)
   console.log(cave.toString())
 
+  console.log(getManhattanDistance(sensors[0], sensors[0].closestBeacon))
   return { answer1: 0 }
 }
 
@@ -50,7 +54,9 @@ class Cave {
     for (let i = 0; i < this.grid[0].length; i++) {
       string += '\n'
       for (let j = 0; j < this.grid.length; j++) {
-        string += this.grid[j][i] + ' '
+        const type = this.grid[j][i].type
+        const marker = type === 'sensor' ? 'S' : type === 'beacon' ? 'B' : '.'
+        string += marker + ' '
       }
     }
     return string
@@ -60,11 +66,15 @@ class Cave {
     const combined = [...this.sensors, ...this.beacons]
     const width = getExtremeCoordinate(combined, 'x', 'max') + 1
     const height = getExtremeCoordinate(combined, 'y', 'max') + 1
-    const cave: CaveGrid = Array.from(Array(width)).map(() =>
-      Array.from(Array(height)).map(() => '.')
+    const cave: CaveGrid = Array.from(Array(width)).map((_, x) =>
+      Array.from(Array(height)).map((_, y) => ({
+        type: 'empty',
+        x,
+        y,
+      }))
     )
-    combined.forEach(({ x, y, type }) => {
-      cave[x][y] = type === 'sensor' ? 'S' : 'B'
+    combined.forEach(cell => {
+      cave[cell.x][cell.y] = cell
     })
     return cave
   }
