@@ -29,6 +29,7 @@ export default async function solution(input: string): Promise<Solution9> {
 function getAnswer1(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 2)
   // console.log(stringifyAllRopeTurns(ropeMovement))
+  // console.log(stringifyKnotMovement(ropeMovement[1], ropeMovement))
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
@@ -36,6 +37,7 @@ function getAnswer1(headMotions: Motion[]): number {
 function getAnswer2(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 10)
   console.log(stringifyAllRopeTurns(ropeMovement))
+  console.log(stringifyKnotMovement(ropeMovement, ropeMovement.length - 1))
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
@@ -170,6 +172,23 @@ function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
     }
   })
 
+  return stringifyGrid(grid)
+}
+
+function stringifyKnotMovement(ropeMovement: RopeMovement, i: number): string {
+  const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
+  const positions = normalizedRopeMovement[i]
+  const grid = getGrid(normalizedRopeMovement)
+
+  positions.forEach(position => {
+    const { x, y } = position
+    if (grid[x][y] === '.') grid[x][y] = '#'
+  })
+
+  return stringifyGrid(grid)
+}
+
+function stringifyGrid(grid: string[][]): string {
   let string = ''
   const gridRotated = grid.map(row => row.slice().reverse())
   for (let i = 0; i < grid[0].length; i++) {
