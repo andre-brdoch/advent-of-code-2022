@@ -1,13 +1,12 @@
 interface Solution11 {
   answer1: number
-  answer2: number
 }
 interface MonkeyParsed {
   name: string
-  items: bigint[]
-  divisableBy: bigint
+  items: number[]
+  divisableBy: number
   activity: number
-  inspect: (item: bigint) => bigint
+  inspect: (item: number) => number
   targetAName?: string
   targetBName?: string
   targetA?: Monkey | MonkeyParsed
@@ -19,43 +18,35 @@ interface Monkey extends MonkeyParsed {
 }
 
 export default async function solution(input: string): Promise<Solution11> {
-  const answer1 = getAnswer1(input)
-  const answer2 = getAnswer2(input)
+  console.log(input)
+  console.log('----')
 
-  return { answer1, answer2 }
-}
-
-function getAnswer1(input: string): number {
   const monkeys = parseMonkeys(input)
-  playRounds(monkeys, 20, true)
-  return getMonkeyBusiness(monkeys)
+  Array.from(Array(20)).forEach(() => {
+    playRound(monkeys)
+  })
+  const answer1 = getMonkeyBusiness(monkeys)
+
+  return { answer1 }
 }
 
-function getAnswer2(input: string): number {
-  const monkeys = parseMonkeys(input)
-  playRounds(monkeys, 10, false)
-  return getMonkeyBusiness(monkeys)
-}
-
-function playRounds(monkeys: Monkey[], rounds: number, easy: boolean): void {
-  Array.from(Array(rounds)).forEach(() => {
-    monkeys.forEach(monkey => {
-      takeTurn(monkey, easy)
-    })
+function playRound(monkeys: Monkey[]): void {
+  monkeys.forEach(monkey => {
+    takeTurn(monkey)
   })
 }
 
-function takeTurn(monkey: Monkey, easy: boolean): void {
+function takeTurn(monkey: Monkey): void {
+  console.log(`--- Monkey ${monkey.name}`)
+
   const { items, inspect, divisableBy, targetA, targetB } = monkey
   items.forEach(item => {
-    let itemInspected = inspect(item)
+    const itemInspected = inspect(item)
     monkey.activity += 1
-    if (easy) {
-      itemInspected = itemInspected / 3n
-    }
-    const didPassTest = itemInspected % divisableBy === 0n
+    const itemRelieved = Math.floor(itemInspected / 3)
+    const didPassTest = itemRelieved % divisableBy === 0
     const target = didPassTest ? targetA : targetB
-    throwTo(target, itemInspected)
+    throwTo(target, itemRelieved)
   })
   monkey.items = []
 }
@@ -64,13 +55,15 @@ function getMonkeyBusiness(monkeys: Monkey[]): number {
   const byActivity = monkeys
     .map(monkey => monkey.activity)
     .sort((a, b) => b - a)
+    .slice(0, 2)
   console.log(byActivity)
 
   const [a, b] = byActivity
   return a * b
 }
 
-function throwTo(monkey: Monkey, item: bigint): void {
+function throwTo(monkey: Monkey, item: number): void {
+  console.log(`Throwing ${item} to ${monkey.name}`)
   monkey.items.push(item)
 }
 
@@ -90,7 +83,7 @@ function capitalizeFirstChar(string: string): string {
   return `${string.charAt(0).toUpperCase()}${string.slice(1)}`
 }
 
-function parseMonkeys(input: string): Monkey[] {
+function parseMonkeys(input: string): any {
   const monkeys: MonkeyParsed[] = input.split('\n\n').map(group => {
     const match = group.match(
       /(Monkey \d+):\n\s*Starting items: (.*)\n\s*Operation: new = (old|\d+) (.) (old|\d+)\n\s*Test: divisible by (\d+)\n\s*If true: throw to (.*)\n\s*If false: throw to (.*)/
@@ -109,12 +102,12 @@ function parseMonkeys(input: string): Monkey[] {
       targetBName,
     ] = match
 
-    const items = itemsString.split(', ').map(str => BigInt(str))
-    const divisableBy = BigInt(divisableByString)
+    const items = itemsString.split(', ').map(str => Number(str))
+    const divisableBy = Number(divisableByString)
 
-    const inspect = (item: bigint): bigint => {
-      const left = leftHand === 'old' ? item : BigInt(leftHand)
-      const right = rightHand === 'old' ? item : BigInt(rightHand)
+    const inspect = (item: number): number => {
+      const left = leftHand === 'old' ? item : Number(leftHand)
+      const right = rightHand === 'old' ? item : Number(rightHand)
       if (operand === '+') return left + right
       else if (operand === '*') return left * right
       throw new Error(`Invalid operand: "${operand}"`)
@@ -134,6 +127,5 @@ function parseMonkeys(input: string): Monkey[] {
     monkey.targetA = getByName(monkey.targetAName ?? '', monkeys)
     monkey.targetB = getByName(monkey.targetBName ?? '', monkeys)
   })
-  // @ts-ignore
   return monkeys
 }
