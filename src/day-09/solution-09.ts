@@ -18,6 +18,7 @@ export default async function solution(input: string): Promise<Solution9> {
   console.log('----')
 
   const motions = parseHeadMotions(input)
+
   // const answer1 = 1
   const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
@@ -42,22 +43,9 @@ function moveRope(headMotions: Motion[], ropeLength: number): RopeMovement {
   if (ropeLength < 2) throw new Error('Rope is too short!')
   const headPositions = moveHead(headMotions)
   const ropeMovement: RopeMovement = [headPositions]
-  console.log('other knots:', ropeLength - 1)
 
-  Array.from(Array(ropeLength - 1)).forEach((n, i) => {
-    console.log('----')
-    console.log(i)
-    console.log('knot', i + 2)
-
-    if (i === 0) {
-      console.log(ropeMovement)
-    }
-
+  Array.from(Array(ropeLength - 1)).forEach(() => {
     const prevKnotPositions: Position[] = ropeMovement[ropeMovement.length - 1]
-
-    if (i === 0) {
-      console.log(prevKnotPositions)
-    }
 
     ropeMovement.push(followKnot(prevKnotPositions))
   })
@@ -80,14 +68,8 @@ function followKnot(knotPositions: Position[]): Position[] {
 
   knotPositions.forEach((knotPosition, i) => {
     const prevNewKnotPosition = newKnotPositions[newKnotPositions.length - 1]
-    const recentPrevKnotPositions = knotPositions.slice(0, i + 1)
     const prevKnotPosition = knotPositions[i - 1]
     if (areAdjacent(knotPosition, prevNewKnotPosition)) {
-      console.log(
-        `${stringifyPosition(prevNewKnotPosition)} - ${stringifyPosition(
-          knotPosition
-        )} - STAY`
-      )
       newKnotPositions.push(prevNewKnotPosition)
     }
     // if diagonal movement needed:
@@ -99,28 +81,13 @@ function followKnot(knotPositions: Position[]): Position[] {
         x: clamp(knotPosition.x - prevNewKnotPosition.x, -1, 1),
         y: clamp(knotPosition.y - prevNewKnotPosition.y, -1, 1),
       }
-      console.log(
-        'diagonal movement needed! distances: ',
-        `${stringifyPosition(vector)}`
-      )
       const newCurrent = addPositions(prevNewKnotPosition, vector)
-      console.log(
-        `moving diagonally from ${stringifyPosition(
-          prevNewKnotPosition
-        )} to ${stringifyPosition(newCurrent)}`
-      )
-
       newKnotPositions.push(newCurrent)
     }
     // if horizontal/vertical movement needed:
     else {
       // move to previous' knots position:
       const newCurrent = { ...prevKnotPosition }
-      console.log(
-        `${stringifyPosition(newCurrent)} - ${stringifyPosition(
-          recentPrevKnotPositions[recentPrevKnotPositions.length - 1]
-        )} - MOVE`
-      )
       newKnotPositions.push(newCurrent)
     }
   })
