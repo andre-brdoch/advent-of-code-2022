@@ -156,16 +156,9 @@ function stringifyAllRopeTurns(ropeMovement: RopeMovement): string {
 
 function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
   const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
-
-  const flat = normalizedRopeMovement.flat()
-  const width = getExtremeCoordinate(flat, 'x', 'max') + 1
-  const height = getExtremeCoordinate(flat, 'y', 'max') + 1
+  const grid = getGrid(normalizedRopeMovement)
   const currentKnotPositions = normalizedRopeMovement.map(
     knotPositions => knotPositions[turn]
-  )
-
-  const grid = Array.from(Array(width)).map(() =>
-    Array.from(Array(height)).map(() => '.')
   )
 
   currentKnotPositions.forEach((position, i) => {
@@ -179,9 +172,9 @@ function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
 
   let string = ''
   const gridRotated = grid.map(row => row.slice().reverse())
-  for (let i = 0; i < height; i++) {
+  for (let i = 0; i < grid[0].length; i++) {
     string += '\n'
-    for (let j = 0; j < width; j++) {
+    for (let j = 0; j < grid.length; j++) {
       string += gridRotated[j][i] + ' '
     }
   }
@@ -190,6 +183,16 @@ function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
 
 function stringifyPosition(position: Position): string {
   return `${position.x}/${position.y}`
+}
+
+function getGrid(normalizedRopeMovement: RopeMovement): string[][] {
+  const flat = normalizedRopeMovement.flat()
+  const width = getExtremeCoordinate(flat, 'x', 'max') + 1
+  const height = getExtremeCoordinate(flat, 'y', 'max') + 1
+
+  return Array.from(Array(width)).map(() =>
+    Array.from(Array(height)).map(() => '.')
+  )
 }
 
 /** Adjust coordinate range to start from 0/0 */
