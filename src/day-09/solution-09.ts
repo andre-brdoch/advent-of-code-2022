@@ -28,6 +28,7 @@ export default async function solution(input: string): Promise<Solution9> {
 
 function getAnswer1(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 2)
+  // console.log(stringifyAllRopeTurns(ropeMovement))
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
@@ -63,22 +64,36 @@ function moveHead(motions: Motion[]): Position[] {
 }
 
 function followKnot(headPositions: Position[]): Position[] {
-  // starts on the same field as head
+  // starts on the same field as previous knot
   const tailPositions: Position[] = headPositions.slice(0, 1)
-  headPositions.forEach((head, i) => {
+
+  headPositions.forEach((headPosition, i) => {
     if (i === 0) return
-    const prevTail = tailPositions[tailPositions.length - 1]
-    if (areAdjacent(head, prevTail)) {
-      // repeat last position
-      tailPositions.push(prevTail)
+    const prevTailPosition = tailPositions[i - 1]
+    const prevHeadPosition = headPositions[i - 1]
+    if (areAdjacent(headPosition, prevTailPosition)) {
+      tailPositions.push(prevTailPosition)
     }
+    // if diagonal movement needed:
+    else if (
+      prevTailPosition.x !== headPosition.x &&
+      prevTailPosition.y !== headPosition.y
+    ) {
+      const vector: Position = {
+        x: clamp(headPosition.x - prevTailPosition.x, -1, 1),
+        y: clamp(headPosition.y - prevTailPosition.y, -1, 1),
+      }
+      const currentTailPosition = addPositions(prevTailPosition, vector)
+      tailPositions.push(currentTailPosition)
+    }
+    // if horizontal/vertical movement needed:
     else {
-      const prevHead = headPositions[i - 1]
-      // move to previous turns head position
-      const newTail = { ...prevHead }
-      tailPositions.push(newTail)
+      // move to previous' knots position:
+      const currentTailPosition = { ...prevHeadPosition }
+      tailPositions.push(currentTailPosition)
     }
   })
+
   return tailPositions
 }
 
