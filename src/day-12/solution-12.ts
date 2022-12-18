@@ -1,3 +1,9 @@
+/**
+ * Finds shortest paths using Dijkstras Algorithm.
+ * Searches from end till start, since there are much
+ * less options for the final fields, narrowing down options.
+ */
+
 interface Solution12 {
   answer1: number
   answer2: number
