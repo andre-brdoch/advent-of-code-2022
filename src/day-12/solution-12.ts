@@ -6,6 +6,7 @@ interface Square {
   elevationNum: number
   start?: boolean
   end?: boolean
+  name: string
 }
 interface Coordinates {
   x: number
@@ -13,79 +14,98 @@ interface Coordinates {
 }
 type Map = Square[][]
 type Path = Square[]
+interface CameFromMap {
+  [key: string]: Square | null
+}
+interface CostSoFarMap {
+  [key: string]: number
+}
 
 const ASCII_OFFSET_A = 96
 
 export default async function solution(input: string): Promise<Solution12> {
-  console.log(input)
-  console.log('---')
-
   const map = parseMap(input)
+
+  const path = getShortestPath(map)
+  console.log(path)
+  const answer1 = path.length - 1
+
+  return { answer1 }
+}
+
+function getShortestPath(map: Map): Path {
+  const start = map.flat().find(square => square.start)
   const end = map.flat().find(square => square.end)
+  if (!start) throw new Error('These mountains are not very accessible.')
   if (!end) throw new Error('No end in sight!')
-  // const possiblePaths = getPossiblePaths(end, map, [end])
-  // // console.log('possiblePaths')
-  // // console.log(possiblePaths)
-  // const fullPaths = possiblePaths.filter(
-  //   path => path[0].end && path[path.length - 1].start
-  // )
-  // console.log('fullPaths')
-  // console.log(fullPaths)
-  // const answer1 = getShortestPath(fullPaths).length - 1
 
-  // const upper = findConnectors(map, 9, true)
-  const lowerI = findConnectors(map, 8, false)
-  const lowerJ = findConnectors(map, 9, false)
-  console.log('lowerI:', lowerI)
-  console.log('lowerJ:', lowerJ)
+  // create map tracking "cheapest" fields to come from,
+  // using Dijkstras algorithm:
+  const frontier = new PriorityQueue<Square>()
+  frontier.add(start, 0)
+  const cameFrom: CameFromMap = { [start.name]: null }
+  const costSoFar: CostSoFarMap = { [start.name]: 0 }
 
-  return { answer1: 0 }
-}
-
-function findConnectors(
-  map: Map,
-  elevationNum: number,
-  upper: boolean
-): Square[] {
-  return map
-    .flat()
-    .filter(
-      square =>
-        square.elevationNum === elevationNum &&
-        getSurroundingSquares(square, map).some(
-          neighbor =>
-            neighbor.elevationNum === square.elevationNum + (upper ? 1 : -1)
-        )
+  while (!frontier.empty()) {
+    const current = frontier.get()
+    if (current === null) throw new Error('Queue empty, what to do?')
+    if (current === end) {
+      break
+    }
+    const reachableNeighbors = getSurroundingSquares(current, map).filter(
+      neighbor => isReachable(neighbor, current)
     )
-}
-
-function getPossiblePaths(
-  square: Square,
-  map: Map,
-  currentPath: Path = []
-): Path[] {
-  const reachableNeighbors = getSurroundingSquares(square, map).filter(
-    neighbor => !currentPath.includes(neighbor) && isReachable(neighbor, square)
-  )
-  const start = reachableNeighbors.find(neighbor => neighbor.start)
-  if (start) {
-    return [[...currentPath, start]]
+    reachableNeighbors.forEach(next => {
+      // make it more expensive to go down again:
+      const newCost =
+        costSoFar[current.name] - (current.elevationNum - next.elevationNum) * 2
+      if (!(next.name in costSoFar) || newCost < costSoFar[next.name]) {
+        costSoFar[next.name] = newCost
+        const priority = newCost
+        frontier.add(next, priority)
+        cameFrom[next.name] = current
+      }
+    })
   }
 
-  console.log('paths so far:', currentPath)
-  console.log('reachableNeighbors:', reachableNeighbors)
+  // find shortest path
+  const path: Path = [end]
+  let current = end
+  while (!current.start) {
+    const cameFromSquare = cameFrom[current.name]
+    if (cameFromSquare === null) throw new Error('Square not found')
+    path.push(cameFromSquare)
+    current = cameFromSquare
+  }
 
-  return reachableNeighbors.reduce(
-    (result, square) => [
-      ...result,
-      ...getPossiblePaths(square, map, [...currentPath, square]),
-    ],
-    [currentPath]
-  )
+  return path
 }
 
-function getShortestPath(paths: Path[]): Path {
-  return paths.sort((a, b) => a.length - b.length)[0]
+class PriorityQueue<T> {
+  private items: {
+    item: T
+    priority: number
+  }[]
+
+  constructor() {
+    this.items = []
+  }
+
+  public add(item: T, priority: number) {
+    this.items.push({ item, priority })
+  }
+
+  public get() {
+    if (this.empty()) return null
+    const highestPrio = this.items.sort((a, b) => b.priority - a.priority)[0]
+    const i = this.items.indexOf(highestPrio)
+    this.items.splice(i, 1)
+    return highestPrio.item
+  }
+
+  public empty() {
+    return this.items.length === 0
+  }
 }
 
 function getSurroundingSquares(square: Square, map: Map): Square[] {
@@ -96,13 +116,9 @@ function getSurroundingSquares(square: Square, map: Map): Square[] {
     { x: x, y: y - 1 },
     { x: x, y: y + 1 },
   ]
-  return (
-    targetCoordinates
-      .filter(coordinates => isOnMap(coordinates, map))
-      .map(({ x, y }) => map[y][x])
-      // prefer neighbors with lower elevation
-      .sort((a, b) => a.elevationNum - b.elevationNum)
-  )
+  return targetCoordinates
+    .filter(coordinates => isOnMap(coordinates, map))
+    .map(({ x, y }) => map[y][x])
 }
 
 function getCoordinates(square: Square, map: Map): Coordinates {
@@ -121,9 +137,9 @@ function getCoordinates(square: Square, map: Map): Coordinates {
 }
 
 function isReachable(target: Square, current: Square): boolean {
-  const diff = current.elevationNum - target.elevationNum
-  // go down 1 level, or stay on same elevation
-  return [0, 1].includes(diff)
+  const diff = target.elevationNum - current.elevationNum
+  // stay on same elevation, or go down
+  return diff <= 1
 }
 
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
@@ -132,8 +148,8 @@ function isOnMap(coordinates: Coordinates, map: Map): boolean {
 }
 
 function parseMap(input: string): Map {
-  return input.split('\n').map(line =>
-    line.split('').map(char => {
+  return input.split('\n').map((line, i) =>
+    line.split('').map((char, j) => {
       let elevation = char
       let start
       let end
@@ -148,6 +164,7 @@ function parseMap(input: string): Map {
       const square: Square = {
         elevation,
         elevationNum: elevation.charCodeAt(0) - ASCII_OFFSET_A,
+        name: `${i}/${j}`,
       }
       if (start) square.start = start
       if (end) square.end = end
