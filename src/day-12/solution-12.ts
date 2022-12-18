@@ -25,28 +25,30 @@ const ASCII_OFFSET_A = 96
 
 export default async function solution(input: string): Promise<Solution12> {
   const map = parseMap(input)
-  console.log(map)
 
   const start = map.flat().find(square => square.start)
   const end = map.flat().find(square => square.end)
   if (!start) throw new Error('These mountains are not very accessible.')
   if (!end) throw new Error('No end in sight!')
-  const path = await findShortestPathBetween(end, start, map)
-  console.log(path)
+  const path = await findShortestPath(map)
   const answer1 = path.length - 1
-
-  const grid = getGrid(map)
-  console.log(stringifyGrid(grid))
 
   return { answer1 }
 }
 
-function findShortestPathBetween(end: Square, start: Square, map: Map): Path {
+function findShortestPath(map: Map): Path {
   // create map tracking "cheapest" fields to come from,
-  // using A* algorithm:
+  // using Dijkstras algorithm:
+
+  const start = map.flat().find(square => square.start)
+  const end = map.flat().find(square => square.end)
+  if (!start) throw new Error('These mountains are not very accessible.')
+  if (!end) throw new Error('No end in sight!')
+
   const frontier = new PriorityQueue<Square>()
   frontier.add(end, 0)
   const cameFrom: CameFromMap = { [end.name]: null }
+  const costSoFar: CostSoFarMap = { [end.name]: 0 }
 
   while (!frontier.empty()) {
     const current = frontier.get()
@@ -59,68 +61,7 @@ function findShortestPathBetween(end: Square, start: Square, map: Map): Path {
       neighbor => isReachable(neighbor, current)
     )
     reachableNeighbors.forEach(next => {
-      if (!(next.name in cameFrom)) {
-        const priority = getManhattanDistance(start, next, map)
-        frontier.add(next, priority)
-        cameFrom[next.name] = current
-      }
-    })
-  }
-
-  // find shortest path
-  const path: Path = [start]
-  let current = start
-  while (current !== end) {
-    const cameFromSquare = cameFrom[current.name]
-    if (cameFromSquare === null) throw new Error('Square not found')
-    path.push(cameFromSquare)
-    current = cameFromSquare
-  }
-
-  return path
-}
-
-function getManhattanDistance(a: Square, b: Square, map: Map): number {
-  const { x: aX, y: aY } = getCoordinates(a, map)
-  const { x: bX, y: bY } = getCoordinates(b, map)
-  return Math.abs(aX - bX) + Math.abs(aY - bY)
-}
-
-async function dijkstra(map: Map, debug = false): Promise<Path> {
-  const start = map.flat().find(square => square.start)
-  const end = map.flat().find(square => square.end)
-  if (!start) throw new Error('These mountains are not very accessible.')
-  if (!end) throw new Error('No end in sight!')
-
-  // create map tracking "cheapest" fields to come from,
-  // using Dijkstras algorithm:
-  const frontier = new PriorityQueue<Square>()
-  frontier.add(start, 0)
-  const cameFrom: CameFromMap = { [start.name]: null }
-  const costSoFar: CostSoFarMap = { [start.name]: 0 }
-  const debugGrid = getGrid(map)
-
-  while (!frontier.empty()) {
-    const current = frontier.get()
-    if (current === null) throw new Error('Queue empty, what to do?')
-    if (current === end) {
-      break
-    }
-
-    if (debug) {
-      const { x, y } = getCoordinates(current, map)
-      debugGrid[y][x] = '#'
-      console.log(`${stringifyGrid(debugGrid)}\n\n`)
-      await waitFor(200)
-    }
-
-    const reachableNeighbors = getSurroundingSquares(current, map).filter(
-      neighbor => isReachable(neighbor, current)
-    )
-    reachableNeighbors.forEach(next => {
-      // make it more expensive to go down again:
-      const newCost =
-        costSoFar[current.name] + (current.elevationNum - next.elevationNum) * 2
+      const newCost = costSoFar[current.name] + 1
       if (!(next.name in costSoFar) || newCost < costSoFar[next.name]) {
         costSoFar[next.name] = newCost
         const priority = newCost
@@ -130,10 +71,10 @@ async function dijkstra(map: Map, debug = false): Promise<Path> {
     })
   }
 
-  // find shortest path
-  const path: Path = [end]
-  let current = end
-  while (!current.start) {
+  // find shortest path from end till start
+  const path: Path = [start]
+  let current = start
+  while (current !== end) {
     const cameFromSquare = cameFrom[current.name]
     if (cameFromSquare === null) throw new Error('Square not found')
     path.push(cameFromSquare)
@@ -207,20 +148,6 @@ function isReachable(next: Square, current: Square): boolean {
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
   const { x, y } = coordinates
   return x >= 0 && x < map[0].length && y >= 0 && y < map.length
-}
-
-function getGrid(map: Map): string[][] {
-  return map.map(row => row.map(square => square.elevation))
-}
-
-function stringifyGrid(grid: string[][]): string {
-  return grid.map(row => row.join('')).join('\n')
-}
-
-function waitFor(time: number): Promise<void> {
-  return new Promise(resolve => {
-    setTimeout(resolve, time)
-  })
 }
 
 function parseMap(input: string): Map {
