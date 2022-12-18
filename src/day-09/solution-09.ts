@@ -167,6 +167,21 @@ function stringifyAllRopeTurns(ropeMovement: RopeMovement): string {
     .join('\n\n\n')
 }
 
+function strinfigyRopePerMotion(
+  ropeMovement: RopeMovement,
+  motions: Motion[]
+): string {
+  let turn = 0
+  let string = ''
+  motions.forEach(motion => {
+    turn += motion.amount
+    string += `\n\n\n${motion.direction}${motion.amount}:\n`
+    string += stringifyRopeAtTurn(ropeMovement, turn)
+    string += '\n'
+  })
+  return string
+}
+
 function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
   const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
   const grid = getGrid(normalizedRopeMovement)
