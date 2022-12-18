@@ -25,25 +25,22 @@ const ASCII_OFFSET_A = 96
 
 export default async function solution(input: string): Promise<Solution12> {
   const map = parseMap(input)
-
-  const start = map.flat().find(square => square.start)
-  const end = map.flat().find(square => square.end)
-  if (!start) throw new Error('These mountains are not very accessible.')
-  if (!end) throw new Error('No end in sight!')
-  const path = await findShortestPath(map)
-  const answer1 = path.length - 1
-
+  const answer1 = getAnswer1(map)
   return { answer1 }
 }
 
-function findShortestPath(map: Map): Path {
-  // create map tracking "cheapest" fields to come from,
-  // using Dijkstras algorithm:
-
+function getAnswer1(map: Map): number {
   const start = map.flat().find(square => square.start)
   const end = map.flat().find(square => square.end)
   if (!start) throw new Error('These mountains are not very accessible.')
   if (!end) throw new Error('No end in sight!')
+  const path = findShortestPath(start, end, map)
+  return path.length - 1
+}
+
+function findShortestPath(start: Square, end: Square, map: Map): Path {
+  // create map tracking "cheapest" fields to come from,
+  // using Dijkstras algorithm:
 
   const frontier = new PriorityQueue<Square>()
   frontier.add(end, 0)
