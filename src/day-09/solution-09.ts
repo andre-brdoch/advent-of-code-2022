@@ -150,6 +150,17 @@ function addPositions(a: Position, b: Position): Position {
 
 // === Visualize ===
 
+async function animateRope(
+  ropeMovement: RopeMovement,
+  delay: number
+): Promise<void> {
+  const outputs = stringifyAllRopeTurns(ropeMovement).split('\n\n')
+  for (const output of outputs) {
+    await wait(delay)
+    console.log(output)
+  }
+}
+
 function stringifyAllRopeTurns(ropeMovement: RopeMovement): string {
   return ropeMovement[0]
     .map((_, i) => `TURN ${i}:${stringifyRopeAtTurn(ropeMovement, i)}`)
@@ -242,6 +253,14 @@ function getExtremeCoordinate(
   return positions
     .map(position => position[axis])
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
+}
+
+function wait(time: number): Promise<void> {
+  return new Promise<void>(resolve => {
+    setTimeout(() => {
+      resolve()
+    }, time)
+  })
 }
 
 // === Typescript helpers ===
