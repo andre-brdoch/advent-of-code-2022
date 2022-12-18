@@ -19,8 +19,6 @@ export default async function solution(input: string): Promise<Solution9> {
   console.log('----')
 
   const motions = parseHeadMotions(input)
-  console.log(motions)
-
   const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
 
@@ -29,21 +27,12 @@ export default async function solution(input: string): Promise<Solution9> {
 
 function getAnswer1(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 2)
-  // animateRope(ropeMovement, 500)
-  // console.logstringifyAllRopeTurns(ropeMovement))
-  // console.log(stringifyKnotMovement(ropeMovement[1], ropeMovement))
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
 
 function getAnswer2(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 10)
-
-  // console.log(strinfigyRopePerMotion(ropeMovement, headMotions.slice(0, 3)))
-
-  // animateRope(ropeMovement, 100)
-  // console.log(stringifyAllRopeTurns(ropeMovement, 18))
-  // console.log(stringifyKnotMovement(ropeMovement, ropeMovement.length - 1))
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
@@ -78,37 +67,20 @@ function followKnot(headPositions: Position[]): Position[] {
   headPositions.forEach((headPosition, i) => {
     if (i === 0) return
     const prevTailPosition = tailPositions[i - 1]
-    const prevHeadPosition = headPositions[i - 1]
-    const vector: Position = {
-      x: headPosition.x - prevTailPosition.x,
-      y: headPosition.y - prevTailPosition.y,
-    }
+    const vector: Position = clampVector(
+      {
+        x: headPosition.x - prevTailPosition.x,
+        y: headPosition.y - prevTailPosition.y,
+      },
+      -1,
+      1
+    )
 
     if (areAdjacent(headPosition, prevTailPosition)) {
       tailPositions.push(prevTailPosition)
     }
-    // if diagonal movement needed:
-    else if (
-      prevTailPosition.x !== headPosition.x &&
-      prevTailPosition.y !== headPosition.y
-    ) {
-      const currentTailPosition = addPositions(
-        prevTailPosition,
-        clampVector(vector, -1, 1)
-      )
-      tailPositions.push(currentTailPosition)
-    }
-    // if horizontal/vertical movement needed:
     else {
-      // move to previous' knots position:
-      // console.log(vector)
-
-      const currentTailPosition = addPositions(
-        prevTailPosition,
-        clampVector(vector, -1, 1)
-      )
-      // const currentTailPosition = { ...prevHeadPosition }
-      // const currentTailPosition = addPositions(prevTailPosition, vector)
+      const currentTailPosition = addPositions(prevTailPosition, vector)
       tailPositions.push(currentTailPosition)
     }
   })
@@ -175,6 +147,7 @@ function addPositions(a: Position, b: Position): Position {
 
 // === Visualize ===
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function animateRope(
   ropeMovement: RopeMovement,
   delay: number
@@ -196,6 +169,7 @@ function stringifyAllRopeTurns(
     .join('\n\n\n')
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function strinfigyRopePerMotion(
   ropeMovement: RopeMovement,
   motions: Motion[]
@@ -230,6 +204,7 @@ function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
   return stringifyGrid(grid)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function stringifyKnotMovement(ropeMovement: RopeMovement, i: number): string {
   const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
   const positions = normalizedRopeMovement[i]
