@@ -25,15 +25,19 @@ const ASCII_OFFSET_A = 96
 
 export default async function solution(input: string): Promise<Solution12> {
   const map = parseMap(input)
+  console.log(map)
 
-  const path = getShortestPath(map)
-  console.log(path)
+  const path = await getShortestPath(map, true)
+  // console.log(path)
   const answer1 = path.length - 1
+
+  const grid = getGrid(map)
+  console.log(stringifyGrid(grid))
 
   return { answer1 }
 }
 
-function getShortestPath(map: Map): Path {
+async function getShortestPath(map: Map, debug = false): Promise<Path> {
   const start = map.flat().find(square => square.start)
   const end = map.flat().find(square => square.end)
   if (!start) throw new Error('These mountains are not very accessible.')
@@ -45,6 +49,7 @@ function getShortestPath(map: Map): Path {
   frontier.add(start, 0)
   const cameFrom: CameFromMap = { [start.name]: null }
   const costSoFar: CostSoFarMap = { [start.name]: 0 }
+  const debugGrid = getGrid(map)
 
   while (!frontier.empty()) {
     const current = frontier.get()
@@ -52,10 +57,18 @@ function getShortestPath(map: Map): Path {
     if (current === end) {
       break
     }
+
+    if (debug) {
+      const { x, y } = getCoordinates(current, map)
+      debugGrid[y][x] = '#'
+      console.log(`${stringifyGrid(debugGrid)}\n\n`)
+      await waitFor(200)
+    }
+
     const reachableNeighbors = getSurroundingSquares(current, map).filter(
       neighbor => isReachable(neighbor, current)
     )
-    reachableNeighbors.forEach(next => {
+    reachableNeighbors.forEach(async next => {
       // make it more expensive to go down again:
       const newCost =
         costSoFar[current.name] + (current.elevationNum - next.elevationNum) * 2
@@ -145,6 +158,20 @@ function isReachable(target: Square, current: Square): boolean {
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
   const { x, y } = coordinates
   return x >= 0 && x < map[0].length && y >= 0 && y < map.length
+}
+
+function getGrid(map: Map): string[][] {
+  return map.map(row => row.map(square => square.elevation))
+}
+
+function stringifyGrid(grid: string[][]): string {
+  return grid.map(row => row.join('')).join('\n')
+}
+
+function waitFor(time: number): Promise<void> {
+  return new Promise(resolve => {
+    setTimeout(resolve, time)
+  })
 }
 
 function parseMap(input: string): Map {
