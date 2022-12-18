@@ -31,8 +31,8 @@ export default async function solution(input: string): Promise<Solution12> {
   const end = map.flat().find(square => square.end)
   if (!start) throw new Error('These mountains are not very accessible.')
   if (!end) throw new Error('No end in sight!')
-  const path = await findShortestPathBetween(start, end, map)
-  // console.log(path)
+  const path = await findShortestPathBetween(end, start, map)
+  console.log(path)
   const answer1 = path.length - 1
 
   const grid = getGrid(map)
@@ -41,17 +41,17 @@ export default async function solution(input: string): Promise<Solution12> {
   return { answer1 }
 }
 
-function findShortestPathBetween(start: Square, end: Square, map: Map): Path {
+function findShortestPathBetween(end: Square, start: Square, map: Map): Path {
   // create map tracking "cheapest" fields to come from,
   // using A* algorithm:
   const frontier = new PriorityQueue<Square>()
-  frontier.add(start, 0)
-  const cameFrom: CameFromMap = { [start.name]: null }
+  frontier.add(end, 0)
+  const cameFrom: CameFromMap = { [end.name]: null }
 
   while (!frontier.empty()) {
     const current = frontier.get()
     if (current === null) throw new Error('Queue empty, what to do?')
-    if (current === end) {
+    if (current === start) {
       break
     }
 
@@ -60,7 +60,7 @@ function findShortestPathBetween(start: Square, end: Square, map: Map): Path {
     )
     reachableNeighbors.forEach(next => {
       if (!(next.name in cameFrom)) {
-        const priority = getManhattanDistance(end, next, map)
+        const priority = getManhattanDistance(start, next, map)
         frontier.add(next, priority)
         cameFrom[next.name] = current
       }
@@ -68,9 +68,9 @@ function findShortestPathBetween(start: Square, end: Square, map: Map): Path {
   }
 
   // find shortest path
-  const path: Path = [end]
-  let current = end
-  while (!current.start) {
+  const path: Path = [start]
+  let current = start
+  while (current !== end) {
     const cameFromSquare = cameFrom[current.name]
     if (cameFromSquare === null) throw new Error('Square not found')
     path.push(cameFromSquare)
@@ -198,10 +198,10 @@ function getCoordinates(square: Square, map: Map): Coordinates {
   return { x, y }
 }
 
-function isReachable(target: Square, current: Square): boolean {
-  const diff = target.elevationNum - current.elevationNum
+function isReachable(next: Square, current: Square): boolean {
+  const diff = next.elevationNum - current.elevationNum
   // stay on same elevation, or go down
-  return diff <= 1
+  return diff >= -1
 }
 
 function isOnMap(coordinates: Coordinates, map: Map): boolean {
