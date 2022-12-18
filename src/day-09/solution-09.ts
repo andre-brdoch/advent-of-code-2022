@@ -15,9 +15,6 @@ type Axis = keyof Position
 type RopeMovement = Position[][]
 
 export default async function solution(input: string): Promise<Solution9> {
-  console.log(input)
-  console.log('----')
-
   const motions = parseHeadMotions(input)
   const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
