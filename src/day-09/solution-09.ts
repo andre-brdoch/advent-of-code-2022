@@ -65,37 +65,37 @@ function moveHead(motions: Motion[]): Position[] {
   return positions
 }
 
-function followKnot(knotPositions: Position[]): Position[] {
+function followKnot(headPositions: Position[]): Position[] {
   // starts on the same field as previous knot
-  const newKnotPositions: Position[] = knotPositions.slice(0, 1)
+  const tailPositions: Position[] = headPositions.slice(0, 1)
 
-  knotPositions.forEach((knotPosition, i) => {
-    const prevNewKnotPosition = newKnotPositions[newKnotPositions.length - 1]
-    const prevKnotPosition = knotPositions[i - 1]
-    if (areAdjacent(knotPosition, prevNewKnotPosition)) {
-      newKnotPositions.push(prevNewKnotPosition)
+  headPositions.forEach((headPosition, i) => {
+    const prevTailPosition = tailPositions[tailPositions.length - 1]
+    const prevHeadPosition = headPositions[i - 1]
+    if (areAdjacent(headPosition, prevTailPosition)) {
+      tailPositions.push(prevTailPosition)
     }
     // if diagonal movement needed:
     else if (
-      prevNewKnotPosition.x !== knotPosition.x &&
-      prevNewKnotPosition.y !== knotPosition.y
+      prevTailPosition.x !== headPosition.x &&
+      prevTailPosition.y !== headPosition.y
     ) {
       const vector: Position = {
-        x: clamp(knotPosition.x - prevNewKnotPosition.x, -1, 1),
-        y: clamp(knotPosition.y - prevNewKnotPosition.y, -1, 1),
+        x: clamp(headPosition.x - prevTailPosition.x, -1, 1),
+        y: clamp(headPosition.y - prevTailPosition.y, -1, 1),
       }
-      const newCurrent = addPositions(prevNewKnotPosition, vector)
-      newKnotPositions.push(newCurrent)
+      const currentTailPosition = addPositions(prevTailPosition, vector)
+      tailPositions.push(currentTailPosition)
     }
     // if horizontal/vertical movement needed:
     else {
       // move to previous' knots position:
-      const newCurrent = { ...prevKnotPosition }
-      newKnotPositions.push(newCurrent)
+      const currentTailPosition = { ...prevHeadPosition }
+      tailPositions.push(currentTailPosition)
     }
   })
 
-  return newKnotPositions
+  return tailPositions
 }
 
 function movePosition(position: Position, motion: Motion): Position[] {
