@@ -5,6 +5,7 @@ interface MonkeyParsed {
   name: string
   items: number[]
   divisableBy: number
+  activity: number
   inspect: (item: number) => number
   targetAName?: string
   targetBName?: string
@@ -21,9 +22,49 @@ export default async function solution(input: string): Promise<Solution11> {
   console.log('----')
 
   const monkeys = parseMonkeys(input)
-  console.log(monkeys)
+  Array.from(Array(20)).forEach(() => {
+    playRound(monkeys)
+  })
+  const answer1 = getMonkeyBusiness(monkeys)
 
-  return { answer1: 0 }
+  return { answer1 }
+}
+
+function playRound(monkeys: Monkey[]): void {
+  monkeys.forEach(monkey => {
+    takeTurn(monkey)
+  })
+}
+
+function takeTurn(monkey: Monkey): void {
+  console.log(`--- Monkey ${monkey.name}`)
+
+  const { items, inspect, divisableBy, targetA, targetB } = monkey
+  items.forEach(item => {
+    const itemInspected = inspect(item)
+    monkey.activity += 1
+    const itemRelieved = Math.floor(itemInspected / 3)
+    const didPassTest = itemRelieved % divisableBy === 0
+    const target = didPassTest ? targetA : targetB
+    throwTo(target, itemRelieved)
+  })
+  monkey.items = []
+}
+
+function getMonkeyBusiness(monkeys: Monkey[]): number {
+  const byActivity = monkeys
+    .map(monkey => monkey.activity)
+    .sort((a, b) => b - a)
+    .slice(0, 2)
+  console.log(byActivity)
+
+  const [a, b] = byActivity
+  return a * b
+}
+
+function throwTo(monkey: Monkey, item: number): void {
+  console.log(`Throwing ${item} to ${monkey.name}`)
+  monkey.items.push(item)
 }
 
 function getByName<T>(name: string, items: T[]): T {
@@ -76,6 +117,7 @@ function parseMonkeys(input: string): any {
       name,
       items,
       divisableBy,
+      activity: 0,
       inspect,
       targetAName: capitalizeFirstChar(targetAName),
       targetBName: capitalizeFirstChar(targetBName),
