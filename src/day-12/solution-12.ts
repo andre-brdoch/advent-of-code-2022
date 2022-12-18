@@ -58,7 +58,7 @@ function getShortestPath(map: Map): Path {
     reachableNeighbors.forEach(next => {
       // make it more expensive to go down again:
       const newCost =
-        costSoFar[current.name] - (current.elevationNum - next.elevationNum) * 2
+        costSoFar[current.name] + (current.elevationNum - next.elevationNum) * 2
       if (!(next.name in costSoFar) || newCost < costSoFar[next.name]) {
         costSoFar[next.name] = newCost
         const priority = newCost
@@ -97,7 +97,7 @@ class PriorityQueue<T> {
 
   public get() {
     if (this.empty()) return null
-    const highestPrio = this.items.sort((a, b) => b.priority - a.priority)[0]
+    const highestPrio = this.items.sort((a, b) => a.priority - b.priority)[0]
     const i = this.items.indexOf(highestPrio)
     this.items.splice(i, 1)
     return highestPrio.item
