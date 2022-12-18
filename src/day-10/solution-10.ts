@@ -14,6 +14,10 @@ interface Cycle {
   signalStrength: number
   line: Line
 }
+type Pixel = '#' | '.'
+type Screen = Pixel[][]
+
+const GROUP_SIZE = 40
 
 export default async function solution(input: string): Promise<Solution10> {
   console.log(input)
@@ -27,13 +31,38 @@ export default async function solution(input: string): Promise<Solution10> {
   console.log('getInterestingCycles')
   console.log(interestingCycles)
   const answer1 = getSum(interestingCycles.map(cycle => cycle.signalStrength))
+  const screen = getScreen(cycles)
+  console.log(screen)
+  console.log(stringifyScreen(screen))
 
   return { answer1 }
 }
 
+function getScreen(cycles: Cycle[]): Screen {
+  const rows: Screen = []
+  // copy
+  const remainingCycles = cycles.slice()
+  while (remainingCycles.length) {
+    const row: Pixel[] = remainingCycles
+      .splice(0, GROUP_SIZE)
+      .map(({ number, x }) => {
+        const xPx = number % GROUP_SIZE
+        const overlaps = x - 1 <= xPx && xPx <= x + 1
+        const px = overlaps ? '#' : '.'
+        return px
+      })
+    rows.push(row)
+  }
+  return rows
+}
+
+function stringifyScreen(screen: Screen): string {
+  return screen.map(row => row.join('')).join('\n')
+}
+
 function getInterestingCycles(cycles: Cycle[]): Cycle[] {
   return cycles.reduce((result, cycle) => {
-    if (cycle.number === 20 || (cycle.number - 20) % 40 === 0) {
+    if (cycle.number === 20 || (cycle.number - 20) % GROUP_SIZE === 0) {
       return [...result, cycle]
     }
     return result
