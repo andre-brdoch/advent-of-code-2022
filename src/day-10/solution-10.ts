@@ -26,13 +26,11 @@ export default async function solution(input: string): Promise<Solution10> {
   const parsed = parseLines(input)
   const cycles = getCycles(parsed)
   const interestingCycles = getInterestingCycles(cycles)
-  console.log(parsed)
   console.log(cycles)
-  console.log('getInterestingCycles')
-  console.log(interestingCycles)
   const answer1 = getSum(interestingCycles.map(cycle => cycle.signalStrength))
   const screen = getScreen(cycles)
-  console.log(screen)
+
+  // see console output for answer 2:
   console.log(stringifyScreen(screen))
 
   return { answer1 }
@@ -45,9 +43,8 @@ function getScreen(cycles: Cycle[]): Screen {
   while (remainingCycles.length) {
     const row: Pixel[] = remainingCycles
       .splice(0, GROUP_SIZE)
-      .map(({ number, x }) => {
-        const xPx = number % GROUP_SIZE
-        const overlaps = x - 1 <= xPx && xPx <= x + 1
+      .map((cycle, i) => {
+        const overlaps = cycle.x - 1 <= i && i <= cycle.x + 1
         const px = overlaps ? '#' : '.'
         return px
       })
