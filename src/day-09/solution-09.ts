@@ -20,24 +20,21 @@ export default async function solution(input: string): Promise<Solution9> {
 
   const motions = parseHeadMotions(input)
 
-  // const answer1 = 1
   const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
-  // const answer2 = 0
 
   return { answer1, answer2 }
 }
 
 function getAnswer1(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 2)
-  console.log(stringifyAllRopeTurns(ropeMovement))
-
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
 
 function getAnswer2(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 10)
+  console.log(stringifyAllRopeTurns(ropeMovement))
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
@@ -123,10 +120,6 @@ function areAdjacent(a: Position, b: Position): boolean {
   return xAdjacent && yAdjacent
 }
 
-function stringifyPosition(position: Position): string {
-  return `${position.x}/${position.y}`
-}
-
 function clamp(number: number, min: number, max: number): number {
   return Math.min(Math.max(number, min), max)
 }
@@ -148,6 +141,7 @@ function stringifyAllRopeTurns(ropeMovement: RopeMovement): string {
 
 function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
   const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
+
   const flat = normalizedRopeMovement.flat()
   const width = getExtremeCoordinate(flat, 'x', 'max') + 1
   const height = getExtremeCoordinate(flat, 'y', 'max') + 1
@@ -177,6 +171,10 @@ function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
     }
   }
   return string
+}
+
+function stringifyPosition(position: Position): string {
+  return `${position.x}/${position.y}`
 }
 
 /** Adjust coordinate range to start from 0/0 */
