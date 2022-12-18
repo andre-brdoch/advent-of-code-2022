@@ -11,6 +11,7 @@ interface Position {
   x: number
   y: number
 }
+type Axis = keyof Position
 type RopeMovement = Position[][]
 
 export default async function solution(input: string): Promise<Solution9> {
@@ -29,6 +30,8 @@ export default async function solution(input: string): Promise<Solution9> {
 
 function getAnswer1(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 2)
+  console.log(stringifyAllRopeTurns(ropeMovement))
+
   const tailPositions = ropeMovement[ropeMovement.length - 1]
   return countUniquePositions(tailPositions)
 }
@@ -148,12 +151,75 @@ function addPositions(a: Position, b: Position): Position {
   }
 }
 
-function printRope(knots: Position[]): void {
-  knots.forEach((knot, i) => {
-    const name = i === 0 ? 'H' : i === knots.length - 1 ? 'T' : i + 2
-    const msg = `${name}: stringifyPosition(knot)`
-    console.log(msg)
+// === Visualize ===
+
+function stringifyAllRopeTurns(ropeMovement: RopeMovement): string {
+  return ropeMovement[0]
+    .map((_, i) => `TURN ${i}:${stringifyRopeAtTurn(ropeMovement, i)}`)
+    .join('\n\n\n')
+}
+
+function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
+  const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
+  const flat = normalizedRopeMovement.flat()
+  const width = getExtremeCoordinate(flat, 'x', 'max') + 1
+  const height = getExtremeCoordinate(flat, 'y', 'max') + 1
+  const currentKnotPositions = normalizedRopeMovement.map(
+    knotPositions => knotPositions[turn]
+  )
+
+  const grid = Array.from(Array(width)).map(() =>
+    Array.from(Array(height)).map(() => '.')
+  )
+
+  currentKnotPositions.forEach((position, i) => {
+    const { x, y } = position
+    const marker =
+      i === 0 ? 'H' : i === currentKnotPositions.length - 1 ? 'T' : String(i)
+    if (grid[x][y] === '.') {
+      grid[x][y] = marker
+    }
   })
+
+  let string = ''
+  const gridRotated = grid.map(row => row.slice().reverse())
+  for (let i = 0; i < height; i++) {
+    string += '\n'
+    for (let j = 0; j < width; j++) {
+      string += gridRotated[j][i] + ' '
+    }
+  }
+  return string
+}
+
+/** Adjust coordinate range to start from 0/0 */
+function normalizeRopeMovement(ropeMovement: RopeMovement): {
+  normalizedRopeMovement: RopeMovement
+  offsetX: number
+  offsetY: number
+} {
+  // include sand start coordinates:
+  const flatCoordinates = ropeMovement.flat()
+  const xMin = getExtremeCoordinate(flatCoordinates, 'x', 'min')
+  const yMin = getExtremeCoordinate(flatCoordinates, 'y', 'min')
+  const normalized = ropeMovement.map(path =>
+    path.map(({ x, y }) => ({ x: x - xMin, y: y - yMin }))
+  )
+  return {
+    normalizedRopeMovement: normalized,
+    offsetX: -xMin,
+    offsetY: -yMin,
+  }
+}
+
+function getExtremeCoordinate(
+  positions: Position[],
+  axis: Axis,
+  type: 'min' | 'max'
+): number {
+  return positions
+    .map(position => position[axis])
+    .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
 }
 
 // === Typescript helpers ===
