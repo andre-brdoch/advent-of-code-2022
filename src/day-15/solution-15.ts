@@ -1,6 +1,9 @@
+import { isTest } from '../utils/env-helpers.js'
+
 interface Solution15 {
   answer1: number
 }
+2000000
 interface Coordinate {
   x: number
   y: number
@@ -33,6 +36,13 @@ export default async function solution(input: string): Promise<Solution15> {
 
   cave.identifyGuaranteedFreeCells()
   console.log(cave.toString())
+
+  // TODO: need to dynamically extend grid when sensors search
+  const targetY = isTest() ? 10 : 2000000
+  const result = cave.grid
+    .map(row => row[targetY])
+    .filter(cell => cell.type === 'empty').length
+  console.log(result)
 
   return { answer1: 0 }
 }
