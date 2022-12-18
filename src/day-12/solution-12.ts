@@ -27,7 +27,11 @@ export default async function solution(input: string): Promise<Solution12> {
   const map = parseMap(input)
   console.log(map)
 
-  const path = await getShortestPath(map, true)
+  const start = map.flat().find(square => square.start)
+  const end = map.flat().find(square => square.end)
+  if (!start) throw new Error('These mountains are not very accessible.')
+  if (!end) throw new Error('No end in sight!')
+  const path = await findShortestPathBetween(start, end, map)
   // console.log(path)
   const answer1 = path.length - 1
 
@@ -37,7 +41,52 @@ export default async function solution(input: string): Promise<Solution12> {
   return { answer1 }
 }
 
-async function getShortestPath(map: Map, debug = false): Promise<Path> {
+function findShortestPathBetween(start: Square, end: Square, map: Map): Path {
+  // create map tracking "cheapest" fields to come from,
+  // using A* algorithm:
+  const frontier = new PriorityQueue<Square>()
+  frontier.add(start, 0)
+  const cameFrom: CameFromMap = { [start.name]: null }
+
+  while (!frontier.empty()) {
+    const current = frontier.get()
+    if (current === null) throw new Error('Queue empty, what to do?')
+    if (current === end) {
+      break
+    }
+
+    const reachableNeighbors = getSurroundingSquares(current, map).filter(
+      neighbor => isReachable(neighbor, current)
+    )
+    reachableNeighbors.forEach(next => {
+      if (!(next.name in cameFrom)) {
+        const priority = getManhattanDistance(end, next, map)
+        frontier.add(next, priority)
+        cameFrom[next.name] = current
+      }
+    })
+  }
+
+  // find shortest path
+  const path: Path = [end]
+  let current = end
+  while (!current.start) {
+    const cameFromSquare = cameFrom[current.name]
+    if (cameFromSquare === null) throw new Error('Square not found')
+    path.push(cameFromSquare)
+    current = cameFromSquare
+  }
+
+  return path
+}
+
+function getManhattanDistance(a: Square, b: Square, map: Map): number {
+  const { x: aX, y: aY } = getCoordinates(a, map)
+  const { x: bX, y: bY } = getCoordinates(b, map)
+  return Math.abs(aX - bX) + Math.abs(aY - bY)
+}
+
+async function dijkstra(map: Map, debug = false): Promise<Path> {
   const start = map.flat().find(square => square.start)
   const end = map.flat().find(square => square.end)
   if (!start) throw new Error('These mountains are not very accessible.')
@@ -68,7 +117,7 @@ async function getShortestPath(map: Map, debug = false): Promise<Path> {
     const reachableNeighbors = getSurroundingSquares(current, map).filter(
       neighbor => isReachable(neighbor, current)
     )
-    reachableNeighbors.forEach(async next => {
+    reachableNeighbors.forEach(next => {
       // make it more expensive to go down again:
       const newCost =
         costSoFar[current.name] + (current.elevationNum - next.elevationNum) * 2
