@@ -70,6 +70,10 @@ class Cave {
   }
 }
 
+function getManhattanDistance(a: Coordinate, b: Coordinate): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+}
+
 /** Get offset for normalization */
 function getNormalizeOffset(coordinates: Coordinate[]): {
   offsetX: number
