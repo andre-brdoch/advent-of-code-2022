@@ -1,5 +1,6 @@
 interface Solution12 {
   answer1: number
+  answer2: number
 }
 interface Square {
   elevation: string
@@ -26,19 +27,38 @@ const ASCII_OFFSET_A = 96
 export default async function solution(input: string): Promise<Solution12> {
   const map = parseMap(input)
   const answer1 = getAnswer1(map)
-  return { answer1 }
+  const answer2 = getAnswer2(map)
+  return { answer1, answer2 }
 }
 
 function getAnswer1(map: Map): number {
-  const start = map.flat().find(square => square.start)
-  const end = map.flat().find(square => square.end)
+  const flatMap = map.flat()
+  const start = flatMap.find(square => square.start)
+  const end = flatMap.find(square => square.end)
   if (!start) throw new Error('These mountains are not very accessible.')
   if (!end) throw new Error('No end in sight!')
   const path = findShortestPath(start, end, map)
+  if (!path) throw new Error('No path found')
   return path.length - 1
 }
 
-function findShortestPath(start: Square, end: Square, map: Map): Path {
+function getAnswer2(map: Map): number {
+  const flatMap = map.flat()
+  const end = flatMap.find(square => square.end)
+  if (!end) throw new Error('No end in sight!')
+
+  const possibleStarts = flatMap.filter(square => square.elevation === 'a')
+  const possiblePaths = possibleStarts
+    // this takes a while :)
+    .map(start => findShortestPath(start, end, map))
+    .filter(path => path !== null)
+  const shortest = (possiblePaths as Path[]).sort(
+    (a, b) => a.length - b.length
+  )[0]
+  return shortest.length - 1
+}
+
+function findShortestPath(start: Square, end: Square, map: Map): Path | null {
   // create map tracking "cheapest" fields to come from,
   // using Dijkstras algorithm:
 
@@ -73,7 +93,10 @@ function findShortestPath(start: Square, end: Square, map: Map): Path {
   let current = start
   while (current !== end) {
     const cameFromSquare = cameFrom[current.name]
-    if (cameFromSquare === null) throw new Error('Square not found')
+    if (cameFromSquare == null) {
+      // no path found
+      return null
+    }
     path.push(cameFromSquare)
     current = cameFromSquare
   }
