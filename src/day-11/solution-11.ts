@@ -78,8 +78,6 @@ function getMonkeyBusiness(monkeys: Monkey[]): number {
   const byActivity = monkeys
     .map(monkey => monkey.activity)
     .sort((a, b) => b - a)
-  console.log(byActivity)
-
   const [a, b] = byActivity
   return a * b
 }
@@ -148,6 +146,5 @@ function parseMonkeys(input: string): Monkey[] {
     monkey.targetA = getByName(monkey.targetAName ?? '', monkeys)
     monkey.targetB = getByName(monkey.targetBName ?? '', monkeys)
   })
-  // @ts-ignore
-  return monkeys
+  return monkeys as Monkey[]
 }
