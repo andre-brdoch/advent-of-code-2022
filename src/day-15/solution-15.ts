@@ -16,6 +16,7 @@ interface Beacon extends Coordinate {
 interface Sensor extends Coordinate {
   closestBeacon: Beacon
   range: number
+  outlineMap?: SensorOutlineMap
   type: 'sensor'
 }
 interface UnknownCell extends Coordinate {
@@ -29,6 +30,12 @@ type CaveGrid = Cell[][]
 interface Boundaries {
   min: number
   max: number
+}
+interface SensorOutlineMap {
+  [key: string]: {
+    fromX: number
+    toX: number
+  }
 }
 
 const TARGET_Y = isTest() ? 10 : 2000000
@@ -153,56 +160,62 @@ class Cave {
     throw new Error('There is no hidden beacon.')
   }
 
-  public ruleOutOccupiedCells = () => {
-    const allReachableCoordinates = [
-      // remove duplicates
-      ...new Set(
-        this.sensors
-          .flatMap(this.getAllReachableCoordinates)
-          // stringify to make unique in set
-          .map(strinfifyCoordinate)
-      ),
-    ]
-      // un-stringify
-      .map(parseCoordinate)
+  // public ruleOutOccupiedCells = () => {
+  //   const allReachableCoordinates = [
+  //     // remove duplicates
+  //     ...new Set(
+  //       this.sensors
+  //         .flatMap(this.getSensorRangeOutline)
+  //         // stringify to make unique in set
+  //         .map(strinfifyCoordinate)
+  //     ),
+  //   ]
+  //     // un-stringify
+  //     .map(parseCoordinate)
 
-    this.emptyCells = allReachableCoordinates
-      // not already a beacon or sensor
-      .filter(
-        ({ x, y }) =>
-          !this.getAllKnownFields().some(cell => cell.x === x && cell.y === y)
-      )
-      .map(coordinates => ({ ...coordinates, type: 'empty' }))
+  //   this.emptyCells = allReachableCoordinates
+  //     // not already a beacon or sensor
+  //     .filter(
+  //       ({ x, y }) =>
+  //         !this.getAllKnownFields().some(cell => cell.x === x && cell.y === y)
+  //     )
+  //     .map(coordinates => ({ ...coordinates, type: 'empty' }))
+  // }
+
+  public addRangeOutlinesToSensors(): void {
+    for (let i = 0; i < this.sensors.length; i++) {
+      const sensor = this.sensors[i]
+      const outlineMap = this.getSensorRangeOutline(sensor)
+      sensor.outlineMap = outlineMap
+      console.log('done for sensor', i)
+    }
   }
 
-  public getAllReachableCoordinates = (sensor: Sensor): Coordinate[] => {
+  public getSensorRangeOutline = (sensor: Sensor): SensorOutlineMap => {
+    // Find outline of range, and save it in a map by y value.
+    // This will allow faster lookup for finding the answers.
+
     const { closestBeacon: beacon, x, y } = sensor
     const distance = getManhattanDistance(sensor, beacon)
-    const result: Coordinate[] = []
-
+    const outlineMap: SensorOutlineMap = {}
     let radius = 0
-    Array.from(Array(distance * 2 + 1)).forEach((_, i) => {
-      const coordinates = [radius === 0 ? x : x - radius, x + radius].map(
-        x => ({
-          x,
-          y: y - distance + i,
-        })
-      )
-      result.push(...coordinates)
 
-      // go from distance to 0 and back to distance:
+    for (let i = 0; i < distance * 2 + 1; i++) {
+      outlineMap[y - distance + i] = { fromX: x - radius, toX: x + radius }
+
+      // go from 0 to distance and back to 0:
       if (i < distance) radius += 1
       else radius -= 1
-    })
+    }
 
-    return result
+    return outlineMap
   }
 
   public getAllKnownFields() {
     return [...this.sensors, ...this.beacons, ...this.emptyCells]
   }
 
-  public toString(withBoundaries = false): string {
+  public stringify(withBoundaries = false): string {
     const { yStart, yEnd } = this.getRanges(withBoundaries)
 
     let string = ''
@@ -220,6 +233,40 @@ class Cave {
               : type === 'empty'
                 ? '#'
                 : '.'
+        string += marker + ' '
+      }
+    }
+    return string
+  }
+
+  public stringifyEdges(withBoundaries = false): string {
+    const { yMin, yMax, xMin, xMax } = this
+    // const { yStart, yEnd } = this.getRanges(withBoundaries)
+
+    let string = ''
+
+    const combinedOutlineMap = this.sensors
+      .map(sensor => sensor.outlineMap)
+      .filter(map => map !== undefined)
+      .reduce((result, map) => {
+        Object.keys(map as SensorOutlineMap).forEach(y => {
+          const { fromX, toX } = (map as SensorOutlineMap)[y]
+          if (!result[y]) {
+            result[y] = [fromX, toX]
+          }
+          else {
+            result[y].push(fromX, toX)
+          }
+        })
+        return result
+      }, {} as { [key: string]: number[] })
+
+    for (let y = 0; y < yMax - yMin; y++) {
+      const xVals = combinedOutlineMap[y + yMin]
+
+      string += '\n'
+      for (let x = 0; x < xMax - xMin; x++) {
+        const marker = xVals?.includes(x + xMin) ? '#' : '.'
         string += marker + ' '
       }
     }
