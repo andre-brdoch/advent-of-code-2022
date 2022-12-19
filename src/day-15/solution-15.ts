@@ -60,14 +60,11 @@ class Cave {
         this.sensors
           .flatMap(this.getAllReachableCoordinates)
           // stringify to make unique in set
-          .map(({ x, y }) => `${x}/${y}`)
+          .map(strinfifyCoordinate)
       ),
     ]
       // un-stringify
-      .map(stringifiedCoordinate => {
-        const [x, y] = stringifiedCoordinate.split('/')
-        return { x: Number(x), y: Number(y) }
-      })
+      .map(parseCoordinate)
 
     this.emptyCells = allReachableCoordinates
       // not already a beacon or sensor
@@ -181,6 +178,16 @@ function getExtremeCoordinate(
   return coordinates
     .map(c => c[axis])
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
+}
+
+function strinfifyCoordinate(coordinate: Coordinate): string {
+  const { x, y } = coordinate
+  return `${x}/${y}`
+}
+
+function parseCoordinate(string: string): Coordinate {
+  const [x, y] = string.split('/')
+  return { x: Number(x), y: Number(y) }
 }
 
 function parseSensors(input: string): Sensor[] {
