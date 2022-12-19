@@ -37,7 +37,7 @@ export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  console.log(cave.toString(BOUNDARIES))
+  console.log(cave.toString())
 
   // const s = sensors[0]
   // console.log(s)
@@ -226,9 +226,9 @@ class Cave {
       return [
         ...result,
         { x: x - cell.range, y },
-        { x: x + cell.range, y },
+        { x: x + cell.range + 1, y },
         { x, y: y - cell.range },
-        { x, y: y + cell.range },
+        { x, y: y + cell.range + 1 },
       ]
     }, [] as Coordinate[])
 
