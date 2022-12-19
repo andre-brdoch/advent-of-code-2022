@@ -25,14 +25,19 @@ interface EmptyCell extends Coordinate {
 }
 type Cell = Sensor | Beacon | EmptyCell | UnknownCell
 type CaveGrid = Cell[][]
+interface Boundaries {
+  min: number
+  max: number
+}
 
 const TARGET_Y = isTest() ? 10 : 2000000
+const BOUNDARIES = isTest() ? { min: 0, max: 20 } : { min: 0, max: 4000000 }
 
 export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  console.log(cave.toString())
+  console.log(cave.toString(BOUNDARIES))
 
   // const s = sensors[0]
   // console.log(s)
@@ -179,13 +184,23 @@ class Cave {
     return [...this.sensors, ...this.beacons, ...this.emptyCells]
   }
 
-  public toString(): string {
+  public toString(boundaries: Boundaries | undefined = undefined): string {
+    const { min, max } = boundaries ?? {}
+    const yStart = Math.max(this.yMin, min ?? this.yMin)
+    const yEnd = Math.min(this.yMax, max ?? this.yMax)
+    const xStart = Math.max(this.xMin, min ?? this.xMin)
+    const xEnd = Math.min(this.xMax, max ?? this.xMax)
+
     let string = ''
-    for (let y = this.yMin; y < this.yMax; y++) {
+
+    for (let y = yStart; y < yEnd; y++) {
       const { allCells } = this.analyzeRow(y)
+      const withinBoundaries = allCells.filter(
+        ({ x }) => xStart <= x && x <= xEnd
+      )
       string += '\n'
-      for (let j = 0; j < allCells.length; j++) {
-        const type = allCells[j].type
+      for (let j = 0; j < withinBoundaries.length; j++) {
+        const type = withinBoundaries[j].type
         const marker =
           type === 'sensor'
             ? 'S'
