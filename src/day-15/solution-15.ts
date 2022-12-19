@@ -48,17 +48,26 @@ export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  // console.log(cave.toString(true))
+  // console.log(cave.getSensorRangeOutline(cave.sensors[6]))
+  cave.addRangeOutlinesToSensors()
+  // console.log(cave.sensors);
 
-  const { emptyCells } = cave.analyzeRow(TARGET_Y)
-  const answer1 = emptyCells.length
+  // cave.ruleOutOccupiedCells()
+  // console.log(cave.emptyCells.length);
 
-  const hiddenBeacon = cave.findHiddenBeacon()
-  console.log(hiddenBeacon)
+  console.log(cave.stringifyGrid('outlines', false))
 
-  const answer2 = getTuningFrequency(hiddenBeacon)
+  // console.log(cave.stringify(false))
 
-  return { answer1, answer2 }
+  // const { emptyCells } = cave.analyzeRow(TARGET_Y)
+  // const answer1 = emptyCells.length
+
+  // const hiddenBeacon = cave.findHiddenBeacon()
+  // console.log(hiddenBeacon)
+
+  // const answer2 = getTuningFrequency(hiddenBeacon)
+
+  return { answer1: 0, answer2: 0 }
 }
 
 class Cave {
@@ -91,6 +100,34 @@ class Cave {
     this.xMaxBoundaries = Math.min(yMax, max)
     this.yMinBoundaries = Math.max(xMin, min)
     this.yMaxBoundaries = Math.min(xMax, max)
+  }
+
+  public addRangeOutlinesToSensors(): void {
+    for (let i = 0; i < this.sensors.length; i++) {
+      const sensor = this.sensors[i]
+      const outlineMap = this.getSensorRangeOutline(sensor)
+      sensor.outlineMap = outlineMap
+    }
+  }
+
+  public getSensorRangeOutline = (sensor: Sensor): SensorOutlineMap => {
+    // Find outline of range, and save it in a map by y value.
+    // This will allow faster lookup for finding the answers.
+
+    const { closestBeacon: beacon, x, y } = sensor
+    const distance = getManhattanDistance(sensor, beacon)
+    const outlineMap: SensorOutlineMap = {}
+    let radius = 0
+
+    for (let i = 0; i < distance * 2 + 1; i++) {
+      outlineMap[y - distance + i] = { fromX: x - radius, toX: x + radius }
+
+      // go from 0 to distance and back to 0:
+      if (i < distance) radius += 1
+      else radius -= 1
+    }
+
+    return outlineMap
   }
 
   public analyzeRow(
@@ -182,38 +219,73 @@ class Cave {
   //     .map(coordinates => ({ ...coordinates, type: 'empty' }))
   // }
 
-  public addRangeOutlinesToSensors(): void {
-    for (let i = 0; i < this.sensors.length; i++) {
-      const sensor = this.sensors[i]
-      const outlineMap = this.getSensorRangeOutline(sensor)
-      sensor.outlineMap = outlineMap
-    }
-  }
 
-  public getSensorRangeOutline = (sensor: Sensor): SensorOutlineMap => {
-    // Find outline of range, and save it in a map by y value.
-    // This will allow faster lookup for finding the answers.
-
-    const { closestBeacon: beacon, x, y } = sensor
-    const distance = getManhattanDistance(sensor, beacon)
-    const outlineMap: SensorOutlineMap = {}
-    let radius = 0
-
-    for (let i = 0; i < distance * 2 + 1; i++) {
-      outlineMap[y - distance + i] = { fromX: x - radius, toX: x + radius }
-
-      // go from 0 to distance and back to 0:
-      if (i < distance) radius += 1
-      else radius -= 1
-    }
-
-    return outlineMap
-  }
 
   public getAllKnownFields() {
     return [...this.sensors, ...this.beacons, ...this.emptyCells]
   }
 
+  
+
+  private getRanges(withBoundaries = false) {
+    return {
+      yStart: withBoundaries ? this.yMinBoundaries : this.yMin,
+      yEnd: withBoundaries ? this.yMaxBoundaries : this.yMax,
+      xStart: withBoundaries ? this.xMinBoundaries : this.xMin,
+      xEnd: withBoundaries ? this.xMaxBoundaries : this.xMax,
+    }
+  }
+
+  private getExtremeCoordinates(): {
+    xMin: number
+    xMax: number
+    yMin: number
+    yMax: number
+    } {
+    const rangeEdges: Coordinate[] = this.sensors.reduce((result, cell) => {
+      const { x, y } = cell
+      return [
+        ...result,
+        { x: x - cell.range, y },
+        { x: x + cell.range + 1, y },
+        { x, y: y - cell.range },
+        { x, y: y + cell.range + 1 },
+      ]
+    }, [] as Coordinate[])
+
+    const xMin = getExtremeCoordinate(rangeEdges, 'x', 'min')
+    const xMax = getExtremeCoordinate(rangeEdges, 'x', 'max')
+    const yMin = getExtremeCoordinate(rangeEdges, 'y', 'min')
+    const yMax = getExtremeCoordinate(rangeEdges, 'y', 'max')
+    return { xMin, xMax, yMin, yMax }
+  }
+
+  private getNormalizedGrid(): CaveGrid {
+    const combined = [...this.sensors, ...this.beacons, ...this.emptyCells]
+    const { offsetX, offsetY } = getNormalizeOffset(combined)
+    const normalized = combined.map(cell =>
+      normalizeCoordinate(cell, offsetX, offsetY)
+    )
+    const width = getExtremeCoordinate(normalized, 'x', 'max') + 1
+    const height = getExtremeCoordinate(normalized, 'y', 'max') + 1
+    const grid: CaveGrid = Array.from(Array(width)).map((_, x) =>
+      Array.from(Array(height)).map((_, y) => ({
+        type: 'unknown',
+        x,
+        y,
+      }))
+    )
+    normalized.forEach(cell => {
+      grid[cell.x][cell.y] = cell
+    })
+    return grid
+  }
+
+  // === Visualizations === /
+
+  /**
+   * Prints grid. Only meant to be used for relatively small coordinate systems.
+   */
   public stringifyGrid(
     mode: 'full' | 'outlines' = 'full',
     withBoundaries = false
@@ -308,60 +380,6 @@ class Cave {
       }
       grid.push(row)
     }
-    return grid
-  }
-
-  private getRanges(withBoundaries = false) {
-    return {
-      yStart: withBoundaries ? this.yMinBoundaries : this.yMin,
-      yEnd: withBoundaries ? this.yMaxBoundaries : this.yMax,
-      xStart: withBoundaries ? this.xMinBoundaries : this.xMin,
-      xEnd: withBoundaries ? this.xMaxBoundaries : this.xMax,
-    }
-  }
-
-  private getExtremeCoordinates(): {
-    xMin: number
-    xMax: number
-    yMin: number
-    yMax: number
-    } {
-    const rangeEdges: Coordinate[] = this.sensors.reduce((result, cell) => {
-      const { x, y } = cell
-      return [
-        ...result,
-        { x: x - cell.range, y },
-        { x: x + cell.range + 1, y },
-        { x, y: y - cell.range },
-        { x, y: y + cell.range + 1 },
-      ]
-    }, [] as Coordinate[])
-
-    const xMin = getExtremeCoordinate(rangeEdges, 'x', 'min')
-    const xMax = getExtremeCoordinate(rangeEdges, 'x', 'max')
-    const yMin = getExtremeCoordinate(rangeEdges, 'y', 'min')
-    const yMax = getExtremeCoordinate(rangeEdges, 'y', 'max')
-    return { xMin, xMax, yMin, yMax }
-  }
-
-  private getNormalizedGrid(): CaveGrid {
-    const combined = [...this.sensors, ...this.beacons, ...this.emptyCells]
-    const { offsetX, offsetY } = getNormalizeOffset(combined)
-    const normalized = combined.map(cell =>
-      normalizeCoordinate(cell, offsetX, offsetY)
-    )
-    const width = getExtremeCoordinate(normalized, 'x', 'max') + 1
-    const height = getExtremeCoordinate(normalized, 'y', 'max') + 1
-    const grid: CaveGrid = Array.from(Array(width)).map((_, x) =>
-      Array.from(Array(height)).map((_, y) => ({
-        type: 'unknown',
-        x,
-        y,
-      }))
-    )
-    normalized.forEach(cell => {
-      grid[cell.x][cell.y] = cell
-    })
     return grid
   }
 }
@@ -478,3 +496,4 @@ function range(from: number, to: number): number[] {
   }
   return result
 }
+
