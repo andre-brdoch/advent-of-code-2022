@@ -3,7 +3,6 @@ import { isTest } from '../utils/env-helpers.js'
 interface Solution15 {
   answer1: number
 }
-2000000
 interface Coordinate {
   x: number
   y: number
@@ -27,9 +26,13 @@ interface EmptyCell extends Coordinate {
 type Cell = Sensor | Beacon | EmptyCell | UnknownCell
 type CaveGrid = Cell[][]
 
+const TARGET_Y = isTest() ? 10 : 2000000
+
 export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
+
+  console.log(cave.toString())
 
   // const s = sensors[0]
   // console.log(s)
@@ -40,8 +43,7 @@ export default async function solution(input: string): Promise<Solution15> {
   // cave.ruleOutOccupiedCells()
 
   // console.log(cave.toString())
-  const targetY = isTest() ? 10 : 2000000
-  const { emptyCells } = cave.analyzeRow(targetY)
+  const { emptyCells } = cave.analyzeRow(TARGET_Y)
   // console.log('empty:')
   // console.log(emptyCells)
   // console.log('unknown:')
@@ -81,29 +83,50 @@ class Cave {
 
   public analyzeRow(y: number): {
     emptyCells: EmptyCell[]
+    sensorCells: Sensor[]
+    beaconCells: Beacon[]
     unknownCells: UnknownCell[]
+    allCells: Cell[]
   } {
     const emptyCells: EmptyCell[] = []
+    const sensorCells: Sensor[] = []
+    const beaconCells: Beacon[] = []
     const unknownCells: UnknownCell[] = []
+    const allCells: Cell[] = []
+
     for (let x = this.xMin; x < this.xMax; x++) {
       let target: Cell = { x, y, type: 'unknown' }
       const isInReach = this.sensors.some(
         sensor => getManhattanDistance(sensor, target) <= sensor.range
       )
-      const isEmpty =
-        isInReach &&
-        this.getAllKnownFields().every(
-          cell => strinfifyCoordinate(cell) !== strinfifyCoordinate(target)
-        )
+      const occupiedBy = this.getAllKnownFields().find(
+        cell => strinfifyCoordinate(cell) === strinfifyCoordinate(target)
+      )
+      const isEmpty = isInReach && occupiedBy === undefined
+
       if (isEmpty) {
         target = { ...target, type: 'empty' }
         emptyCells.push(target)
       }
-      else if (!isInReach) unknownCells.push(target)
+      else if (occupiedBy != null && occupiedBy.type === 'sensor') {
+        target = { ...occupiedBy }
+        sensorCells.push(target)
+      }
+      else if (occupiedBy != null && occupiedBy.type === 'beacon') {
+        target = { ...occupiedBy }
+        beaconCells.push(target)
+      }
+      else {
+        unknownCells.push(target)
+      }
+      allCells.push(target)
     }
     return {
       emptyCells,
+      sensorCells,
+      beaconCells,
       unknownCells,
+      allCells,
     }
   }
 
@@ -157,12 +180,12 @@ class Cave {
   }
 
   public toString(): string {
-    const grid = this.getNormalizedGrid()
     let string = ''
-    for (let i = 0; i < grid[0].length; i++) {
+    for (let y = this.yMin; y < this.yMax; y++) {
+      const { allCells } = this.analyzeRow(y)
       string += '\n'
-      for (let j = 0; j < grid.length; j++) {
-        const type = grid[j][i].type
+      for (let j = 0; j < allCells.length; j++) {
+        const type = allCells[j].type
         const marker =
           type === 'sensor'
             ? 'S'
