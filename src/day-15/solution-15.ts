@@ -2,6 +2,7 @@ import { isTest } from '../utils/env-helpers.js'
 
 interface Solution15 {
   answer1: number
+  answer2: number
 }
 interface Coordinate {
   x: number
@@ -34,38 +35,23 @@ const TARGET_Y = isTest() ? 10 : 2000000
 const BOUNDARIES: Boundaries = isTest()
   ? { min: 0, max: 20 }
   : { min: 0, max: 4000000 }
+const TUNING_FREQUENCY_MODIFIER = 4000000
 
 export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  console.log(cave.toString(true))
+  // console.log(cave.toString(true))
 
-  // const s = sensors[0]
-  // console.log(s)
-  // console.log(cave.getAllReachableCoordinates(s))
-
-  // console.log(cave.toString())
-
-  // cave.ruleOutOccupiedCells()
-
-  // console.log(cave.toString())
   const { emptyCells } = cave.analyzeRow(TARGET_Y)
-  // console.log('empty:')
-  // console.log(emptyCells)
-  // console.log('unknown:')
-  // console.log(unknownCells)
   const answer1 = emptyCells.length
 
-  // const answer1 = cave
-  //   .getAllKnownFields()
-  //   .filter(({ y, type }) => y === targetY && type === 'empty').length
-  // console.log('row:')
-  // const row = cave.getAllKnownFields().filter(({ y }) => y === targetY)
-  // console.log(row)
-  // const count = row.reduce()
+  const hiddenBeacon = cave.findHiddenBeacon()
+  console.log(hiddenBeacon)
 
-  return { answer1 }
+  const answer2 = getTuningFrequency(hiddenBeacon)
+
+  return { answer1, answer2 }
 }
 
 class Cave {
@@ -100,7 +86,10 @@ class Cave {
     this.yMaxBoundaries = Math.min(xMax, max)
   }
 
-  public analyzeRow(y: number): {
+  public analyzeRow(
+    y: number,
+    withBoundaries = false
+  ): {
     emptyCells: EmptyCell[]
     sensorCells: Sensor[]
     beaconCells: Beacon[]
@@ -113,7 +102,9 @@ class Cave {
     const unknownCells: UnknownCell[] = []
     const allCells: Cell[] = []
 
-    for (let x = this.xMin; x < this.xMax; x++) {
+    const { xStart, xEnd } = this.getRanges(withBoundaries)
+
+    for (let x = xStart; x < xEnd; x++) {
       let target: Cell = { x, y, type: 'unknown' }
       const isInReach = this.sensors.some(
         sensor => getManhattanDistance(sensor, target) <= sensor.range
@@ -147,6 +138,19 @@ class Cave {
       unknownCells,
       allCells,
     }
+  }
+
+  public findHiddenBeacon(): Beacon {
+    const { yStart, yEnd } = this.getRanges(true)
+
+    for (let y = yStart; y < yEnd; y++) {
+      const { unknownCells } = this.analyzeRow(y, true)
+      if (unknownCells.length === 1) {
+        const found = unknownCells[0]
+        return { ...found, type: 'beacon' }
+      }
+    }
+    throw new Error('There is no hidden beacon.')
   }
 
   public ruleOutOccupiedCells = () => {
@@ -199,21 +203,15 @@ class Cave {
   }
 
   public toString(withBoundaries = false): string {
-    const yStart = withBoundaries ? this.yMinBoundaries : this.yMin
-    const yEnd = withBoundaries ? this.yMaxBoundaries : this.yMax
-    const xStart = withBoundaries ? this.xMinBoundaries : this.xMin
-    const xEnd = withBoundaries ? this.xMaxBoundaries : this.xMax
+    const { yStart, yEnd } = this.getRanges(withBoundaries)
 
     let string = ''
 
     for (let y = yStart; y < yEnd; y++) {
-      const { allCells } = this.analyzeRow(y)
-      const withinBoundaries = allCells.filter(
-        ({ x }) => xStart <= x && x <= xEnd
-      )
+      const { allCells } = this.analyzeRow(y, withBoundaries)
       string += '\n'
-      for (let j = 0; j < withinBoundaries.length; j++) {
-        const type = withinBoundaries[j].type
+      for (let j = 0; j < allCells.length; j++) {
+        const type = allCells[j].type
         const marker =
           type === 'sensor'
             ? 'S'
@@ -226,6 +224,15 @@ class Cave {
       }
     }
     return string
+  }
+
+  private getRanges(withBoundaries = false) {
+    return {
+      yStart: withBoundaries ? this.yMinBoundaries : this.yMin,
+      yEnd: withBoundaries ? this.yMaxBoundaries : this.yMax,
+      xStart: withBoundaries ? this.xMinBoundaries : this.xMin,
+      xEnd: withBoundaries ? this.xMaxBoundaries : this.xMax,
+    }
   }
 
   private getExtremeCoordinates(): {
@@ -276,6 +283,11 @@ class Cave {
 
 function getManhattanDistance(a: Coordinate, b: Coordinate): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+}
+
+function getTuningFrequency(coordinate: Coordinate): number {
+  const { x, y } = coordinate
+  return x * TUNING_FREQUENCY_MODIFIER + y
 }
 
 /** Get offset for normalization */
