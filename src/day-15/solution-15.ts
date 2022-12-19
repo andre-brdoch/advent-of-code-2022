@@ -31,13 +31,15 @@ interface Boundaries {
 }
 
 const TARGET_Y = isTest() ? 10 : 2000000
-const BOUNDARIES = isTest() ? { min: 0, max: 20 } : { min: 0, max: 4000000 }
+const BOUNDARIES: Boundaries = isTest()
+  ? { min: 0, max: 20 }
+  : { min: 0, max: 4000000 }
 
 export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  console.log(cave.toString())
+  console.log(cave.toString(true))
 
   // const s = sensors[0]
   // console.log(s)
@@ -74,16 +76,28 @@ class Cave {
   public xMax: number
   public yMin: number
   public yMax: number
+  public xMinBoundaries: number
+  public xMaxBoundaries: number
+  public yMinBoundaries: number
+  public yMaxBoundaries: number
 
   constructor(sensors: Sensor[]) {
     this.sensors = sensors
     this.beacons = [...new Set(sensors.map(sensor => sensor.closestBeacon))]
+    // TODO: remove
     this.emptyCells = []
+
     const { xMin, xMax, yMin, yMax } = this.getExtremeCoordinates()
     this.xMin = xMin
     this.xMax = xMax
     this.yMin = yMin
     this.yMax = yMax
+
+    const { min, max } = BOUNDARIES
+    this.xMinBoundaries = Math.max(yMin, min)
+    this.xMaxBoundaries = Math.min(yMax, max)
+    this.yMinBoundaries = Math.max(xMin, min)
+    this.yMaxBoundaries = Math.min(xMax, max)
   }
 
   public analyzeRow(y: number): {
@@ -184,12 +198,11 @@ class Cave {
     return [...this.sensors, ...this.beacons, ...this.emptyCells]
   }
 
-  public toString(boundaries: Boundaries | undefined = undefined): string {
-    const { min, max } = boundaries ?? {}
-    const yStart = Math.max(this.yMin, min ?? this.yMin)
-    const yEnd = Math.min(this.yMax, max ?? this.yMax)
-    const xStart = Math.max(this.xMin, min ?? this.xMin)
-    const xEnd = Math.min(this.xMax, max ?? this.xMax)
+  public toString(withBoundaries = false): string {
+    const yStart = withBoundaries ? this.yMinBoundaries : this.yMin
+    const yEnd = withBoundaries ? this.yMaxBoundaries : this.yMax
+    const xStart = withBoundaries ? this.xMinBoundaries : this.xMin
+    const xEnd = withBoundaries ? this.xMaxBoundaries : this.xMax
 
     let string = ''
 
