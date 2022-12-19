@@ -31,60 +31,63 @@ export default async function solution(input: string): Promise<Solution15> {
 
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
-  console.log(sensors)
+
   console.log(cave.toString())
 
-  cave.identifyGuaranteedFreeCells()
+  cave.ruleOutOccupiedCells()
   console.log(cave.toString())
 
   // TODO: need to dynamically extend grid when sensors search
-  const targetY = isTest() ? 10 : 2000000
-  const result = cave.grid
-    .map(row => row[targetY])
-    .filter(cell => cell.type === 'empty').length
-  console.log(result)
+  // const targetY = isTest() ? 10 : 2000000
+  // const result = cave.grid
+  //   .map(row => row[targetY])
+  //   .filter(cell => cell.type === 'empty').length
+  // console.log(result)
 
   return { answer1: 0 }
 }
 
 class Cave {
-  public grid
   private sensors: Sensor[]
   private beacons: Beacon[]
+  private emptyCells: EmptyCell[]
 
   constructor(sensors: Sensor[]) {
-    const beacons = sensors.map(sensor => sensor.closestBeacon)
-    const { offsetX, offsetY } = getNormalizeOffset([...sensors, ...beacons])
-    this.sensors = sensors.map(sensor =>
-      normalizeCoordinate(sensor, offsetX, offsetY)
-    )
-    this.beacons = beacons.map(sensor =>
-      normalizeCoordinate(sensor, offsetX, offsetY)
-    )
-    this.grid = this.getInitialCave()
+    this.sensors = sensors
+    this.beacons = sensors.map(sensor => sensor.closestBeacon)
+    this.emptyCells = []
   }
 
-  public identifyGuaranteedFreeCells = () => {
-    const forSureEmptyCells = [
-      ...new Set(this.sensors.flatMap(this.getAllReachableCells)),
-    ].filter(cell => cell && cell.type === 'unknown')
+  public ruleOutOccupiedCells = () => {
+    const allReachableCoordinates = [
+      // remove duplicates
+      ...new Set(
+        this.sensors
+          .flatMap(this.getAllReachableCoordinates)
+          // stringify to make unique in set
+          .map(({ x, y }) => `${x}/${y}`)
+      ),
+    ]
+      // un-stringify
+      .map(stringifiedCoordinate => {
+        const [x, y] = stringifiedCoordinate.split('/')
+        return { x: Number(x), y: Number(y) }
+      })
 
-    forSureEmptyCells.forEach(cell => {
-      this.grid[cell.x][cell.y] = { ...cell, type: 'empty' }
-    })
-    console.log(forSureEmptyCells)
+    this.emptyCells = allReachableCoordinates
+      // not already a beacon or sensor
+      .filter(
+        ({ x, y }) =>
+          ![...this.sensors, ...this.beacons].some(
+            cell => cell.x === x && cell.y === y
+          )
+      )
+      .map(coordinates => ({ ...coordinates, type: 'empty' }))
   }
 
-  public getAllReachableCells = (sensor: Sensor): Cell[] => {
+  public getAllReachableCoordinates = (sensor: Sensor): Coordinate[] => {
     const { closestBeacon: beacon, x, y } = sensor
     const distance = getManhattanDistance(sensor, beacon)
-    console.log('sensor:', `${x}/${y}`)
-    console.log('distance:', distance)
-    const xRange = range(x - distance, x + distance)
-    const yRange = range(y - distance, y + distance)
-    console.log(xRange)
-    console.log(yRange)
-
     const rows: Coordinate[][] = []
 
     let radius = 0
@@ -93,29 +96,23 @@ class Cave {
         x,
         y: y - distance + i,
       }))
-      console.log(i, radius)
       rows.push(coordinates)
 
       // go from distance to 0 and back to distance:
       if (i < distance) radius += 1
       else radius -= 1
     })
-    const reachableCoordinates = rows
-      .flat()
-      .filter(
-        ({ x, y }) =>
-          0 <= x && x < this.grid.length && 0 <= y && y < this.grid.length
-      )
 
-    return reachableCoordinates.map(({ x, y }) => this.grid[x][y])
+    return rows.flat()
   }
 
   public toString(): string {
+    const grid = this.getNormalizedGrid()
     let string = ''
-    for (let i = 0; i < this.grid[0].length; i++) {
+    for (let i = 0; i < grid[0].length; i++) {
       string += '\n'
-      for (let j = 0; j < this.grid.length; j++) {
-        const type = this.grid[j][i].type
+      for (let j = 0; j < grid.length; j++) {
+        const type = grid[j][i].type
         const marker =
           type === 'sensor'
             ? 'S'
@@ -130,21 +127,25 @@ class Cave {
     return string
   }
 
-  private getInitialCave(): CaveGrid {
-    const combined = [...this.sensors, ...this.beacons]
-    const width = getExtremeCoordinate(combined, 'x', 'max') + 1
-    const height = getExtremeCoordinate(combined, 'y', 'max') + 1
-    const cave: CaveGrid = Array.from(Array(width)).map((_, x) =>
+  private getNormalizedGrid(): CaveGrid {
+    const combined = [...this.sensors, ...this.beacons, ...this.emptyCells]
+    const { offsetX, offsetY } = getNormalizeOffset(combined)
+    const normalized = combined.map(cell =>
+      normalizeCoordinate(cell, offsetX, offsetY)
+    )
+    const width = getExtremeCoordinate(normalized, 'x', 'max') + 1
+    const height = getExtremeCoordinate(normalized, 'y', 'max') + 1
+    const grid: CaveGrid = Array.from(Array(width)).map((_, x) =>
       Array.from(Array(height)).map((_, y) => ({
         type: 'unknown',
         x,
         y,
       }))
     )
-    combined.forEach(cell => {
-      cave[cell.x][cell.y] = cell
+    normalized.forEach(cell => {
+      grid[cell.x][cell.y] = cell
     })
-    return cave
+    return grid
   }
 }
 
