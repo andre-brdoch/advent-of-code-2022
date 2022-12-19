@@ -240,8 +240,7 @@ class Cave {
   }
 
   public stringifyEdges(withBoundaries = false): string {
-    const { yMin, yMax, xMin, xMax } = this
-    // const { yStart, yEnd } = this.getRanges(withBoundaries)
+    const { yStart, yEnd, xStart, xEnd } = this.getRanges(withBoundaries)
 
     let string = ''
 
@@ -261,12 +260,24 @@ class Cave {
         return result
       }, {} as { [key: string]: number[] })
 
-    for (let y = 0; y < yMax - yMin; y++) {
-      const xVals = combinedOutlineMap[y + yMin]
+    for (let y = yStart; y < yEnd; y++) {
+      const xVals = combinedOutlineMap[y + (withBoundaries ? yStart : 0)]
 
       string += '\n'
-      for (let x = 0; x < xMax - xMin; x++) {
-        const marker = xVals?.includes(x + xMin) ? '#' : '.'
+      for (let x = xStart; x < xEnd; x++) {
+        const device = [...this.sensors, ...this.beacons].find(
+          cell => cell.x === x && cell.y === y
+        )
+        let marker = '.'
+        if (device !== undefined && device.type === 'sensor') {
+          marker = 'S'
+        }
+        else if (device !== undefined && device.type === 'beacon') {
+          marker = 'B'
+        }
+        else if (xVals?.includes(x + (withBoundaries ? xStart : 0))) {
+          marker = '#'
+        }
         string += marker + ' '
       }
     }
