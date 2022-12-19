@@ -26,7 +26,6 @@ interface EmptyCell extends Coordinate {
   type: 'empty'
 }
 type Cell = Sensor | Beacon | EmptyCell | UnknownCell
-type CaveGrid = Cell[][]
 interface Boundaries {
   min: number
   max: number
@@ -36,6 +35,12 @@ interface SensorOutlineMap {
     fromX: number
     toX: number
   }
+}
+interface CombinedSensorOutlinesMap {
+  [key: string]: {
+    fromX: number
+    toX: number
+  }[]
 }
 
 const TARGET_Y = isTest() ? 10 : 2000000
@@ -83,11 +88,15 @@ class Cave {
   public yMinBoundaries: number
   public yMaxBoundaries: number
 
+  // TODO: make private
+  public outlineMap: CombinedSensorOutlinesMap
+
   constructor(sensors: Sensor[]) {
     this.sensors = sensors
     this.beacons = [...new Set(sensors.map(sensor => sensor.closestBeacon))]
     // TODO: remove
     this.emptyCells = []
+    this.outlineMap = {}
 
     const { xMin, xMax, yMin, yMax } = this.getExtremeCoordinates()
     this.xMin = xMin
@@ -130,6 +139,28 @@ class Cave {
     return outlineMap
   }
 
+  // TODO: make private
+  public addCombinedOutlineMap(withBoundaries = false): void {
+    const { yStart, yEnd } = this.getRanges(withBoundaries)
+
+    for (let i = 0; i < this.sensors.length; i++) {
+      const outlineMap = this.sensors[i].outlineMap
+      if (outlineMap === undefined) throw new Error('No outline map')
+      for (let y = yStart; y < yEnd; y++) {
+        const yAdjusted = y - (withBoundaries ? yStart : 0)
+        const xBoundaries = outlineMap[yAdjusted]
+        if (!xBoundaries) continue
+        if (this.outlineMap[yAdjusted] === undefined) {
+          this.outlineMap[yAdjusted] = [xBoundaries]
+        }
+        else {
+          this.outlineMap[yAdjusted].push(xBoundaries)
+        }
+      }
+    }
+  }
+
+  // TODO: refactor to be based upon outline instead
   public analyzeRow(
     y: number,
     withBoundaries = false
@@ -153,7 +184,7 @@ class Cave {
       const isInReach = this.sensors.some(
         sensor => getManhattanDistance(sensor, target) <= sensor.range
       )
-      const occupiedBy = this.getAllKnownFields().find(
+      const occupiedBy = [...this.sensors, ...this.beacons].find(
         cell => strinfifyCoordinate(cell) === strinfifyCoordinate(target)
       )
       const isEmpty = isInReach && occupiedBy === undefined
@@ -339,29 +370,11 @@ class Cave {
    */
   private getOutlineGrid(withBoundaries = false): string[][] {
     const { yStart, yEnd, xStart, xEnd } = this.getRanges(withBoundaries)
-
-    const combinedOutlineMap = this.sensors
-      .map(sensor => sensor.outlineMap)
-      .filter(map => map !== undefined)
-      .reduce((result, map) => {
-        Object.keys(map as SensorOutlineMap).forEach(y => {
-          const { fromX, toX } = (map as SensorOutlineMap)[y]
-          if (!result[y]) {
-            result[y] = [fromX, toX]
-          }
-          else {
-            result[y].push(fromX, toX)
-          }
-        })
-        return result
-      }, {} as { [key: string]: number[] })
-
     const grid = []
 
     for (let y = yStart; y < yEnd; y++) {
-      const xVals = combinedOutlineMap[y + (withBoundaries ? yStart : 0)]
+      const boundaryPairs = this.outlineMap[y + (withBoundaries ? yStart : 0)]
       const row = []
-
       for (let x = xStart; x < xEnd; x++) {
         const device = [...this.sensors, ...this.beacons].find(
           cell => cell.x === x && cell.y === y
@@ -373,7 +386,12 @@ class Cave {
         else if (device !== undefined && device.type === 'beacon') {
           marker = 'B'
         }
-        else if (xVals?.includes(x + (withBoundaries ? xStart : 0))) {
+        else if (
+          (boundaryPairs ?? []).some(({ fromX, toX }) => {
+            const xAdjusted = x + (withBoundaries ? xStart : 0)
+            return fromX === xAdjusted || toX === xAdjusted
+          })
+        ) {
           marker = '#'
         }
         row.push(marker)
