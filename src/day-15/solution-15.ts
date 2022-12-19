@@ -81,7 +81,7 @@ class Cave {
   public getAllReachableCoordinates = (sensor: Sensor): Coordinate[] => {
     const { closestBeacon: beacon, x, y } = sensor
     const distance = getManhattanDistance(sensor, beacon)
-    const rows: Coordinate[][] = []
+    const result: Coordinate[] = []
 
     let radius = 0
     Array.from(Array(distance * 2 + 1)).forEach((_, i) => {
@@ -89,14 +89,14 @@ class Cave {
         x,
         y: y - distance + i,
       }))
-      rows.push(coordinates)
+      result.push(...coordinates)
 
       // go from distance to 0 and back to distance:
       if (i < distance) radius += 1
       else radius -= 1
     })
 
-    return rows.flat()
+    return result
   }
 
   public getAllKnownFields() {
