@@ -7,6 +7,7 @@ interface Solution15 {
 interface Coordinate {
   x: number
   y: number
+  stringified?: string
 }
 type Axis = keyof Coordinate
 interface Beacon extends Coordinate {
@@ -29,17 +30,19 @@ export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
+  // console.log(sensors[0])
+  // console.log(cave.getAllReachableCoordinates(sensors[0]))
+
   // console.log(cave.toString())
 
   cave.ruleOutOccupiedCells()
-  // console.log(cave.toString())
+  console.log(cave.toString())
+  // const targetY = isTest() ? 10 : 2000000
+  // const answer1 = cave
+  //   .getAllKnownFields()
+  //   .filter(({ y, type }) => y === targetY && type === 'empty').length
 
-  const targetY = isTest() ? 10 : 2000000
-  const answer1 = cave
-    .getAllKnownFields()
-    .filter(({ y, type }) => y === targetY && type === 'empty').length
-
-  return { answer1 }
+  return { answer1: 0 }
 }
 
 class Cave {
@@ -49,7 +52,7 @@ class Cave {
 
   constructor(sensors: Sensor[]) {
     this.sensors = sensors
-    this.beacons = sensors.map(sensor => sensor.closestBeacon)
+    this.beacons = [...new Set(sensors.map(sensor => sensor.closestBeacon))]
     this.emptyCells = []
   }
 
@@ -176,7 +179,7 @@ function getExtremeCoordinate(
   type: 'min' | 'max'
 ): number {
   return coordinates
-    .map(c => c[axis])
+    .map(c => c[axis] as number)
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
 }
 
@@ -191,13 +194,26 @@ function parseCoordinate(string: string): Coordinate {
 }
 
 function parseSensors(input: string): Sensor[] {
-  return input
+  const sensors: Sensor[] = input
     .split('\n')
     .map(line =>
       line
         .replace('Sensor at ', '')
         .split(': closest beacon is at ')
-        .map(parseCoordinates)
+        .map(string =>
+          string
+            .replace('x=', '')
+            .replace('y=', '')
+            .split(', ')
+            .map(str => Number(str))
+            .reduce(
+              (result, axis, i) => ({
+                ...result,
+                [i === 0 ? 'x' : 'y']: axis,
+              }),
+              {} as Coordinate
+            )
+        )
     )
     .map(([sensor, beacon]) => ({
       ...sensor,
@@ -205,23 +221,28 @@ function parseSensors(input: string): Sensor[] {
       closestBeacon: {
         ...beacon,
         type: 'beacon',
+        stringified: strinfifyCoordinate(beacon),
       },
     }))
-}
 
-function parseCoordinates(string: string): Coordinate {
-  return string
-    .replace('x=', '')
-    .replace('y=', '')
-    .split(', ')
-    .map(str => Number(str))
-    .reduce(
-      (result, axis, i) => ({
-        ...result,
-        [i === 0 ? 'x' : 'y']: axis,
-      }),
-      {} as Coordinate
+  // remove duplicate beacons
+  sensors.forEach(sensor => {
+    const { closestBeacon: beacon } = sensor
+    const otherSensors = sensors.filter(
+      s =>
+        s !== sensor &&
+        s.closestBeacon !== beacon &&
+        s.closestBeacon.stringified === beacon.stringified
     )
+    otherSensors.forEach(s => {
+      s.closestBeacon = beacon
+    })
+  })
+
+  return sensors.map(sensor => {
+    delete sensor.closestBeacon.stringified
+    return sensor
+  })
 }
 
 function range(from: number, to: number): number[] {
