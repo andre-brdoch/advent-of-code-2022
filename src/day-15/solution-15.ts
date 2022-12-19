@@ -26,31 +26,26 @@ type Cell = Sensor | Beacon | EmptyCell | UnknownCell
 type CaveGrid = Cell[][]
 
 export default async function solution(input: string): Promise<Solution15> {
-  console.log(input)
-  console.log('----')
-
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  console.log(cave.toString())
+  // console.log(cave.toString())
 
   cave.ruleOutOccupiedCells()
-  console.log(cave.toString())
+  // console.log(cave.toString())
 
-  // TODO: need to dynamically extend grid when sensors search
-  // const targetY = isTest() ? 10 : 2000000
-  // const result = cave.grid
-  //   .map(row => row[targetY])
-  //   .filter(cell => cell.type === 'empty').length
-  // console.log(result)
+  const targetY = isTest() ? 10 : 2000000
+  const answer1 = cave
+    .getAllKnownFields()
+    .filter(({ y, type }) => y === targetY && type === 'empty').length
 
-  return { answer1: 0 }
+  return { answer1 }
 }
 
 class Cave {
-  private sensors: Sensor[]
-  private beacons: Beacon[]
-  private emptyCells: EmptyCell[]
+  public sensors: Sensor[]
+  public beacons: Beacon[]
+  public emptyCells: EmptyCell[]
 
   constructor(sensors: Sensor[]) {
     this.sensors = sensors
@@ -78,9 +73,7 @@ class Cave {
       // not already a beacon or sensor
       .filter(
         ({ x, y }) =>
-          ![...this.sensors, ...this.beacons].some(
-            cell => cell.x === x && cell.y === y
-          )
+          !this.getAllKnownFields().some(cell => cell.x === x && cell.y === y)
       )
       .map(coordinates => ({ ...coordinates, type: 'empty' }))
   }
@@ -104,6 +97,10 @@ class Cave {
     })
 
     return rows.flat()
+  }
+
+  public getAllKnownFields() {
+    return [...this.sensors, ...this.beacons, ...this.emptyCells]
   }
 
   public toString(): string {
