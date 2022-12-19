@@ -187,7 +187,6 @@ class Cave {
       const sensor = this.sensors[i]
       const outlineMap = this.getSensorRangeOutline(sensor)
       sensor.outlineMap = outlineMap
-      console.log('done for sensor', i)
     }
   }
 
@@ -215,14 +214,36 @@ class Cave {
     return [...this.sensors, ...this.beacons, ...this.emptyCells]
   }
 
-  public stringify(withBoundaries = false): string {
-    const { yStart, yEnd } = this.getRanges(withBoundaries)
-
+  public stringifyGrid(
+    mode: 'full' | 'outlines' = 'full',
+    withBoundaries = false
+  ): string {
+    const grid =
+      mode === 'outlines'
+        ? this.getOutlineGrid(withBoundaries)
+        : this.getFullGrid(withBoundaries)
     let string = ''
+    for (let y = 0; y < grid.length; y++) {
+      string += '\n'
+      for (let x = 0; x < grid[0].length; x++) {
+        string += grid[y][x] + ' '
+      }
+    }
+    return string
+  }
+
+  /**
+   * Returns a printable grid of beacons, sensors, and all of the
+   * known empty cells within their range.
+   * Only meant to be used for relatively small coordinate systems.
+   */
+  private getFullGrid(withBoundaries = false): string[][] {
+    const { yStart, yEnd } = this.getRanges(withBoundaries)
+    const grid = []
 
     for (let y = yStart; y < yEnd; y++) {
+      const row = []
       const { allCells } = this.analyzeRow(y, withBoundaries)
-      string += '\n'
       for (let j = 0; j < allCells.length; j++) {
         const type = allCells[j].type
         const marker =
@@ -233,16 +254,19 @@ class Cave {
               : type === 'empty'
                 ? '#'
                 : '.'
-        string += marker + ' '
+        row.push(marker)
       }
+      grid.push(row)
     }
-    return string
+    return grid
   }
 
-  public stringifyEdges(withBoundaries = false): string {
+  /**
+   * Returns a printable grid of beacons, sensors, and the range of their outlines.
+   * Only meant to be used for relatively small coordinate systems.
+   */
+  private getOutlineGrid(withBoundaries = false): string[][] {
     const { yStart, yEnd, xStart, xEnd } = this.getRanges(withBoundaries)
-
-    let string = ''
 
     const combinedOutlineMap = this.sensors
       .map(sensor => sensor.outlineMap)
@@ -260,10 +284,12 @@ class Cave {
         return result
       }, {} as { [key: string]: number[] })
 
+    const grid = []
+
     for (let y = yStart; y < yEnd; y++) {
       const xVals = combinedOutlineMap[y + (withBoundaries ? yStart : 0)]
+      const row = []
 
-      string += '\n'
       for (let x = xStart; x < xEnd; x++) {
         const device = [...this.sensors, ...this.beacons].find(
           cell => cell.x === x && cell.y === y
@@ -278,10 +304,11 @@ class Cave {
         else if (xVals?.includes(x + (withBoundaries ? xStart : 0))) {
           marker = '#'
         }
-        string += marker + ' '
+        row.push(marker)
       }
+      grid.push(row)
     }
-    return string
+    return grid
   }
 
   private getRanges(withBoundaries = false) {
