@@ -15,6 +15,7 @@ interface Beacon extends Coordinate {
 }
 interface Sensor extends Coordinate {
   closestBeacon: Beacon
+  range: number
   type: 'sensor'
 }
 interface UnknownCell extends Coordinate {
@@ -30,17 +31,25 @@ export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  // console.log(sensors[0])
-  // console.log(cave.getAllReachableCoordinates(sensors[0]))
+  const s = sensors[0]
+  console.log(s)
+  console.log(cave.getAllReachableCoordinates(s))
+
+  console.log(cave.getExtremeCoordinates())
 
   // console.log(cave.toString())
 
-  cave.ruleOutOccupiedCells()
-  console.log(cave.toString())
-  // const targetY = isTest() ? 10 : 2000000
+  // cave.ruleOutOccupiedCells()
+
+  // console.log(cave.toString())
+  const targetY = isTest() ? 10 : 2000000
   // const answer1 = cave
   //   .getAllKnownFields()
   //   .filter(({ y, type }) => y === targetY && type === 'empty').length
+  // console.log('row:')
+  const row = cave.getAllKnownFields().filter(({ y }) => y === targetY)
+  // console.log(row)
+  // const count = row.reduce()
 
   return { answer1: 0 }
 }
@@ -85,10 +94,12 @@ class Cave {
 
     let radius = 0
     Array.from(Array(distance * 2 + 1)).forEach((_, i) => {
-      const coordinates = range(x - radius, x + radius).map(x => ({
-        x,
-        y: y - distance + i,
-      }))
+      const coordinates = [radius === 0 ? x : x - radius, x + radius].map(
+        x => ({
+          x,
+          y: y - distance + i,
+        })
+      )
       result.push(...coordinates)
 
       // go from distance to 0 and back to distance:
@@ -122,6 +133,31 @@ class Cave {
       }
     }
     return string
+  }
+
+  // todo: make private
+  public getExtremeCoordinates(): {
+    xMin: number
+    xMax: number
+    yMin: number
+    yMax: number
+    } {
+    const rangeEdges: Coordinate[] = this.sensors.reduce((result, cell) => {
+      const { x, y } = cell
+      return [
+        ...result,
+        { x: x - cell.range, y },
+        { x: x + cell.range, y },
+        { x, y: y - cell.range },
+        { x, y: y + cell.range },
+      ]
+    }, [] as Coordinate[])
+
+    const xMin = getExtremeCoordinate(rangeEdges, 'x', 'min')
+    const xMax = getExtremeCoordinate(rangeEdges, 'x', 'max')
+    const yMin = getExtremeCoordinate(rangeEdges, 'y', 'min')
+    const yMax = getExtremeCoordinate(rangeEdges, 'y', 'max')
+    return { xMin, xMax, yMin, yMax }
   }
 
   private getNormalizedGrid(): CaveGrid {
@@ -218,6 +254,7 @@ function parseSensors(input: string): Sensor[] {
     .map(([sensor, beacon]) => ({
       ...sensor,
       type: 'sensor',
+      range: getManhattanDistance(sensor, beacon),
       closestBeacon: {
         ...beacon,
         type: 'beacon',
