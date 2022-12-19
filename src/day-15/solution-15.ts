@@ -215,49 +215,6 @@ class Cave {
     }
   }
 
-  public findHiddenBeacon(): Beacon {
-    const { yStart, yEnd } = this.getRanges(true)
-
-    for (let y = yStart; y < yEnd; y++) {
-      const { unknownCells } = this.analyzeRow(y, true)
-      if (unknownCells.length === 1) {
-        const found = unknownCells[0]
-        return { ...found, type: 'beacon' }
-      }
-    }
-    throw new Error('There is no hidden beacon.')
-  }
-
-  // public ruleOutOccupiedCells = () => {
-  //   const allReachableCoordinates = [
-  //     // remove duplicates
-  //     ...new Set(
-  //       this.sensors
-  //         .flatMap(this.getSensorRangeOutline)
-  //         // stringify to make unique in set
-  //         .map(strinfifyCoordinate)
-  //     ),
-  //   ]
-  //     // un-stringify
-  //     .map(parseCoordinate)
-
-  //   this.emptyCells = allReachableCoordinates
-  //     // not already a beacon or sensor
-  //     .filter(
-  //       ({ x, y }) =>
-  //         !this.getAllKnownFields().some(cell => cell.x === x && cell.y === y)
-  //     )
-  //     .map(coordinates => ({ ...coordinates, type: 'empty' }))
-  // }
-
-
-
-  public getAllKnownFields() {
-    return [...this.sensors, ...this.beacons, ...this.emptyCells]
-  }
-
-  
-
   private getRanges(withBoundaries = false) {
     return {
       yStart: withBoundaries ? this.yMinBoundaries : this.yMin,
@@ -289,27 +246,6 @@ class Cave {
     const yMin = getExtremeCoordinate(rangeEdges, 'y', 'min')
     const yMax = getExtremeCoordinate(rangeEdges, 'y', 'max')
     return { xMin, xMax, yMin, yMax }
-  }
-
-  private getNormalizedGrid(): CaveGrid {
-    const combined = [...this.sensors, ...this.beacons, ...this.emptyCells]
-    const { offsetX, offsetY } = getNormalizeOffset(combined)
-    const normalized = combined.map(cell =>
-      normalizeCoordinate(cell, offsetX, offsetY)
-    )
-    const width = getExtremeCoordinate(normalized, 'x', 'max') + 1
-    const height = getExtremeCoordinate(normalized, 'y', 'max') + 1
-    const grid: CaveGrid = Array.from(Array(width)).map((_, x) =>
-      Array.from(Array(height)).map((_, y) => ({
-        type: 'unknown',
-        x,
-        y,
-      }))
-    )
-    normalized.forEach(cell => {
-      grid[cell.x][cell.y] = cell
-    })
-    return grid
   }
 
   // === Visualizations === /
@@ -411,29 +347,6 @@ function getTuningFrequency(coordinate: Coordinate): number {
   return x * TUNING_FREQUENCY_MODIFIER + y
 }
 
-/** Get offset for normalization */
-function getNormalizeOffset(coordinates: Coordinate[]): {
-  offsetX: number
-  offsetY: number
-} {
-  const xMin = getExtremeCoordinate(coordinates, 'x', 'min')
-  const yMin = getExtremeCoordinate(coordinates, 'y', 'min')
-  return {
-    offsetX: -xMin,
-    offsetY: -yMin,
-  }
-}
-
-/** Adjust coordinate range to start from 0/0 */
-function normalizeCoordinate(
-  coordinate: Coordinate,
-  offsetX: number,
-  offsetY: number
-): any {
-  const { x, y } = coordinate
-  return { ...coordinate, x: x + offsetX, y: y + offsetY }
-}
-
 function getExtremeCoordinate(
   coordinates: Coordinate[],
   axis: Axis,
@@ -447,11 +360,6 @@ function getExtremeCoordinate(
 function strinfifyCoordinate(coordinate: Coordinate): string {
   const { x, y } = coordinate
   return `${x}/${y}`
-}
-
-function parseCoordinate(string: string): Coordinate {
-  const [x, y] = string.split('/')
-  return { x: Number(x), y: Number(y) }
 }
 
 function parseSensors(input: string): Sensor[] {
@@ -506,12 +414,3 @@ function parseSensors(input: string): Sensor[] {
     return sensor
   })
 }
-
-function range(from: number, to: number): number[] {
-  const result = []
-  for (let number = from; number <= to; number++) {
-    result.push(number)
-  }
-  return result
-}
-
