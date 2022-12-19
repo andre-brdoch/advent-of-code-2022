@@ -31,11 +31,9 @@ export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
-  const s = sensors[0]
-  console.log(s)
-  console.log(cave.getAllReachableCoordinates(s))
-
-  console.log(cave.getExtremeCoordinates())
+  // const s = sensors[0]
+  // console.log(s)
+  // console.log(cave.getAllReachableCoordinates(s))
 
   // console.log(cave.toString())
 
@@ -43,26 +41,70 @@ export default async function solution(input: string): Promise<Solution15> {
 
   // console.log(cave.toString())
   const targetY = isTest() ? 10 : 2000000
+  const { emptyCells } = cave.analyzeRow(targetY)
+  // console.log('empty:')
+  // console.log(emptyCells)
+  // console.log('unknown:')
+  // console.log(unknownCells)
+  const answer1 = emptyCells.length
+
   // const answer1 = cave
   //   .getAllKnownFields()
   //   .filter(({ y, type }) => y === targetY && type === 'empty').length
   // console.log('row:')
-  const row = cave.getAllKnownFields().filter(({ y }) => y === targetY)
+  // const row = cave.getAllKnownFields().filter(({ y }) => y === targetY)
   // console.log(row)
   // const count = row.reduce()
 
-  return { answer1: 0 }
+  return { answer1 }
 }
 
 class Cave {
   public sensors: Sensor[]
   public beacons: Beacon[]
   public emptyCells: EmptyCell[]
+  public xMin: number
+  public xMax: number
+  public yMin: number
+  public yMax: number
 
   constructor(sensors: Sensor[]) {
     this.sensors = sensors
     this.beacons = [...new Set(sensors.map(sensor => sensor.closestBeacon))]
     this.emptyCells = []
+    const { xMin, xMax, yMin, yMax } = this.getExtremeCoordinates()
+    this.xMin = xMin
+    this.xMax = xMax
+    this.yMin = yMin
+    this.yMax = yMax
+  }
+
+  public analyzeRow(y: number): {
+    emptyCells: EmptyCell[]
+    unknownCells: UnknownCell[]
+  } {
+    const emptyCells: EmptyCell[] = []
+    const unknownCells: UnknownCell[] = []
+    for (let x = this.xMin; x < this.xMax; x++) {
+      let target: Cell = { x, y, type: 'unknown' }
+      const isInReach = this.sensors.some(
+        sensor => getManhattanDistance(sensor, target) <= sensor.range
+      )
+      const isEmpty =
+        isInReach &&
+        this.getAllKnownFields().every(
+          cell => strinfifyCoordinate(cell) !== strinfifyCoordinate(target)
+        )
+      if (isEmpty) {
+        target = { ...target, type: 'empty' }
+        emptyCells.push(target)
+      }
+      else if (!isInReach) unknownCells.push(target)
+    }
+    return {
+      emptyCells,
+      unknownCells,
+    }
   }
 
   public ruleOutOccupiedCells = () => {
@@ -135,8 +177,7 @@ class Cave {
     return string
   }
 
-  // todo: make private
-  public getExtremeCoordinates(): {
+  private getExtremeCoordinates(): {
     xMin: number
     xMax: number
     yMin: number
