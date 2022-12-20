@@ -18,13 +18,6 @@ interface Sensor extends Coordinate {
   range: number
   type: 'sensor'
 }
-interface UnknownCell extends Coordinate {
-  type: 'unknown'
-}
-interface EmptyCell extends Coordinate {
-  type: 'empty'
-}
-type Cell = Sensor | Beacon | EmptyCell | UnknownCell
 interface Boundaries {
   min: number
   max: number
@@ -45,14 +38,16 @@ const TUNING_FREQUENCY_MODIFIER = 4000000
 export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
+
   cave.addRangeOutlines()
   console.log('Done outlining.\n')
-  // console.log(cave.stringifyGrid('outlines', true))
+  console.log(cave.stringifyGrid('outlines', false))
 
   const answer1 = cave.getEmptyCellCount(TARGET_Y)
 
   const hiddenBeacon = cave.findHiddenBeacon()
   console.log(`Hidden Beacon found at ${strinfifyCoordinate(hiddenBeacon)}!\n`)
+
   const answer2 = getTuningFrequency(hiddenBeacon)
 
   return { answer1, answer2 }
@@ -61,7 +56,6 @@ export default async function solution(input: string): Promise<Solution15> {
 class Cave {
   public sensors: Sensor[]
   public beacons: Beacon[]
-  public emptyCells: EmptyCell[]
   public xMin: number
   public xMax: number
   public yMin: number
@@ -76,8 +70,6 @@ class Cave {
   constructor(sensors: Sensor[]) {
     this.sensors = sensors
     this.beacons = [...new Set(sensors.map(sensor => sensor.closestBeacon))]
-    // TODO: remove
-    this.emptyCells = []
     this.outlineMap = {}
 
     const { xMin, xMax, yMin, yMax } = this.getExtremeCoordinates()
@@ -93,29 +85,31 @@ class Cave {
     this.yMaxBoundaries = Math.min(xMax, max)
   }
 
+  /**
+   * Finds hidden beacon within boundaries.
+   * Traverses all rows within the boundaries, and attempts
+   * to merge the min-max x-values for that line.
+   * If the merged line has a gap, or doesn't start on the
+   * first/end on the last cell, we found the hidden beacon.
+   *
+   * @returns Beacon that is not within range of any sensor,
+   * and within the boundaries.
+   */
   public findHiddenBeacon(): Beacon {
     for (let y = 0; y < this.yMaxBoundaries; y++) {
-      // Attempt drawing a line. If it has a gap , or doesn't start/end
-      // at the first/last cell, we found the hidden beacon.
       const xBoundaries = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
-
       let highestX: number | undefined = undefined
 
       for (let i = 0; i < xBoundaries.length; i++) {
         const { fromX, toX } = xBoundaries[i]
         const newHighestX = Math.max(toX, highestX ?? this.xMinBoundaries)
-
         const firstNotCovered = i === 0 && fromX > this.xMinBoundaries
         const lastNotCovered =
           i === xBoundaries.length - 1 && newHighestX < this.xMaxBoundaries
         const skippedOne = highestX !== undefined && fromX > highestX + 1
         if (firstNotCovered || lastNotCovered || skippedOne) {
           // found it!
-          return {
-            y,
-            x: fromX - 1,
-            type: 'beacon',
-          }
+          return { y, x: fromX - 1, type: 'beacon' }
         }
         highestX = newHighestX
       }
@@ -123,10 +117,12 @@ class Cave {
     throw new Error('There is no hidden beacon :(')
   }
 
+  /**
+   * Finds the outlines of all sensor ranges, and saves them in
+   * a instance-wide outline map by y-value.
+   * This will allow faster lookup when traversing each row.
+   */
   public addRangeOutlines(): void {
-    // Find outline of ranges, and save it in a map by y value.
-    // This will allow faster lookup for finding the answers.
-
     for (let i = 0; i < this.sensors.length; i++) {
       const sensor = this.sensors[i]
       const { closestBeacon: beacon, x, y } = sensor
@@ -151,6 +147,15 @@ class Cave {
     }
   }
 
+  /**
+   * Gets count of empty cells for a given row.
+   * Merges the lines x min-max values where possible,
+   * and returns their sum minusthe amount of sensors/beacons
+   * on this line.
+   *
+   * @param y - Row to count
+   * @returns Amount of empty cells on row
+   */
   public getEmptyCellCount(y: number): number {
     const xBoundaries = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
     const pairs: { fromX: number; toX: number }[] = []
@@ -181,81 +186,14 @@ class Cave {
     )
   }
 
-  // TODO: refactor to be based upon outline instead
-  public analyzeRow(
-    y: number,
-    withBoundaries = false
-  ): {
-    emptyCells: EmptyCell[]
-    sensorCells: Sensor[]
-    beaconCells: Beacon[]
-    unknownCells: UnknownCell[]
-    allCells: Cell[]
-  } {
-    const emptyCells: EmptyCell[] = []
-    const sensorCells: Sensor[] = []
-    const beaconCells: Beacon[] = []
-    const unknownCells: UnknownCell[] = []
-    const allCells: Cell[] = []
-
-    const { xStart, xEnd } = this.getRanges(withBoundaries)
-
-    for (let x = xStart; x < xEnd; x++) {
-      let target: Cell = { x, y, type: 'unknown' }
-      const isInReach = this.sensors.some(
-        sensor => getManhattanDistance(sensor, target) <= sensor.range
-      )
-      const occupiedBy = [...this.sensors, ...this.beacons].find(
-        cell => strinfifyCoordinate(cell) === strinfifyCoordinate(target)
-      )
-      const isEmpty = isInReach && occupiedBy === undefined
-
-      if (isEmpty) {
-        target = { ...target, type: 'empty' }
-        emptyCells.push(target)
-      }
-      else if (occupiedBy != null && occupiedBy.type === 'sensor') {
-        target = { ...occupiedBy }
-        sensorCells.push(target)
-      }
-      else if (occupiedBy != null && occupiedBy.type === 'beacon') {
-        target = { ...occupiedBy }
-        beaconCells.push(target)
-      }
-      else {
-        unknownCells.push(target)
-      }
-      allCells.push(target)
-    }
-    return {
-      emptyCells,
-      sensorCells,
-      beaconCells,
-      unknownCells,
-      allCells,
-    }
-  }
-
-  // todo: make private
-  /**
-   * Finds all sensors that are fully enclosed by another one.
-   */
-  public findFullyEnclosedSensors(): Sensor[] {
-    const result: Sensor[] = []
-    this.sensors.forEach(sensor => {
-      // TODO: implement
-      const isFullyEnclosed = this.sensors.some(s => s !== sensor && true)
-      if (isFullyEnclosed) {
-        result.push(sensor)
-      }
-    })
-    return result
-  }
-
   private getDevicesOnRow(y: number): (Sensor | Beacon)[] {
     return [...this.sensors, ...this.beacons].filter(device => device.y === y)
   }
 
+  /**
+   * Gets the grid range based on either actual coordinates,
+   * or cut within boundaries.
+   */
   private getRanges(withBoundaries = false) {
     return {
       yStart: withBoundaries ? this.yMinBoundaries : this.yMin,
@@ -265,6 +203,7 @@ class Cave {
     }
   }
 
+  /** Finds the highest/lowest possible values for the grid x/y axis. */
   private getExtremeCoordinates(): {
     xMin: number
     xMax: number
@@ -292,7 +231,14 @@ class Cave {
   // === Visualizations === /
 
   /**
-   * Prints grid. Only meant to be used for relatively small coordinate systems.
+   * Stringifies grid for printing.
+   * Only meant to be used for relatively small coordinate systems.Prints
+   *
+   * @param mode - Whether to print only the outlines of sensor ranges,
+   * or also all empty cells within
+   * @param withBoundaries - Whether to cut the grid according to
+   * boundaries or not
+   * @returns Stringified grid
    */
   public stringifyGrid(
     mode: 'full' | 'outlines' = 'full',
@@ -313,9 +259,13 @@ class Cave {
   }
 
   /**
-   * Returns a printable grid of beacons, sensors, and all of the
+   * Returns a stringifiable grid of beacons, sensors, and all of the
    * known empty cells within their range.
    * Only meant to be used for relatively small coordinate systems.
+   *
+   * @param withBoundaries - Whether to cut the grid according to
+   * boundaries or not
+   * @returns Stringifiable grid including all empty cells
    */
   private getFullGrid(withBoundaries = false): string[][] {
     const { yStart, yEnd, xStart, xEnd } = this.getRanges(withBoundaries)
@@ -348,8 +298,12 @@ class Cave {
   }
 
   /**
-   * Returns a printable grid of beacons, sensors, and the range of their outlines.
+   * Returns a stringifiable grid of beacons, sensors, and the range of their outlines.
    * Only meant to be used for relatively small coordinate systems.
+   *
+   * @param withBoundaries - Whether to cut the grid according to
+   * boundaries or not
+   * @returns Stringifiable grid with range outlines
    */
   private getOutlineGrid(withBoundaries = false): string[][] {
     const { yStart, yEnd, xStart, xEnd } = this.getRanges(withBoundaries)
@@ -395,6 +349,7 @@ function getTuningFrequency(coordinate: Coordinate): number {
   return x * TUNING_FREQUENCY_MODIFIER + y
 }
 
+/** Finds the highest/lowest value for a given axis on a list of coordinates. */
 function getExtremeCoordinate(
   coordinates: Coordinate[],
   axis: Axis,
