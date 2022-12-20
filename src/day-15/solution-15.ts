@@ -22,18 +22,19 @@ interface Boundaries {
   min: number
   max: number
 }
+interface xMinMax {
+  fromX: number
+  toX: number
+}
 interface CombinedSensorOutlinesMap {
-  [key: string]: {
-    fromX: number
-    toX: number
-  }[]
+  [key: string]: xMinMax[]
 }
 
 const TARGET_Y = isTest() ? 10 : 2000000
+const TUNING_FREQUENCY_MODIFIER = 4000000
 const BOUNDARIES: Boundaries = isTest()
   ? { min: 0, max: 20 }
   : { min: 0, max: 4000000 }
-const TUNING_FREQUENCY_MODIFIER = 4000000
 
 export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
@@ -97,15 +98,15 @@ class Cave {
    */
   public findHiddenBeacon(): Beacon {
     for (let y = 0; y < this.yMaxBoundaries; y++) {
-      const xBoundaries = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
+      const xMinMaxList = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
       let highestX: number | undefined = undefined
 
-      for (let i = 0; i < xBoundaries.length; i++) {
-        const { fromX, toX } = xBoundaries[i]
+      for (let i = 0; i < xMinMaxList.length; i++) {
+        const { fromX, toX } = xMinMaxList[i]
         const newHighestX = Math.max(toX, highestX ?? this.xMinBoundaries)
         const firstNotCovered = i === 0 && fromX > this.xMinBoundaries
         const lastNotCovered =
-          i === xBoundaries.length - 1 && newHighestX < this.xMaxBoundaries
+          i === xMinMaxList.length - 1 && newHighestX < this.xMaxBoundaries
         const skippedOne = highestX !== undefined && fromX > highestX + 1
         if (firstNotCovered || lastNotCovered || skippedOne) {
           // found it!
@@ -131,13 +132,13 @@ class Cave {
 
       for (let j = 0; j < distance * 2 + 1; j++) {
         const yAdjusted = y - distance + j
-        const entry = { fromX: x - radius, toX: x + radius }
+        const xMinMax: xMinMax = { fromX: x - radius, toX: x + radius }
 
         if (this.outlineMap[yAdjusted] === undefined) {
-          this.outlineMap[yAdjusted] = [entry]
+          this.outlineMap[yAdjusted] = [xMinMax]
         }
         else {
-          this.outlineMap[yAdjusted].push(entry)
+          this.outlineMap[yAdjusted].push(xMinMax)
         }
 
         // go from 0 to distance and back to 0:
@@ -157,11 +158,11 @@ class Cave {
    * @returns Amount of empty cells on row
    */
   public getEmptyCellCount(y: number): number {
-    const xBoundaries = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
-    const pairs: { fromX: number; toX: number }[] = []
+    const xMinMaxList = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
+    const pairs: xMinMax[] = []
 
-    for (let i = 0; i < xBoundaries.length; i++) {
-      const { fromX, toX } = xBoundaries[i]
+    for (let i = 0; i < xMinMaxList.length; i++) {
+      const { fromX, toX } = xMinMaxList[i]
 
       if (pairs.length === 0) {
         pairs.push({ fromX, toX })
@@ -274,7 +275,7 @@ class Cave {
       const row = []
       const devices = this.getDevicesOnRow(y)
       const yAdjusted = y + (withBoundaries ? yStart : 0)
-      const xBoundaries = this.outlineMap[yAdjusted]
+      const xMinMaxList = this.outlineMap[yAdjusted]
       for (let x = xStart; x < xEnd; x++) {
         const xAdjusted = x + (withBoundaries ? xStart : 0)
         let marker = '.'
@@ -283,7 +284,7 @@ class Cave {
           marker = device.type === 'sensor' ? 'S' : 'B'
         }
         else if (
-          xBoundaries.some(
+          xMinMaxList.some(
             ({ fromX, toX }) => xAdjusted >= fromX && xAdjusted <= toX
           )
         ) {
