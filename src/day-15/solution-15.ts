@@ -37,19 +37,37 @@ const BOUNDARIES: Boundaries = isTest()
   : { min: 0, max: 4000000 }
 
 export default async function solution(input: string): Promise<Solution15> {
+  const timer1 = performance.now()
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
 
+  const timer2 = performance.now()
+  console.log('Start outlining...')
+
   cave.addRangeOutlines()
-  console.log('Done outlining.\n')
-  console.log(cave.stringifyGrid('outlines', false))
+
+  const timer3 = performance.now()
+  console.log(
+    `Finished outlining after ${formatTimeDuration(timer2, timer3)}\n`
+  )
+  // console.log(cave.stringifyGrid('outlines', false))
+
+  console.log(`Start counting empty cells in row ${TARGET_Y}...`)
 
   const answer1 = cave.getEmptyCellCount(TARGET_Y)
+
+  const timer4 = performance.now()
+  console.log(`Finished counting after ${formatTimeDuration(timer1, timer4)}\n`)
+
+  console.log('Search for hidden beacon...')
 
   const hiddenBeacon = cave.findHiddenBeacon()
   console.log(`Hidden Beacon found at ${strinfifyCoordinate(hiddenBeacon)}!\n`)
 
   const answer2 = getTuningFrequency(hiddenBeacon)
+
+  const timer5 = performance.now()
+  console.log(`Total processing time: ${formatTimeDuration(timer1, timer5)}\n`)
 
   return { answer1, answer2 }
 }
@@ -364,6 +382,10 @@ function getExtremeCoordinate(
 function strinfifyCoordinate(coordinate: Coordinate): string {
   const { x, y } = coordinate
   return `${x}/${y}`
+}
+
+function formatTimeDuration(fromMs: number, toMs: number): string {
+  return `${Math.round((toMs - fromMs) / 1000)}s`
 }
 
 function parseSensors(input: string): Sensor[] {
