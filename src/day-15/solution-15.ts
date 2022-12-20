@@ -47,25 +47,32 @@ export default async function solution(input: string): Promise<Solution15> {
   const cave = new Cave(sensors)
 
   // console.log(cave.getSensorRangeOutline(cave.sensors[6]))
-  cave.addRangeOutlinesToSensors()
+  // cave.addRangeOutlinesToSensors()
   // console.log(cave.sensors);
 
   // cave.ruleOutOccupiedCells()
   // console.log(cave.emptyCells.length);
 
-  console.log(cave.stringifyGrid('outlines', false))
+  cave.addRangeOutlines()
+  console.log('done outlining')
+  // console.log(cave.stringifyGrid('outlines', true))
+  const hiddenBeacon = cave.findHiddenBeacon()
+  console.log('found')
+  console.log(hiddenBeacon)
+
+  // cave.addCombinedOutlineMap()
 
   // console.log(cave.stringify(false))
 
-  // const { emptyCells } = cave.analyzeRow(TARGET_Y)
-  // const answer1 = emptyCells.length
+  const { emptyCells } = cave.analyzeRow(TARGET_Y)
+  const answer1 = emptyCells.length
 
   // const hiddenBeacon = cave.findHiddenBeacon()
   // console.log(hiddenBeacon)
 
-  // const answer2 = getTuningFrequency(hiddenBeacon)
+  const answer2 = getTuningFrequency(hiddenBeacon)
 
-  return { answer1: 0, answer2: 0 }
+  return { answer1, answer2 }
 }
 
 class Cave {
@@ -102,6 +109,45 @@ class Cave {
     this.xMaxBoundaries = Math.min(yMax, max)
     this.yMinBoundaries = Math.max(xMin, min)
     this.yMaxBoundaries = Math.min(xMax, max)
+  }
+
+  public findHiddenBeacon(): Beacon {
+    for (let y = 0; y < this.yMaxBoundaries; y++) {
+      // Attempt drawing a line. If it has a gap , or doesn't start/end
+      // at the first/last cell, we found the hidden beacon.
+      const xBoundaries = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
+
+      // console.log('-----')
+      // console.log(xBoundaries)
+
+      let highestX: number | undefined = undefined
+
+      for (let i = 0; i < xBoundaries.length; i++) {
+        const { fromX, toX } = xBoundaries[i]
+        // console.log('from', fromX, ', to', toX)
+        const newHighestX = Math.max(toX, highestX ?? this.xMinBoundaries)
+
+        const firstNotCovered = i === 0 && fromX > this.xMinBoundaries
+        const lastNotCovered =
+          i === xBoundaries.length - 1 && newHighestX < this.xMaxBoundaries
+        const skippedOne = highestX !== undefined && fromX > highestX + 1
+        if (firstNotCovered || lastNotCovered || skippedOne) {
+          // found it!
+          // console.log('first', firstNotCovered)
+          // console.log('last', lastNotCovered)
+          // console.log('skipped', skippedOne)
+          // console.log('highest x', highestX)
+
+          return {
+            y,
+            x: fromX - 1,
+            type: 'beacon',
+          }
+        }
+        highestX = newHighestX
+      }
+    }
+    throw new Error('There is no hidden beacon :(')
   }
 
   public addRangeOutlines(): void {
