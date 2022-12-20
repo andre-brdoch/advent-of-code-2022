@@ -16,7 +16,6 @@ interface Beacon extends Coordinate {
 interface Sensor extends Coordinate {
   closestBeacon: Beacon
   range: number
-  outlineMap?: SensorOutlineMap
   type: 'sensor'
 }
 interface UnknownCell extends Coordinate {
@@ -29,12 +28,6 @@ type Cell = Sensor | Beacon | EmptyCell | UnknownCell
 interface Boundaries {
   min: number
   max: number
-}
-interface SensorOutlineMap {
-  [key: string]: {
-    fromX: number
-    toX: number
-  }
 }
 interface CombinedSensorOutlinesMap {
   [key: string]: {
@@ -111,51 +104,30 @@ class Cave {
     this.yMaxBoundaries = Math.min(xMax, max)
   }
 
-  public addRangeOutlinesToSensors(): void {
-    for (let i = 0; i < this.sensors.length; i++) {
-      const sensor = this.sensors[i]
-      const outlineMap = this.getSensorRangeOutline(sensor)
-      sensor.outlineMap = outlineMap
-    }
-  }
-
-  public getSensorRangeOutline = (sensor: Sensor): SensorOutlineMap => {
-    // Find outline of range, and save it in a map by y value.
+  public addRangeOutlines(): void {
+    // Find outline of ranges, and save it in a map by y value.
     // This will allow faster lookup for finding the answers.
 
-    const { closestBeacon: beacon, x, y } = sensor
-    const distance = getManhattanDistance(sensor, beacon)
-    const outlineMap: SensorOutlineMap = {}
-    let radius = 0
-
-    for (let i = 0; i < distance * 2 + 1; i++) {
-      outlineMap[y - distance + i] = { fromX: x - radius, toX: x + radius }
-
-      // go from 0 to distance and back to 0:
-      if (i < distance) radius += 1
-      else radius -= 1
-    }
-
-    return outlineMap
-  }
-
-  // TODO: make private
-  public addCombinedOutlineMap(withBoundaries = false): void {
-    const { yStart, yEnd } = this.getRanges(withBoundaries)
-
     for (let i = 0; i < this.sensors.length; i++) {
-      const outlineMap = this.sensors[i].outlineMap
-      if (outlineMap === undefined) throw new Error('No outline map')
-      for (let y = yStart; y < yEnd; y++) {
-        const yAdjusted = y - (withBoundaries ? yStart : 0)
-        const xBoundaries = outlineMap[yAdjusted]
-        if (!xBoundaries) continue
+      const sensor = this.sensors[i]
+      const { closestBeacon: beacon, x, y } = sensor
+      const distance = getManhattanDistance(sensor, beacon)
+      let radius = 0
+
+      for (let j = 0; j < distance * 2 + 1; j++) {
+        const yAdjusted = y - distance + j
+        const entry = { fromX: x - radius, toX: x + radius }
+
         if (this.outlineMap[yAdjusted] === undefined) {
-          this.outlineMap[yAdjusted] = [xBoundaries]
+          this.outlineMap[yAdjusted] = [entry]
         }
         else {
-          this.outlineMap[yAdjusted].push(xBoundaries)
+          this.outlineMap[yAdjusted].push(entry)
         }
+
+        // go from 0 to distance and back to 0:
+        if (j < distance) radius += 1
+        else radius -= 1
       }
     }
   }
