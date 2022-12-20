@@ -172,10 +172,8 @@ class Cave {
         pairs.push({ fromX, toX })
       }
     }
-    const devicesOnThisRow = [...this.sensors, ...this.beacons].filter(
-      device =>
-        device.y === y &&
-        pairs.some(pair => pair.fromX <= device.x && pair.toX >= device.x)
+    const devicesOnThisRow = this.getDevicesOnRow(y).filter(device =>
+      pairs.some(pair => pair.fromX <= device.x && pair.toX >= device.x)
     )
     return pairs.reduce(
       (result, { fromX, toX }) => result + toX - fromX + 1,
@@ -254,6 +252,10 @@ class Cave {
     return result
   }
 
+  private getDevicesOnRow(y: number): (Sensor | Beacon)[] {
+    return [...this.sensors, ...this.beacons].filter(device => device.y === y)
+  }
+
   private getRanges(withBoundaries = false) {
     return {
       yStart: withBoundaries ? this.yMinBoundaries : this.yMin,
@@ -316,27 +318,33 @@ class Cave {
    * Only meant to be used for relatively small coordinate systems.
    */
   private getFullGrid(withBoundaries = false): string[][] {
-    const { yStart, yEnd } = this.getRanges(withBoundaries)
+    const { yStart, yEnd, xStart, xEnd } = this.getRanges(withBoundaries)
     const grid = []
-
     for (let y = yStart; y < yEnd; y++) {
       const row = []
-      const { allCells } = this.analyzeRow(y, withBoundaries)
-      for (let j = 0; j < allCells.length; j++) {
-        const type = allCells[j].type
-        const marker =
-          type === 'sensor'
-            ? 'S'
-            : type === 'beacon'
-              ? 'B'
-              : type === 'empty'
-                ? '#'
-                : '.'
+      const devices = this.getDevicesOnRow(y)
+      const yAdjusted = y + (withBoundaries ? yStart : 0)
+      const xBoundaries = this.outlineMap[yAdjusted]
+      for (let x = xStart; x < xEnd; x++) {
+        const xAdjusted = x + (withBoundaries ? xStart : 0)
+        let marker = '.'
+        const device = devices.find(device => device.x === xAdjusted)
+        if (device !== undefined) {
+          marker = device.type === 'sensor' ? 'S' : 'B'
+        }
+        else if (
+          xBoundaries.some(
+            ({ fromX, toX }) => xAdjusted >= fromX && xAdjusted <= toX
+          )
+        ) {
+          marker = '#'
+        }
         row.push(marker)
       }
       grid.push(row)
     }
     return grid
+    return []
   }
 
   /**
@@ -348,7 +356,8 @@ class Cave {
     const grid = []
 
     for (let y = yStart; y < yEnd; y++) {
-      const boundaryPairs = this.outlineMap[y + (withBoundaries ? yStart : 0)]
+      const yAdjusted = y + (withBoundaries ? yStart : 0)
+      const boundaryPairs = this.outlineMap[yAdjusted]
       const row = []
       for (let x = xStart; x < xEnd; x++) {
         const device = [...this.sensors, ...this.beacons].find(
