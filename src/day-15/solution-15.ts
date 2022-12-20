@@ -46,11 +46,10 @@ export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
   cave.addRangeOutlines()
-  console.log('done outlining')
-  console.log(cave.stringifyGrid('outlines', true))
+  console.log('Done outlining.\n')
+  // console.log(cave.stringifyGrid('outlines', true))
 
-  const { emptyCells } = cave.analyzeRow(TARGET_Y)
-  const answer1 = emptyCells.length
+  const answer1 = cave.getEmptyCellCount(TARGET_Y)
 
   const hiddenBeacon = cave.findHiddenBeacon()
   console.log(`Hidden Beacon found at ${strinfifyCoordinate(hiddenBeacon)}!\n`)
@@ -150,6 +149,38 @@ class Cave {
         else radius -= 1
       }
     }
+  }
+
+  public getEmptyCellCount(y: number): number {
+    const xBoundaries = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
+    const pairs: { fromX: number; toX: number }[] = []
+
+    for (let i = 0; i < xBoundaries.length; i++) {
+      const { fromX, toX } = xBoundaries[i]
+
+      if (pairs.length === 0) {
+        pairs.push({ fromX, toX })
+        continue
+      }
+      const lastPair = pairs[pairs.length - 1]
+      const doesConnect = fromX <= lastPair.toX
+      // merge them together if connected
+      if (doesConnect && lastPair.toX < toX) {
+        lastPair.toX = toX
+      }
+      else if (!doesConnect) {
+        pairs.push({ fromX, toX })
+      }
+    }
+    const devicesOnThisRow = [...this.sensors, ...this.beacons].filter(
+      device =>
+        device.y === y &&
+        pairs.some(pair => pair.fromX <= device.x && pair.toX >= device.x)
+    )
+    return pairs.reduce(
+      (result, { fromX, toX }) => result + toX - fromX + 1,
+      -devicesOnThisRow.length
+    )
   }
 
   // TODO: refactor to be based upon outline instead
