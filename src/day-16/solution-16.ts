@@ -26,6 +26,12 @@ interface Turn {
   flowRateTotal: number
 }
 type Sequence = Array<Turn>
+interface CameFromMap {
+  [key: string]: ValveAnalyzed | null
+}
+interface CostMap {
+  [key: string]: number
+}
 
 const MAX_TURNS = 30
 const START_NAME = 'AA'
@@ -37,15 +43,33 @@ export default async function solution(input: string): Promise<Solution16> {
   const valves = parseValves(input)
   const analyzedValves = analyzeValves(valves)
   const startingValve = getByName(START_NAME, analyzedValves)
-  const remaining = getRemaining(analyzedValves)
-  const sequence = buildSequence(startingValve, remaining, 0)
-  console.log(stringifySequence(sequence))
-  const answer1 = sequence.reduce(
-    (result, turn) => result + turn.flowRateTotal,
-    0
-  )
+  find(analyzedValves, startingValve)
+  // const remaining = getRemaining(analyzedValves)
+  // const sequence = buildSequence(startingValve, remaining, 0)
+  // console.log(stringifySequence(sequence))
+  // const answer1 = sequence.reduce(
+  //   (result, turn) => result + turn.flowRateTotal,
+  //   0
+  // )
 
-  return { answer1 }
+  return { answer1: 0 }
+}
+
+function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
+  const frontier = new PriorityQueue<ValveAnalyzed>()
+  frontier.add(startingValve, 0)
+  const cameFrom: CameFromMap = { [startingValve.name]: null }
+  const costSoFar = { [startingValve.name]: 0 }
+
+  
+  while (!frontier.empty()) {
+    const current = frontier.get()
+    if (current === null) throw new Error('Empty queue, what now?')
+
+    current.neighbors.forEach(next => {
+      const newCost = costSoFar[current.name]
+    })
+  }
 }
 
 function buildSequence(
@@ -192,4 +216,31 @@ function analyzeValves(valves: Valve[]): ValveAnalyzed[] {
       potentialByRound,
     }
   })
+}
+
+class PriorityQueue<T> {
+  private items: {
+    item: T
+    priority: number
+  }[]
+
+  constructor() {
+    this.items = []
+  }
+
+  public add(item: T, priority: number) {
+    this.items.push({ item, priority })
+  }
+
+  public get() {
+    if (this.empty()) return null
+    const highestPrio = this.items.sort((a, b) => b.priority - a.priority)[0]
+    const i = this.items.indexOf(highestPrio)
+    this.items.splice(i, 1)
+    return highestPrio.item
+  }
+
+  public empty() {
+    return this.items.length === 0
+  }
 }
