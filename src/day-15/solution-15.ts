@@ -45,31 +45,15 @@ const TUNING_FREQUENCY_MODIFIER = 4000000
 export default async function solution(input: string): Promise<Solution15> {
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
-
-  // console.log(cave.getSensorRangeOutline(cave.sensors[6]))
-  // cave.addRangeOutlinesToSensors()
-  // console.log(cave.sensors);
-
-  // cave.ruleOutOccupiedCells()
-  // console.log(cave.emptyCells.length);
-
   cave.addRangeOutlines()
   console.log('done outlining')
-  // console.log(cave.stringifyGrid('outlines', true))
-  const hiddenBeacon = cave.findHiddenBeacon()
-  console.log('found')
-  console.log(hiddenBeacon)
-
-  // cave.addCombinedOutlineMap()
-
-  // console.log(cave.stringify(false))
+  console.log(cave.stringifyGrid('outlines', true))
 
   const { emptyCells } = cave.analyzeRow(TARGET_Y)
   const answer1 = emptyCells.length
 
-  // const hiddenBeacon = cave.findHiddenBeacon()
-  // console.log(hiddenBeacon)
-
+  const hiddenBeacon = cave.findHiddenBeacon()
+  console.log(`Hidden Beacon found at ${strinfifyCoordinate(hiddenBeacon)}!\n`)
   const answer2 = getTuningFrequency(hiddenBeacon)
 
   return { answer1, answer2 }
@@ -88,8 +72,7 @@ class Cave {
   public yMinBoundaries: number
   public yMaxBoundaries: number
 
-  // TODO: make private
-  public outlineMap: CombinedSensorOutlinesMap
+  private outlineMap: CombinedSensorOutlinesMap
 
   constructor(sensors: Sensor[]) {
     this.sensors = sensors
@@ -117,14 +100,10 @@ class Cave {
       // at the first/last cell, we found the hidden beacon.
       const xBoundaries = this.outlineMap[y].sort((a, b) => a.fromX - b.fromX)
 
-      // console.log('-----')
-      // console.log(xBoundaries)
-
       let highestX: number | undefined = undefined
 
       for (let i = 0; i < xBoundaries.length; i++) {
         const { fromX, toX } = xBoundaries[i]
-        // console.log('from', fromX, ', to', toX)
         const newHighestX = Math.max(toX, highestX ?? this.xMinBoundaries)
 
         const firstNotCovered = i === 0 && fromX > this.xMinBoundaries
@@ -133,11 +112,6 @@ class Cave {
         const skippedOne = highestX !== undefined && fromX > highestX + 1
         if (firstNotCovered || lastNotCovered || skippedOne) {
           // found it!
-          // console.log('first', firstNotCovered)
-          // console.log('last', lastNotCovered)
-          // console.log('skipped', skippedOne)
-          // console.log('highest x', highestX)
-
           return {
             y,
             x: fromX - 1,
@@ -302,7 +276,7 @@ class Cave {
         string += grid[y][x] + ' '
       }
     }
-    return string
+    return string + '\n'
   }
 
   /**
