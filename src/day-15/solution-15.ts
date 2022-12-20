@@ -187,6 +187,22 @@ class Cave {
     }
   }
 
+  // todo: make private
+  /**
+   * Finds all sensors that are fully enclosed by another one.
+   */
+  public findFullyEnclosedSensors(): Sensor[] {
+    const result: Sensor[] = []
+    this.sensors.forEach(sensor => {
+      // TODO: implement
+      const isFullyEnclosed = this.sensors.some(s => s !== sensor && true)
+      if (isFullyEnclosed) {
+        result.push(sensor)
+      }
+    })
+    return result
+  }
+
   private getRanges(withBoundaries = false) {
     return {
       yStart: withBoundaries ? this.yMinBoundaries : this.yMin,
