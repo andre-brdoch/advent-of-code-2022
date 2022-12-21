@@ -29,8 +29,9 @@ export default async function solution(input: string): Promise<Solution21> {
 }
 
 async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
-  const waitForOtherCalculations = new Promise(resolve => {
-    //
+  let resolve: (value: unknown) => void
+  const waitForOtherCalculations = new Promise(resolveFn => {
+    resolve = resolveFn
   })
   async function resolveNumbersTill(
     name: Name,
@@ -42,28 +43,38 @@ async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
       throw new Error(`Humanoid "${name} does not exist.`)
     }
     if (cameFrom) humanoid.cameFrom = cameFrom
+    const pathToRoot = getPath(humanoid)
     if (name === POOR_HUMAN) {
+      // if (false) {
       console.log(
         'Human here, waiting for the other part of the calculation...\n'
       )
-      console.log(getPath(humanoid))
+      await waitForOtherCalculations
+      console.log('please, continue.')
 
-      //   await waitForOtherCalculations
+      const pathToRoot = getPath(humanoid)
+      const { leftOperand: leftMonkey, rightOperand: rightMonkey } =
+        pathToRoot[pathToRoot.length - 1]?.formula ?? {}
+      if (leftMonkey === undefined || rightMonkey === undefined) {
+        throw new Error('Boss monkey must have a formula')
+      }
+      const waitingFor =
+        pathToRoot[1].name === leftMonkey ? rightMonkey : leftMonkey
+
+      console.log(pathToRoot)
     }
     if (humanoid.number !== undefined) return humanoid.number
     else if (humanoid.formula) {
       const { leftOperand, rightOperand, operator } = humanoid.formula
-      const leftNumber = await resolveNumbersTill(
-        leftOperand,
-        humanoids,
-        humanoid
-      )
-      const rightNumber = await resolveNumbersTill(
-        rightOperand,
-        humanoids,
-        humanoid
-      )
+      const [leftNumber, rightNumber] = await Promise.all([
+        resolveNumbersTill(leftOperand, humanoids, humanoid),
+        resolveNumbersTill(rightOperand, humanoids, humanoid),
+      ])
       humanoid.number = calc(leftNumber, operator, rightNumber)
+      // if direct children of root monkey
+      if (pathToRoot.length === 2) {
+        resolve(true)
+      }
       return humanoid.number
     }
     else throw new Error('Invalid monkey')
