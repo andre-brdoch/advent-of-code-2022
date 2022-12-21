@@ -29,11 +29,11 @@ export default async function solution(input: string): Promise<Solution21> {
 }
 
 async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
-  let resolve: (value: unknown) => void
-  const waitForOtherCalculations = new Promise(resolveFn => {
+  let resolve: (monkey: Humanoid) => void
+  const waitForOtherCalculations: Promise<Humanoid> = new Promise(resolveFn => {
     resolve = resolveFn
   })
-  async function resolveNumbersTill(
+  async function resolveNumbersTill2(
     name: Name,
     humanoids: Humanoid[],
     cameFrom: Humanoid | null
@@ -44,42 +44,42 @@ async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
     }
     if (cameFrom) humanoid.cameFrom = cameFrom
     const pathToRoot = getPath(humanoid)
+    const root = pathToRoot[pathToRoot.length - 1]
     if (name === POOR_HUMAN) {
-      // if (false) {
       console.log(
         'Human here, waiting for the other part of the calculation...\n'
       )
-      await waitForOtherCalculations
-      console.log('please, continue.')
+      const otherMonkey = await waitForOtherCalculations
+      console.log(
+        `Monkey "${otherMonkey.name}" had number ${otherMonkey.number}.`
+      )
+      console.log(
+        `Need to find number to scream, so that monkey "${pathToRoot[1].name}" also has number ${otherMonkey.number}...\n`
+      )
 
-      const pathToRoot = getPath(humanoid)
       const { leftOperand: leftMonkey, rightOperand: rightMonkey } =
-        pathToRoot[pathToRoot.length - 1]?.formula ?? {}
+        root.formula ?? {}
       if (leftMonkey === undefined || rightMonkey === undefined) {
         throw new Error('Boss monkey must have a formula')
       }
-      const waitingFor =
-        pathToRoot[1].name === leftMonkey ? rightMonkey : leftMonkey
-
-      console.log(pathToRoot)
     }
     if (humanoid.number !== undefined) return humanoid.number
     else if (humanoid.formula) {
       const { leftOperand, rightOperand, operator } = humanoid.formula
       const [leftNumber, rightNumber] = await Promise.all([
-        resolveNumbersTill(leftOperand, humanoids, humanoid),
-        resolveNumbersTill(rightOperand, humanoids, humanoid),
+        resolveNumbersTill2(leftOperand, humanoids, humanoid),
+        resolveNumbersTill2(rightOperand, humanoids, humanoid),
       ])
       humanoid.number = calc(leftNumber, operator, rightNumber)
       // if direct children of root monkey
       if (pathToRoot.length === 2) {
-        resolve(true)
+        resolve(humanoid)
       }
       return humanoid.number
     }
     else throw new Error('Invalid monkey')
   }
-  return resolveNumbersTill('root', humanoids, null)
+  return resolveNumbersTill2('root', humanoids, null)
 }
 
 function resolveNumbersTill(name: Name, humanoids: Humanoid[]): number {
