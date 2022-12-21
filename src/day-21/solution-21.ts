@@ -25,6 +25,16 @@ export default async function solution(input: string): Promise<Solution21> {
 
   const humanoidsPt2 = parseHumanoids(input)
   const answer2 = await screamProperNumber(humanoidsPt2)
+
+  console.log(resolveFormulaTo(100, '+', 25, null))
+  console.log(resolveFormulaTo(100, '+', null, 25))
+  console.log(resolveFormulaTo(100, '*', 25, null))
+  console.log(resolveFormulaTo(100, '*', null, 25))
+  console.log(resolveFormulaTo(100, '-', 25, null))
+  console.log(resolveFormulaTo(100, '-', null, 25))
+  console.log(resolveFormulaTo(100, '/', 200, null))
+  console.log(resolveFormulaTo(100, '/', null, 200))
+
   return { answer1, answer2 }
 }
 
@@ -50,11 +60,13 @@ async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
         'Human here, waiting for the other part of the calculation...\n'
       )
       const otherMonkey = await waitForOtherCalculations
+      const firstAncestor = pathToRoot[pathToRoot.length - 2]
+      firstAncestor.number = otherMonkey.number
       console.log(
         `Monkey "${otherMonkey.name}" had number ${otherMonkey.number}.`
       )
       console.log(
-        `Need to find number to scream, so that monkey "${pathToRoot[1].name}" also has number ${otherMonkey.number}...\n`
+        `Need to find number to scream, so that monkey "${firstAncestor.name}" also has number ${otherMonkey.number}...\n`
       )
 
       const { leftOperand: leftMonkey, rightOperand: rightMonkey } =
@@ -105,11 +117,40 @@ function getPath(humanoid: Humanoid): Humanoid[] {
   return result
 }
 
+function resolveFormulaTo(
+  result: number,
+  operator: Operator,
+  left: number | null,
+  right: number | null
+): number {
+  const leftIsUnknown = !isNotNull(left)
+  const rightIsUnknown = !isNotNull(right)
+  const known = leftIsUnknown ? right : left
+  if (!isNotNull(known) || (!leftIsUnknown && !rightIsUnknown)) {
+    throw new Error('Formula can not be resolved.')
+  }
+  switch (operator) {
+  case '*':
+    return result / known
+  case '-':
+    return known === right ? result + known : (result - known) * -1
+  case '/':
+    return known === right ? result * known : known / result
+  case '+':
+  default:
+    return result - known
+  }
+}
+
 function calc(left: number, operator: Operator, right: number): number {
   if (operator === '+') return left + right
   if (operator === '-') return left - right
   if (operator === '*') return left * right
   return left / right
+}
+
+function isNotNull<T>(val: T | null): val is T {
+  return val !== null
 }
 
 function getByName(name: Name, humanoids: Humanoid[]): Humanoid | undefined {
