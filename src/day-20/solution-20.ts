@@ -15,18 +15,18 @@ export default async function solution(input: string): Promise<Solution20> {
   const mixed = mixItems(items)
   printItems(mixed)
 
-  console.log('\n\nnew index tests')
-  const test = [{ value: 1 }, { value: 2 }, { value: 3 }, { value: 4 }]
-  console.log(getNewIndex(test, 0, 0))
-  console.log(getNewIndex(test, 0, 1))
-  console.log(getNewIndex(test, 0, 2))
-  console.log(getNewIndex(test, 0, 3))
-  console.log(getNewIndex(test, 0, 4))
-  console.log(getNewIndex(test, 0, 5))
-  console.log(getNewIndex(test, 0, 6))
-  console.log(getNewIndex(test, 0, 7))
-  console.log(getNewIndex(test, 0, 8))
-  console.log('\n\n')
+  // console.log('\n\nnew index tests')
+  // const test = [{ value: 1 }, { value: 2 }, { value: 3 }, { value: 4 }]
+  // console.log(getNewIndex(test, 0, 0))
+  // console.log(getNewIndex(test, 0, 1))
+  // console.log(getNewIndex(test, 0, 2))
+  // console.log(getNewIndex(test, 0, 3))
+  // console.log(getNewIndex(test, 0, 4))
+  // console.log(getNewIndex(test, 0, 5))
+  // console.log(getNewIndex(test, 0, 6))
+  // console.log(getNewIndex(test, 0, 7))
+  // console.log(getNewIndex(test, 0, 8))
+  // console.log('\n\n')
 
   const startItem = mixed.find(item => item.value === 0)
   if (!startItem) throw new Error('Start item not found!')
@@ -57,6 +57,7 @@ function getNewIndex(
   items: Sequence,
   from: number,
   moveBy: number,
+  // if not static, there is effectively 1 item less in the sequence
   fromIsStatic = false
 ): number {
   // console.log('--')
@@ -68,17 +69,10 @@ function getNewIndex(
 
   if (moveBy === 0) moveTo = from
   // if on right boundary while moving forward, wrap
-  else if (!fromIsStatic && moveTo === items.length - 1 && moveBy > 0) {
-    moveTo = 0
-  }
-  // if on left boundary while moving backwards, wrap
-  else if (!fromIsStatic && moveTo === 0 && moveBy < 0) {
-    moveTo = items.length - 1
-  }
   else if (moveTo < 0) {
     moveTo = items.length - 1 + moveTo
   }
-  else if (moveTo >= items.length) {
+  else if (moveTo > items.length) {
     moveTo = moveTo - items.length + (fromIsStatic ? 0 : 1)
   }
   return moveTo
