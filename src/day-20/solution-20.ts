@@ -38,21 +38,6 @@ export default async function solution(input: string): Promise<Solution20> {
   return { answer1 }
 }
 
-function mixItems(items: Sequence): Sequence {
-  const result: Sequence = [...items]
-  items.forEach(item => {
-    const i = result.indexOf(item)
-    const iNew = getNewIndex(result, i, item.value)
-
-    result.splice(i, 1)
-    result.splice(iNew, 0, item)
-
-    console.log(`---\nMove ${item.value} (from ${i} to ${iNew})`)
-    // printItems(result)
-  })
-  return result
-}
-
 function getNewIndex(
   items: Sequence,
   from: number,
@@ -76,6 +61,21 @@ function getNewIndex(
     moveTo = moveTo - items.length + (fromIsStatic ? 0 : 1)
   }
   return moveTo
+}
+
+function mixItems(items: Sequence): Sequence {
+  const result: Sequence = [...items]
+  items.forEach(item => {
+    const i = result.indexOf(item)
+    const iNew = getNewIndex(result, i, item.value)
+
+    result.splice(i, 1)
+    result.splice(iNew, 0, item)
+
+    console.log(`---\nMove ${item.value} (from ${i} to ${iNew})`)
+    // printItems(result)
+  })
+  return result
 }
 
 function getCoordinates(relevantNumbers: number[]): number {
