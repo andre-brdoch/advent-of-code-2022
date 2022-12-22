@@ -11,31 +11,17 @@ export default async function solution(input: string): Promise<Solution20> {
   const items = parseItems(input)
   printItems(items)
 
-  console.log('\nafter:')
+  const answer1 = getAnswer1(items)
+
+  return { answer1 }
+}
+
+function getAnswer1(items: Sequence): number {
   const mixed = mixItems(items)
-  printItems(mixed)
-
-  // console.log('\n\nnew index tests')
-  // const test = [{ value: 1 }, { value: 2 }, { value: 3 }, { value: 4 }]
-  // console.log(getNewIndex(test, 0, 0))
-  // console.log(getNewIndex(test, 0, 1))
-  // console.log(getNewIndex(test, 0, 2))
-  // console.log(getNewIndex(test, 0, 3))
-  // console.log(getNewIndex(test, 0, 4))
-  // console.log(getNewIndex(test, 0, 5))
-  // console.log(getNewIndex(test, 0, 6))
-  // console.log(getNewIndex(test, 0, 7))
-  // console.log(getNewIndex(test, 0, 8))
-  // console.log('\n\n')
-
   const startItem = mixed.find(item => item.value === 0)
   if (!startItem) throw new Error('Start item not found!')
   const relevantNumbers = getRelevantNumbers(mixed, startItem)
-  console.log(relevantNumbers)
-
-  const answer1 = getCoordinates(relevantNumbers)
-
-  return { answer1 }
+  return getCoordinates(relevantNumbers)
 }
 
 function getNewIndex(
