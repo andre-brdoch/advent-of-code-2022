@@ -5,19 +5,42 @@ interface Cube {
   x: number
   y: number
   z: number
-  type: 'lava' | 'air' | 'unknown'
+  type: 'lava' | 'air' | 'water' | 'unknown'
 }
 type Axis = keyof Omit<Cube, 'type'>
+type Grid = Cube[][][]
 
 const ALL_AXES: Axis[] = ['x', 'y', 'z']
 
 export default async function solution(input: string): Promise<Solution18> {
   const cubes = parseCubes(input)
-  console.log(getBoundingCube(cubes))
-
   const answer1 = getSurfaceArea(cubes)
 
+  const grid = buildGrid(cubes)
+  grid.forEach(row => console.log(row))
+
   return { answer1 }
+}
+
+function buildGrid(cubes: Cube[]): Grid {
+  const { maxX, maxY, maxZ, minX, minY, minZ } = getBoundingCube(cubes)
+  const grid: Grid = []
+  for (let x = minX; x < maxX; x++) {
+    const row = []
+    for (let y = minY; y < maxY; y++) {
+      const column = []
+      for (let z = minZ; z < maxZ; z++) {
+        let cube = cubes.find(
+          cube => cube.x === x && cube.y === y && cube.z === z
+        )
+        if (!cube) cube = { x, y, z, type: 'unknown' }
+        column.push(cube)
+      }
+      row.push(column)
+    }
+    grid.push(row)
+  }
+  return grid
 }
 
 function getSurfaceArea(cubes: Cube[]): number {
