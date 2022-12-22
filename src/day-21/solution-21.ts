@@ -26,14 +26,14 @@ export default async function solution(input: string): Promise<Solution21> {
   const humanoidsPt2 = parseHumanoids(input)
   const answer2 = await screamProperNumber(humanoidsPt2)
 
-  console.log(resolveFormulaTo(100, '+', 25, null))
-  console.log(resolveFormulaTo(100, '+', null, 25))
-  console.log(resolveFormulaTo(100, '*', 25, null))
-  console.log(resolveFormulaTo(100, '*', null, 25))
-  console.log(resolveFormulaTo(100, '-', 25, null))
-  console.log(resolveFormulaTo(100, '-', null, 25))
-  console.log(resolveFormulaTo(100, '/', 200, null))
-  console.log(resolveFormulaTo(100, '/', null, 200))
+  console.log(resolveFormulaTo(100, '+', 25, undefined))
+  console.log(resolveFormulaTo(100, '+', undefined, 25))
+  console.log(resolveFormulaTo(100, '*', 25, undefined))
+  console.log(resolveFormulaTo(100, '*', undefined, 25))
+  console.log(resolveFormulaTo(100, '-', 25, undefined))
+  console.log(resolveFormulaTo(100, '-', undefined, 25))
+  console.log(resolveFormulaTo(100, '/', 200, undefined))
+  console.log(resolveFormulaTo(100, '/', undefined, 200))
 
   return { answer1, answer2 }
 }
@@ -43,6 +43,8 @@ async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
   const waitForOtherCalculations: Promise<Humanoid> = new Promise(resolveFn => {
     resolve = resolveFn
   })
+  let result: number | undefined = undefined
+
   async function resolveNumbersTill2(
     name: Name,
     humanoids: Humanoid[],
@@ -54,12 +56,16 @@ async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
     }
     if (cameFrom) humanoid.cameFrom = cameFrom
     const pathToRoot = getPath(humanoid)
-    const root = pathToRoot[pathToRoot.length - 1]
+
     if (name === POOR_HUMAN) {
+      delete humanoid.number
       console.log(
         'Human here, waiting for the other part of the calculation...\n'
       )
       const otherMonkey = await waitForOtherCalculations
+      await new Promise(resolve => {
+        setTimeout(resolve, 10000)
+      })
       const firstAncestor = pathToRoot[pathToRoot.length - 2]
       firstAncestor.number = otherMonkey.number
       console.log(
@@ -69,12 +75,11 @@ async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
         `Need to find number to scream, so that monkey "${firstAncestor.name}" also has number ${otherMonkey.number}...\n`
       )
 
-      const { leftOperand: leftMonkey, rightOperand: rightMonkey } =
-        root.formula ?? {}
-      if (leftMonkey === undefined || rightMonkey === undefined) {
-        throw new Error('Boss monkey must have a formula')
-      }
+      const numberToScream = resolveBackwards(humanoid, humanoids)
+      result = numberToScream
+      return numberToScream
     }
+
     if (humanoid.number !== undefined) return humanoid.number
     else if (humanoid.formula) {
       const { leftOperand, rightOperand, operator } = humanoid.formula
@@ -91,7 +96,47 @@ async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
     }
     else throw new Error('Invalid monkey')
   }
-  return resolveNumbersTill2('root', humanoids, null)
+
+  await resolveNumbersTill2('root', humanoids, null)
+  if (result === undefined) throw new Error('Could not solve')
+  return result
+}
+
+function resolveBackwards(current: Humanoid, humanoids: Humanoid[]): number {
+  const parent = current.cameFrom
+  if (!isNotUndefined(parent) || parent.formula === undefined) {
+    throw new Error(`Humanoid "${current.name}" has invalid parent!`)
+  }
+  const { formula, number } = parent
+  if (number === undefined) {
+    parent.number = resolveBackwards(parent, humanoids)
+  }
+  console.log('----')
+  console.log('--', current.name)
+
+  const { leftOperand, rightOperand, operator } = formula
+  console.log('leftOperand', leftOperand)
+  console.log('rightOperand', rightOperand)
+
+  const leftHumanoid = getByName(leftOperand, humanoids)
+  const rightHumanoid = getByName(rightOperand, humanoids)
+  if (leftHumanoid === undefined || rightHumanoid === undefined) {
+    throw new Error('These monkeys do not exist.')
+  }
+  const left = leftHumanoid.number
+  const right = rightHumanoid.number
+  console.log('result', parent.number)
+  console.log('operator', operator)
+  console.log('left val', left)
+  console.log('right val', right)
+
+  current.number = resolveFormulaTo(
+    parent.number as number,
+    operator,
+    left,
+    right
+  )
+  return current.number
 }
 
 function resolveNumbersTill(name: Name, humanoids: Humanoid[]): number {
@@ -120,13 +165,13 @@ function getPath(humanoid: Humanoid): Humanoid[] {
 function resolveFormulaTo(
   result: number,
   operator: Operator,
-  left: number | null,
-  right: number | null
+  left: number | undefined,
+  right: number | undefined
 ): number {
-  const leftIsUnknown = !isNotNull(left)
-  const rightIsUnknown = !isNotNull(right)
+  const leftIsUnknown = !isNotUndefined(left)
+  const rightIsUnknown = !isNotUndefined(right)
   const known = leftIsUnknown ? right : left
-  if (!isNotNull(known) || (!leftIsUnknown && !rightIsUnknown)) {
+  if (!isNotUndefined(known) || (!leftIsUnknown && !rightIsUnknown)) {
     throw new Error('Formula can not be resolved.')
   }
   switch (operator) {
@@ -149,8 +194,8 @@ function calc(left: number, operator: Operator, right: number): number {
   return left / right
 }
 
-function isNotNull<T>(val: T | null): val is T {
-  return val !== null
+function isNotUndefined<T>(val: T | null | undefined): val is T {
+  return val != null
 }
 
 function getByName(name: Name, humanoids: Humanoid[]): Humanoid | undefined {
