@@ -22,7 +22,10 @@ export default async function solution(input: string): Promise<Solution20> {
 
 function getAnswer1(items: Sequence): number {
   const mixed = mixItems(items)
+
+  console.log('\nanswer1:')
   printItems(mixed)
+  console.log('\n')
   const startItem = mixed.find(item => item.value === 0)
   if (!startItem) throw new Error('Start item not found!')
   const relevantNumbers = getRelevantNumbers(mixed, startItem)
@@ -56,11 +59,11 @@ function getNewIndex(
 
   if (moveBy === 0) moveTo = from
   // if on right boundary while moving forward, wrap
-  else if (!fromIsStatic && moveTo === items.length - 1 && moveBy > 0) {
+  else if (moveTo === items.length - 1 && moveBy > 0) {
     moveTo = 0
   }
   // if on left boundary while moving backwards, wrap
-  else if (!fromIsStatic && moveTo === 0 && moveBy < 0) {
+  else if (moveTo === 0 && moveBy < 0) {
     moveTo = items.length - 1
   }
   else if (moveTo < 0) {
@@ -74,8 +77,8 @@ function getNewIndex(
 
 function mixItems(items: Sequence, times = 1): Sequence {
   const result: Sequence = [...items]
-  items.forEach(item => {
-    Array.from(Array(times)).forEach(() => {
+  Array.from(Array(times)).forEach(() => {
+    items.forEach(item => {
       const i = result.indexOf(item)
       const iNew = getNewIndex(result, i, item.value)
 
