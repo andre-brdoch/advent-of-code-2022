@@ -1,13 +1,10 @@
 interface Solution20 {
   answer1: number
-  answer2: number
 }
 interface Item {
   value: number
 }
 type Sequence = Item[]
-
-const DECRYPTION_KEY = 811589153
 
 export default async function solution(input: string): Promise<Solution20> {
   console.log('before:')
@@ -15,28 +12,12 @@ export default async function solution(input: string): Promise<Solution20> {
   printItems(items)
 
   const answer1 = getAnswer1(items)
-  const answer2 = getAnswer2(items)
 
-  return { answer1, answer2 }
-}
-
-function getAnswer2(items: Sequence): number {
-  // const decrypted = items.map(item => ({ value: item.value * DECRYPTION_KEY }))
-  // console.log(decrypted)
-  // const mixed = mixItems(decrypted, 10)
-  // const startItem = mixed.find(item => item.value === 0)
-  // if (!startItem) throw new Error('Start item not found!')
-  // const relevantNumbers = getRelevantNumbers(mixed, startItem)
-  // return getCoordinates(relevantNumbers)
-  return 0
+  return { answer1 }
 }
 
 function getAnswer1(items: Sequence): number {
   const mixed = mixItems(items)
-  console.log('\nanswer1:')
-  printItems(mixed)
-  console.log('\n')
-
   const startItem = mixed.find(item => item.value === 0)
   if (!startItem) throw new Error('Start item not found!')
   const relevantNumbers = getRelevantNumbers(mixed, startItem)
@@ -58,6 +39,7 @@ function getNewIndex(
   // console.log(`${moveBy} % ${items.length - 1} = ${modulo}`)
 
   if (moveBy === 0) moveTo = from
+  // if on right boundary while moving forward, wrap
   else if (moveTo < 0) {
     moveTo = items.length - 1 + moveTo
   }
@@ -67,19 +49,17 @@ function getNewIndex(
   return moveTo
 }
 
-function mixItems(items: Sequence, times = 1): Sequence {
+function mixItems(items: Sequence): Sequence {
   const result: Sequence = [...items]
   items.forEach(item => {
-    Array.from(Array(times)).forEach(() => {
-      const i = result.indexOf(item)
-      const iNew = getNewIndex(result, i, item.value)
+    const i = result.indexOf(item)
+    const iNew = getNewIndex(result, i, item.value)
 
-      result.splice(i, 1)
-      result.splice(iNew, 0, item)
+    result.splice(i, 1)
+    result.splice(iNew, 0, item)
 
-      // console.log(`---\nMove ${item.value} (from ${i} to ${iNew})`)
-    })
-    printItems(result)
+    console.log(`---\nMove ${item.value} (from ${i} to ${iNew})`)
+    // printItems(result)
   })
   return result
 }
