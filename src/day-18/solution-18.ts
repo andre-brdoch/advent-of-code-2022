@@ -11,6 +11,15 @@ interface Cube extends Coordinate {
 }
 type Axis = keyof Coordinate
 type Grid = Cube[][][]
+interface Boundaries {
+  maxX: number
+  maxY: number
+  maxZ: number
+  minX: number
+  minY: number
+  minZ: number
+}
+type Boundary = keyof Boundaries
 
 const ALL_AXES: Axis[] = ['x', 'y', 'z']
 
@@ -57,16 +66,19 @@ function getSurfaceArea(grid: Grid): number {
     .reduce(
       (result, cube) =>
         6 -
-        getNeighbors(cube, grid).filter(neighbor => neighbor.type === 'lava')
-          .length +
+        getNeighbors(cube, grid).filter(
+          neighbor => neighbor !== null && neighbor.type === 'lava'
+        ).length +
         result,
       0
     )
 }
 
-function getNeighbors(cube: Cube, grid: Grid): Cube[] {
-  const otherCubes = grid.flat(2).filter(c => areAdjacent(cube, c))
-  return otherCubes
+function getNeighbors(cube: Cube, grid: Grid): (Cube | null)[] {
+  return getNeighboringCoordinates(cube).map(coordinate => {
+    if (!isOnBoard(coordinate, grid)) return null
+    return grid[cube.x][cube.y][cube.z]
+  })
 }
 
 function getNeighboringCoordinates(cube: Cube): Coordinate[] {
@@ -83,30 +95,26 @@ function getNeighboringCoordinates(cube: Cube): Coordinate[] {
   })
 }
 
-function areAdjacent(a: Cube, b: Cube): boolean {
-  return (
-    areAdjacentOnAxis(a, b, 'x') ||
-    areAdjacentOnAxis(a, b, 'y') ||
-    areAdjacentOnAxis(a, b, 'z')
-  )
+// todo: need to normalize coords
+function isOnBoard(coordinate: Coordinate, grid: Grid): boolean {
+  const { x, y, z } = coordinate
+  try {
+    return !!grid[x][y][z]
+  }
+  catch (err) {
+    return false
+  }
+  // const { x, y, z } = coordinate
+  // const { maxX, maxY, maxZ, minX, minY, minZ } = boundaries
+  // return ALL_AXES.every(axis => {
+  //   const axisUpper = axis.toUpperCase()
+  //   const min = boundaries[`min${axisUpper}` as Boundary]
+  //   const max = boundaries[`max${axisUpper}` as Boundary]
+  //   return coordinate[axis] >
+  // })
 }
 
-function areAdjacentOnAxis(a: Cube, b: Cube, axis: Axis): boolean {
-  const otherAxes: Axis[] = ALL_AXES.filter(otherAxis => otherAxis !== axis)
-  return (
-    Math.abs(a[axis] - b[axis]) === 1 &&
-    otherAxes.every(otherAxis => a[otherAxis] === b[otherAxis])
-  )
-}
-
-function getBoundingCube(cubes: Cube[]): {
-  maxX: number
-  maxY: number
-  maxZ: number
-  minX: number
-  minY: number
-  minZ: number
-} {
+function getBoundingCube(cubes: Cube[]): Boundaries {
   let maxX: number | null = null
   let maxY: number | null = null
   let maxZ: number | null = null
