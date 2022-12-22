@@ -1,23 +1,30 @@
 interface Solution18 {
   answer1: number
 }
-interface Cube {
+interface Coordinate {
   x: number
   y: number
   z: number
+}
+interface Cube extends Coordinate {
   type: 'lava' | 'air' | 'water' | 'unknown'
 }
-type Axis = keyof Omit<Cube, 'type'>
+type Axis = keyof Coordinate
 type Grid = Cube[][][]
 
 const ALL_AXES: Axis[] = ['x', 'y', 'z']
 
 export default async function solution(input: string): Promise<Solution18> {
   const cubes = parseCubes(input)
-  const answer1 = getSurfaceArea(cubes)
-
   const grid = buildGrid(cubes)
+
+  const answer1 = getSurfaceArea(grid)
+
   grid.forEach(row => console.log(row))
+
+  console.log('neighbors:')
+  console.log(cubes[0])
+  console.log(getNeighboringCoordinates(cubes[0]))
 
   return { answer1 }
 }
@@ -43,16 +50,37 @@ function buildGrid(cubes: Cube[]): Grid {
   return grid
 }
 
-function getSurfaceArea(cubes: Cube[]): number {
-  return cubes.reduce(
-    (result, cube) => 6 - getNeighbors(cube, cubes).length + result,
-    0
-  )
+function getSurfaceArea(grid: Grid): number {
+  return grid
+    .flat(2)
+    .filter(cube => cube.type === 'lava')
+    .reduce(
+      (result, cube) =>
+        6 -
+        getNeighbors(cube, grid).filter(neighbor => neighbor.type === 'lava')
+          .length +
+        result,
+      0
+    )
 }
 
-function getNeighbors(cube: Cube, cubes: Cube[]): Cube[] {
-  const otherCubes = cubes.filter(c => areAdjacent(cube, c))
+function getNeighbors(cube: Cube, grid: Grid): Cube[] {
+  const otherCubes = grid.flat(2).filter(c => areAdjacent(cube, c))
   return otherCubes
+}
+
+function getNeighboringCoordinates(cube: Cube): Coordinate[] {
+  return ALL_AXES.flatMap(axis => {
+    const otherAxes = ALL_AXES.filter(otherAxis => otherAxis !== axis).reduce(
+      (result, otherAxis) => ({ ...result, [otherAxis]: cube[otherAxis] }),
+      {} as Coordinate
+    )
+    const result: Coordinate[] = [-1, 1].map(adjustment => ({
+      [axis]: cube[axis] + adjustment,
+      ...otherAxes,
+    }))
+    return result as Coordinate[]
+  })
 }
 
 function areAdjacent(a: Cube, b: Cube): boolean {
