@@ -1,5 +1,6 @@
 interface Solution18 {
   answer1: number
+  answer2: number
 }
 interface Coordinate {
   x: number
@@ -28,25 +29,19 @@ export default async function solution(input: string): Promise<Solution18> {
   const boundaries = getBoundingCube(cubes)
   const grid = buildGrid(cubes, boundaries)
 
-  const answer1 = getSurfaceArea(grid, boundaries)
+  const answer1 = getSurfaceArea(grid, boundaries, 'all')
 
   console.log('\ngrid:')
   grid.forEach(row => console.log(row))
-
-  // console.log(getOuterCubes(grid, boundaries))
 
   submergeInWater(grid, boundaries)
 
   console.log('\nafter submerging:')
   grid.forEach(row => console.log(row))
 
-  // console.log('\ncube:')
-  // console.log(cubes[0])
-  // console.log('neighbors:')
-  // console.log(getNeighboringCoordinates(cubes[0]))
-  // console.log(getNeighbors(cubes[0], grid, boundaries))
+  const answer2 = getSurfaceArea(grid, boundaries, 'outer')
 
-  return { answer1 }
+  return { answer1, answer2 }
 }
 
 function submergeInWater(grid: Grid, boundaries: Boundaries): void {
@@ -92,6 +87,14 @@ function submergeInWater(grid: Grid, boundaries: Boundaries): void {
       })
     }
   }
+
+  // All remaining unknown cubes must be filled with air
+  grid
+    .flat(2)
+    .filter(cube => cube.type === 'unknown')
+    .forEach(cube => {
+      cube.type = 'air'
+    })
 }
 
 function buildGrid(cubes: Cube[], boundaries: Boundaries): Grid {
@@ -115,16 +118,26 @@ function buildGrid(cubes: Cube[], boundaries: Boundaries): Grid {
   return grid
 }
 
-function getSurfaceArea(grid: Grid, boundaries: Boundaries): number {
+function getSurfaceArea(
+  grid: Grid,
+  boundaries: Boundaries,
+  mode: 'all' | 'outer'
+): number {
   return grid
     .flat(2)
     .filter(cube => cube.type === 'lava')
     .reduce(
       (result, cube) =>
         6 -
-        getNeighbors(cube, grid, boundaries).filter(
-          neighbor => neighbor !== null && neighbor.type === 'lava'
-        ).length +
+        getNeighbors(cube, grid, boundaries).filter(neighbor => {
+          if (neighbor === null) return false
+          const { type } = neighbor
+          if (mode === 'outer') {
+            // if only counting outer area, ignore any empy air cubes
+            return type === 'lava' || type === 'air'
+          }
+          return type === 'lava'
+        }).length +
         result,
       0
     )
