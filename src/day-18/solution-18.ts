@@ -25,27 +25,31 @@ const ALL_AXES: Axis[] = ['x', 'y', 'z']
 
 export default async function solution(input: string): Promise<Solution18> {
   const cubes = parseCubes(input)
-  const grid = buildGrid(cubes)
+  const boundaries = getBoundingCube(cubes)
+  const grid = buildGrid(cubes, boundaries)
 
-  const answer1 = getSurfaceArea(grid)
+  const answer1 = getSurfaceArea(grid, boundaries)
 
+  console.log('\ngrid:')
   grid.forEach(row => console.log(row))
 
-  console.log('neighbors:')
-  console.log(cubes[0])
-  console.log(getNeighboringCoordinates(cubes[0]))
+  // console.log('\ncube:')
+  // console.log(cubes[0])
+  // console.log('neighbors:')
+  // console.log(getNeighboringCoordinates(cubes[0]))
+  // console.log(getNeighbors(cubes[0], grid, boundaries))
 
   return { answer1 }
 }
 
-function buildGrid(cubes: Cube[]): Grid {
-  const { maxX, maxY, maxZ, minX, minY, minZ } = getBoundingCube(cubes)
+function buildGrid(cubes: Cube[], boundaries: Boundaries): Grid {
+  const { maxX, maxY, maxZ, minX, minY, minZ } = boundaries
   const grid: Grid = []
-  for (let x = minX; x < maxX; x++) {
+  for (let x = minX; x <= maxX; x++) {
     const row = []
-    for (let y = minY; y < maxY; y++) {
+    for (let y = minY; y <= maxY; y++) {
       const column = []
-      for (let z = minZ; z < maxZ; z++) {
+      for (let z = minZ; z <= maxZ; z++) {
         let cube = cubes.find(
           cube => cube.x === x && cube.y === y && cube.z === z
         )
@@ -59,14 +63,14 @@ function buildGrid(cubes: Cube[]): Grid {
   return grid
 }
 
-function getSurfaceArea(grid: Grid): number {
+function getSurfaceArea(grid: Grid, boundaries: Boundaries): number {
   return grid
     .flat(2)
     .filter(cube => cube.type === 'lava')
     .reduce(
       (result, cube) =>
         6 -
-        getNeighbors(cube, grid).filter(
+        getNeighbors(cube, grid, boundaries).filter(
           neighbor => neighbor !== null && neighbor.type === 'lava'
         ).length +
         result,
@@ -74,10 +78,16 @@ function getSurfaceArea(grid: Grid): number {
     )
 }
 
-function getNeighbors(cube: Cube, grid: Grid): (Cube | null)[] {
+function getNeighbors(
+  cube: Cube,
+  grid: Grid,
+  boundaries: Boundaries
+): (Cube | null)[] {
   return getNeighboringCoordinates(cube).map(coordinate => {
-    if (!isOnBoard(coordinate, grid)) return null
-    return grid[cube.x][cube.y][cube.z]
+    if (!isOnBoard(coordinate, grid, boundaries)) return null
+    const { x, y, z } = coordinate
+    const { minX, minY, minZ } = boundaries
+    return grid[x - minX][y - minY][z - minZ]
   })
 }
 
@@ -96,22 +106,19 @@ function getNeighboringCoordinates(cube: Cube): Coordinate[] {
 }
 
 // todo: need to normalize coords
-function isOnBoard(coordinate: Coordinate, grid: Grid): boolean {
+function isOnBoard(
+  coordinate: Coordinate,
+  grid: Grid,
+  boundaries: Boundaries
+): boolean {
   const { x, y, z } = coordinate
+  const { minX, minY, minZ } = boundaries
   try {
-    return !!grid[x][y][z]
+    return !!grid[x - minX][y - minY][z - minZ]
   }
   catch (err) {
     return false
   }
-  // const { x, y, z } = coordinate
-  // const { maxX, maxY, maxZ, minX, minY, minZ } = boundaries
-  // return ALL_AXES.every(axis => {
-  //   const axisUpper = axis.toUpperCase()
-  //   const min = boundaries[`min${axisUpper}` as Boundary]
-  //   const max = boundaries[`max${axisUpper}` as Boundary]
-  //   return coordinate[axis] >
-  // })
 }
 
 function getBoundingCube(cubes: Cube[]): Boundaries {
