@@ -33,6 +33,13 @@ export default async function solution(input: string): Promise<Solution18> {
   console.log('\ngrid:')
   grid.forEach(row => console.log(row))
 
+  // console.log(getOuterCubes(grid, boundaries))
+
+  submergeInWater(grid, boundaries)
+
+  console.log('\nafter submerging:')
+  grid.forEach(row => console.log(row))
+
   // console.log('\ncube:')
   // console.log(cubes[0])
   // console.log('neighbors:')
@@ -40,6 +47,51 @@ export default async function solution(input: string): Promise<Solution18> {
   // console.log(getNeighbors(cubes[0], grid, boundaries))
 
   return { answer1 }
+}
+
+function submergeInWater(grid: Grid, boundaries: Boundaries): void {
+  const unvisitedOuterWaterCubes: Cube[] = []
+
+  // all non-lava cubes at the outside of the bounding cube must be water
+  getOuterCubes(grid, boundaries).forEach(cube => {
+    if (cube.type === 'unknown') {
+      unvisitedOuterWaterCubes.push(cube)
+    }
+  })
+
+  // Using breath-first search, fill all reachable unknown cubes
+  // from the outher water cells, and switch their type to 'water'.
+  // Do so until all outer unknown cells had been switched to water,
+  // and their corresponding search finished:
+  while (unvisitedOuterWaterCubes.length) {
+    const start = unvisitedOuterWaterCubes.pop()
+    if (start === undefined) break
+    const frontier: Cube[] = [start]
+    const reached: { [key: string]: true } = {}
+    let current: Cube | undefined
+
+    while (frontier.length) {
+      current = frontier.shift()
+      if (current === undefined) break
+      current.type = 'water'
+      // remove from unvisited outer water cubes
+      unvisitedOuterWaterCubes.splice(
+        unvisitedOuterWaterCubes.indexOf(current),
+        1
+      )
+      const neighbors = getNeighbors(current, grid, boundaries).filter(
+        c => c?.type === 'unknown'
+      )
+      neighbors.forEach(next => {
+        if (next === null) return
+        const id = stringifyCoordinate(next)
+        if (next !== null && !(id in reached)) {
+          frontier.push(next)
+          reached[id] = true
+        }
+      })
+    }
+  }
 }
 
 function buildGrid(cubes: Cube[], boundaries: Boundaries): Grid {
@@ -105,7 +157,22 @@ function getNeighboringCoordinates(cube: Cube): Coordinate[] {
   })
 }
 
-// todo: need to normalize coords
+/** Returns the outer most cubes of the bounding cube */
+function getOuterCubes(grid: Grid, boundaries: Boundaries): Cube[] {
+  const { maxX, maxY, maxZ, minX, minY, minZ } = boundaries
+  return grid
+    .flat(2)
+    .filter(
+      ({ x, y, z }) =>
+        x === minX ||
+        x === maxX ||
+        y === minY ||
+        y === maxY ||
+        z === minZ ||
+        z === maxZ
+    )
+}
+
 function isOnBoard(
   coordinate: Coordinate,
   grid: Grid,
@@ -156,6 +223,11 @@ function getBoundingCube(cubes: Cube[]): Boundaries {
     minY,
     minZ,
   }
+}
+
+function stringifyCoordinate(coordinate: Coordinate): string {
+  const { x, y, z } = coordinate
+  return `${x}/${y}/${z}`
 }
 
 function parseCubes(input: string): Cube[] {
