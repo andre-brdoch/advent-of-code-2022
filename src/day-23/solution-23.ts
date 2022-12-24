@@ -27,6 +27,7 @@ interface Grid {
     [key: string]: Elf
   }
 }
+type Axis = keyof Coordinate
 
 const VECTORS: { [key: string]: Coordinate } = {
   N: { x: 0, y: 1 },
@@ -59,7 +60,19 @@ export default async function solution(input: string): Promise<Solution23> {
 
   console.log(grid)
   moveElves(grid, directionPriorities)
-  console.log(grid)
+  console.log(stringifyGrid(grid))
+  moveElves(grid, directionPriorities)
+  console.log(stringifyGrid(grid))
+  moveElves(grid, directionPriorities)
+  console.log(stringifyGrid(grid))
+  moveElves(grid, directionPriorities)
+  console.log(stringifyGrid(grid))
+  moveElves(grid, directionPriorities)
+  console.log(stringifyGrid(grid))
+  moveElves(grid, directionPriorities)
+  console.log(stringifyGrid(grid))
+
+  console.log(stringifyGrid(grid))
 
   // console.log('test locations')
   // const l = getAllElfLocations(grid)[0]
@@ -80,16 +93,14 @@ function moveElves(grid: Grid, directionPriorities: MainDirections[]): void {
   // console.log(movableElveLocations)
 
   movableElveLocations.forEach(location => {
-    console.log('---')
-
     for (let i = 0; i < directionPriorities.length; i++) {
       const direction = directionPriorities[i]
       const neighborElves = getAdjacent(grid, location, direction).filter(
         location => location
       )
-      console.log(
-        `${location.elf.name} looking ${direction}: ${neighborElves.length} neighbors.`
-      )
+      // console.log(
+      //   `${location.elf.name} looking ${direction}: ${neighborElves.length} neighbors.`
+      // )
 
       if (neighborElves.length === 0) {
         // is free, can move
@@ -109,10 +120,10 @@ function moveElves(grid: Grid, directionPriorities: MainDirections[]): void {
 
   // Object.keys(targetGrid).forEach(y => y)
 
-  directionPriorities.push(directionPriorities.shift() as MainDirections)
-  console.log('new prios:', directionPriorities)
+  // directionPriorities.push(directionPriorities.shift() as MainDirections)
+  // console.log('new prios:', directionPriorities)
 
-  console.log(targetMovements)
+  // console.log(targetMovements)
 
   const countMap: { [key: string]: number } = {}
   targetMovements.forEach(({ to }) => {
@@ -183,6 +194,35 @@ function removeFromGrid(grid: Grid, elfLocation: ElfLocation): void {
 
 function stringifyCoordinate(coordinate: Coordinate): string {
   return `${coordinate.x}/${coordinate.y}`
+}
+
+function stringifyGrid(grid: Grid): string {
+  const elves = getAllElfLocations(grid)
+  const xMin = getExtremeCoordinate(elves, 'x', 'min')
+  const xMax = getExtremeCoordinate(elves, 'x', 'max')
+  const yMin = getExtremeCoordinate(elves, 'y', 'min')
+  const yMax = getExtremeCoordinate(elves, 'y', 'max')
+
+  let string = '\n\n'
+  for (let y = yMin; y <= yMax; y++) {
+    for (let x = xMin; x <= xMax; x++) {
+      // rotate 180 deg
+      const marker = grid[yMax - y + yMin]?.[x] ? '#' : '.'
+      string += marker + ' '
+    }
+    string += '\n'
+  }
+  return string
+}
+
+function getExtremeCoordinate(
+  coordinates: Coordinate[],
+  axis: Axis,
+  type: 'min' | 'max'
+): number {
+  return coordinates
+    .map(c => c[axis])
+    .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
 }
 
 function parseFile(input: string): Grid {
