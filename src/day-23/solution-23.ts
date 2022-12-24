@@ -58,8 +58,6 @@ const DIRECTION_ARCS: { [key: string]: Direction[] } = {
 }
 
 export default async function solution(input: string): Promise<Solution23> {
-  console.log(input)
-
   const grid = parseFile(input)
   const directionPriorities: MainDirections[] = ['N', 'S', 'W', 'E']
 
@@ -69,11 +67,6 @@ export default async function solution(input: string): Promise<Solution23> {
   moveElves(grid, directionPriorities, 10)
 
   const answer1 = countEmptyLocations(grid)
-
-  // console.log('test locations')
-  // const l = getAllElfLocations(grid)[0]
-  // console.log(l)
-  // console.log(getAdjacent(grid, l, 'N'))
 
   return { answer1 }
 }
@@ -86,11 +79,17 @@ function moveElves(
   for (let i = 0; i < times; i++) {
     if (times > 1) console.log(`\n\n=== Round ${i + 1} ===`)
 
+    console.log(`\npriorities: ${directionPriorities.join(', ')}`)
+
     const targetMovements: Movement[] = []
     const elves = getAllElfLocations(grid)
-    const movableElveLocations = elves.filter(elfLocation =>
-      getAdjacent(grid, elfLocation, 'all').filter(location => location)
+    const movableElveLocations = elves.filter(
+      elfLocation =>
+        getAdjacent(grid, elfLocation, 'all').filter(location => location)
+          .length
     )
+
+    console.log('Movable:', movableElveLocations.length)
 
     movableElveLocations.forEach(location => {
       for (let j = 0; j < directionPriorities.length; j++) {
