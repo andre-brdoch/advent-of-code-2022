@@ -83,6 +83,8 @@ export default async function solution(input: string): Promise<Solution23> {
 }
 
 function moveElves(grid: Grid, directionPriorities: MainDirections[]): void {
+  console.log(directionPriorities)
+
   const targetGrid: { [key: string]: { [key: string]: Elf[] } } = {}
   const targetMovements: Movement[] = []
   const elves = getAllElfLocations(grid)
@@ -120,7 +122,7 @@ function moveElves(grid: Grid, directionPriorities: MainDirections[]): void {
 
   // Object.keys(targetGrid).forEach(y => y)
 
-  // directionPriorities.push(directionPriorities.shift() as MainDirections)
+  directionPriorities.push(directionPriorities.shift() as MainDirections)
   // console.log('new prios:', directionPriorities)
 
   // console.log(targetMovements)
