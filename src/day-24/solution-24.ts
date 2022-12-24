@@ -12,6 +12,13 @@ type Empty = '.'
 type Cell = Blizzard | Blizzard[] | Wall | Player | Empty
 type Grid = Cell[][]
 
+const VECTORS = {
+  '^': { x: 0, y: 1 },
+  '>': { x: 1, y: 0 },
+  v: { x: 0, y: -1 },
+  '<': { x: -1, y: 0 },
+}
+
 export default async function solution(input: string): Promise<Solution24> {
   const grid = parseGrid(input)
   console.log(stringifyGrid(grid))
@@ -29,10 +36,44 @@ function moveBlizzards(grid: Grid): Grid {
       console.log(cells)
       cells.forEach(c => {
         console.log(c)
+        grid[x][y] = '.'
+        console.log(getNextCoordinate({ x, y }, c, grid))
       })
     }
   }
   return []
+}
+
+function getNextCoordinate(
+  coordinate: Coordinate,
+  blizzard: Blizzard,
+  grid: Grid
+): Coordinate {
+  let next: Cell | undefined = undefined
+  let result = coordinate
+  const vector = VECTORS[blizzard]
+  while (next === undefined || next === '#') {
+    result = {
+      x: vector.x + result.x,
+      y: vector.y + result.y,
+    }
+    next = grid[result.x][result.y]
+    console.log('next:', next)
+
+    // warp through walls
+    if (next === '#') {
+      console.log('next is wall!!')
+
+      const axis = ['<', '>'].includes(blizzard) ? 'x' : 'y'
+      const forwards = ['>', '^'].includes(blizzard)
+      if (forwards) result[axis] = 0
+      else {
+        if (axis === 'x') result[axis] = grid.length - 1
+        else result[axis] = grid[0].length
+      }
+    }
+  }
+  return result
 }
 
 function getAdjacentCoordinates(
