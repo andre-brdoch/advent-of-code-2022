@@ -8,9 +8,6 @@ interface Coordinate {
 }
 type MainDirections = 'N' | 'S' | 'E' | 'W'
 type Direction = 'N' | 'S' | 'E' | 'W' | 'NW' | 'NE' | 'SW' | 'SE'
-interface Vector extends Coordinate {
-  name: Direction
-}
 interface Elf {
   moveTo?: Coordinate
   name: string
@@ -47,12 +44,6 @@ const VECTORS: { [key: string]: Coordinate } = {
   W: { x: -1, y: 0 },
   NW: { x: -1, y: 1 },
 }
-const DIRECTION_ARCS_OLD: { [key: string]: Coordinate[] } = {
-  N: [VECTORS.NE, VECTORS.N, VECTORS.NW],
-  W: [VECTORS.NW, VECTORS.W, VECTORS.SW],
-  S: [VECTORS.SW, VECTORS.S, VECTORS.SE],
-  E: [VECTORS.NE, VECTORS.E, VECTORS.SE],
-}
 const DIRECTION_ARCS: { [key: string]: Direction[] } = {
   N: ['NE', 'N', 'NW'],
   W: ['NW', 'W', 'SW'],
@@ -88,25 +79,23 @@ function moveElves(
   while (times === null ? !didFinish : counter <= times) {
     counter += 1
 
-    if (times && times > 1) console.log(`\n\n=== Round ${counter} ===`)
-
-    console.log(`\npriorities: ${directionPriorities.join(', ')}`)
-
     const targetMovements: Movement[] = []
     const elves = getAllElfLocations(grid)
+
+    // find all elves that are not in final position yet
     const movableElveLocations = elves.filter(
       elfLocation =>
         getAdjacent(grid, elfLocation, 'all').filter(location => location)
           .length
     )
 
-    console.log('Movable:', movableElveLocations.length)
-
     if (movableElveLocations.length === 0) {
+      // all elves are in final position
       didFinish = true
       break
     }
 
+    // get target locations for all elves
     movableElveLocations.forEach(location => {
       for (let j = 0; j < directionPriorities.length; j++) {
         const direction = directionPriorities[j]
@@ -123,9 +112,7 @@ function moveElves(
       }
     })
 
-    // rotate direction priorities
-    directionPriorities.push(directionPriorities.shift() as MainDirections)
-
+    // keep track of location targeted by multiple elves
     const countMap: { [key: string]: number } = {}
     targetMovements.forEach(({ to }) => {
       const id = stringifyCoordinate(to)
@@ -140,6 +127,9 @@ function moveElves(
         addToGrid(grid, to)
         removeFromGrid(grid, from)
       })
+
+    // rotate direction priorities
+    directionPriorities.push(directionPriorities.shift() as MainDirections)
 
     console.log(stringifyGrid(grid))
   }
