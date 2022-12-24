@@ -1,5 +1,6 @@
 interface Solution23 {
   answer1: number
+  answer2: number
 }
 interface Coordinate {
   x: number
@@ -34,6 +35,8 @@ interface Grid {
 type GridArray = (ElfLocation | EmptyLocation)[][]
 type Axis = keyof Coordinate
 
+const CHECK_AFTER = 10
+
 const VECTORS: { [key: string]: Coordinate } = {
   N: { x: 0, y: 1 },
   NE: { x: 1, y: 1 },
@@ -64,20 +67,28 @@ export default async function solution(input: string): Promise<Solution23> {
   console.log('\n\n=== Initial State ===')
   console.log(stringifyGrid(grid))
 
-  moveElves(grid, directionPriorities, 10)
+  moveElves(grid, directionPriorities, CHECK_AFTER)
 
   const answer1 = countEmptyLocations(grid)
 
-  return { answer1 }
+  // keep moving till done
+  const turns = moveElves(grid, directionPriorities, null)
+  const answer2 = CHECK_AFTER + (turns as number) - 1
+
+  return { answer1, answer2 }
 }
 
 function moveElves(
   grid: Grid,
   directionPriorities: MainDirections[],
-  times = 1
-): void {
-  for (let i = 0; i < times; i++) {
-    if (times > 1) console.log(`\n\n=== Round ${i + 1} ===`)
+  times: number | null
+): number | false {
+  let counter = 1
+  let didFinish = false
+  while (times === null ? !didFinish : counter <= times) {
+    counter += 1
+
+    if (times && times > 1) console.log(`\n\n=== Round ${counter} ===`)
 
     console.log(`\npriorities: ${directionPriorities.join(', ')}`)
 
@@ -90,6 +101,11 @@ function moveElves(
     )
 
     console.log('Movable:', movableElveLocations.length)
+
+    if (movableElveLocations.length === 0) {
+      didFinish = true
+      break
+    }
 
     movableElveLocations.forEach(location => {
       for (let j = 0; j < directionPriorities.length; j++) {
@@ -127,6 +143,7 @@ function moveElves(
 
     console.log(stringifyGrid(grid))
   }
+  return didFinish ? counter : false
 }
 
 function getAllElfLocations(grid: Grid): ElfLocation[] {
