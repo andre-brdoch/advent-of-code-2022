@@ -1,5 +1,7 @@
 interface Solution24 {
   answer1: number
+  visualFile?: string
+  visualData?: string
 }
 interface Coordinate {
   x: number
@@ -19,12 +21,22 @@ const VECTORS = {
   '<': { x: -1, y: 0 },
 }
 
-export default async function solution(input: string): Promise<Solution24> {
+export default async function solution(
+  input: string,
+  visualize: boolean
+): Promise<Solution24> {
   let grid = parseGrid(input)
   console.log(stringifyGrid(grid))
   grid = moveBlizzards(grid, 10)
 
-  return { answer1: 0 }
+  const visual = visualize
+    ? {
+      visualFile: 'test-blizzard-movements.txt',
+      visualData: stringifyGrid(grid),
+    }
+    : {}
+
+  return { answer1: 0, ...visual }
 }
 
 function moveBlizzards(grid: Grid, times = 1): Grid {
