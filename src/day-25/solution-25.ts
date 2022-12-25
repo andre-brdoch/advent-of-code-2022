@@ -5,29 +5,8 @@ type Snafu = string
 
 export default async function solution(input: string): Promise<Solution25> {
   const snafus = parseSnafus(input)
-  console.log(snafus)
-  console.log(toDecimal(snafus[0]))
   const decimals = snafus.map(toDecimal)
-  console.log(decimals)
   const decimalSum = decimals.reduce((result, n) => result + n, 0)
-  console.log(decimalSum)
-
-  console.log('---')
-  toSnafu(1)
-  toSnafu(2)
-  toSnafu(3)
-  toSnafu(4)
-  toSnafu(5)
-  toSnafu(6)
-  toSnafu(7)
-  toSnafu(8)
-  toSnafu(9)
-  toSnafu(10)
-  toSnafu(15)
-  toSnafu(20)
-  toSnafu(2022)
-  toSnafu(12345)
-  toSnafu(314159265)
 
   const answer1 = toSnafu(decimalSum)
 
@@ -39,6 +18,7 @@ function toSnafu(number: number): Snafu {
   let didFindHighest = false
   const bases = []
 
+  // get the necessary bases
   while (!didFindHighest) {
     const base = Math.pow(5, counter)
     if (base <= number) {
@@ -49,6 +29,7 @@ function toSnafu(number: number): Snafu {
     else didFindHighest = true
   }
 
+  // Convert ignoring minuses. 3s and 4s will show in the result
   bases.reverse()
   let result = ''
   let rest = number
@@ -62,14 +43,13 @@ function toSnafu(number: number): Snafu {
   console.log('\ndecimal:', number)
   console.log(`unadjusted: ${result}`)
 
-  // prevents highers number than 2 by carrying them over to the left as negatives
+  // prevents numbers higher than 2 by carrying them over to the left as negatives
   if (!isValidSnafu(result)) {
     const newChars: string[] = []
     let carryOver = 0
     for (let i = result.length - 1; i >= 0 || carryOver; i--) {
       const char = result.charAt(i)
       const digit = Number(char) + carryOver
-      // console.log('char:', digit)
       if (isValidSnafu(`${digit}`)) {
         newChars.push(`${digit}`)
         carryOver = 0
