@@ -1,3 +1,5 @@
+import { Logger } from '../utils/Logger.js'
+
 interface Solution24 {
   answer1: number
   visualFile?: string
@@ -14,6 +16,8 @@ type Empty = '.'
 type Cell = Blizzard | Blizzard[] | Wall | Player | Empty
 type Grid = Cell[][]
 
+const logger = new Logger()
+
 const VECTORS = {
   '^': { x: 0, y: -1 },
   '>': { x: 1, y: 0 },
@@ -21,29 +25,20 @@ const VECTORS = {
   '<': { x: -1, y: 0 },
 }
 
-export default async function solution(
-  input: string,
-  visualize: boolean
-): Promise<Solution24> {
+export default async function solution(input: string): Promise<Solution24> {
   let grid = parseGrid(input)
-  console.log(stringifyGrid(grid))
+  logger.log('Initial blizzards')
+  logger.log(stringifyGrid(grid))
   grid = moveBlizzards(grid, 10)
 
-  const visual = visualize
-    ? {
-      visualFile: 'test-blizzard-movements.txt',
-      visualData: stringifyGrid(grid),
-    }
-    : {}
-
-  return { answer1: 0, ...visual }
+  return { answer1: 0, ...logger.getVisual('test-blizzard-movements.txt') }
 }
 
 function moveBlizzards(grid: Grid, times = 1): Grid {
   let result: Grid = grid.slice().map(row => row.slice())
 
   for (let i = 0; i < times; i++) {
-    console.log(`\nEnd of turn ${i}`)
+    logger.log(`\nEnd of turn ${i}`)
 
     const newGrid: Grid = result
       .slice()
@@ -66,7 +61,7 @@ function moveBlizzards(grid: Grid, times = 1): Grid {
       }
     }
     result = newGrid
-    console.log(stringifyGrid(newGrid))
+    logger.log(stringifyGrid(newGrid))
   }
   return result
 }
