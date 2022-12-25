@@ -27,21 +27,9 @@ export default async function solution(input: string): Promise<Solution18> {
   const cubes = parseCubes(input)
   const boundaries = getBoundingCube(cubes)
   const grid = buildGrid(cubes, boundaries)
-
   const answer1 = getSurfaceArea(grid, boundaries, 'all')
 
   submergeInWater(grid, boundaries)
-
-  console.log('air:')
-  console.log(grid.flat(2).filter(cube => cube.type === 'air').length)
-  console.log('water:')
-  console.log(grid.flat(2).filter(cube => cube.type === 'water').length)
-  console.log('lava:')
-  console.log(grid.flat(2).filter(cube => cube.type === 'lava').length)
-
-  console.log('all:')
-  console.log(grid.flat(2).length)
-
   const answer2 = getSurfaceArea(grid, boundaries, 'outer')
 
   return { answer1, answer2 }
@@ -64,11 +52,16 @@ function submergeInWater(grid: Grid, boundaries: Boundaries): void {
       [stringifyCoordinate(start)]: start,
     }
     let current: Cube | undefined
-    let isWater = false
+    let isWater = start.type === 'water'
 
     while (frontier.length) {
       current = frontier.shift()
       if (current === undefined) break
+      // if any cube is placed on the outer layer, it means that it
+      // and therefore all other ones connected to it must be water.
+      if (isOnOuterLayer(current, boundaries)) {
+        isWater = true
+      }
       const neighbors = getNeighbors(current, grid, boundaries).filter(
         c => c?.type === 'unknown'
       )
@@ -78,11 +71,6 @@ function submergeInWater(grid: Grid, boundaries: Boundaries): void {
         if (next !== null && !(id in reached)) {
           frontier.push(next)
           reached[id] = next
-          // if any cube is placed on the outer layer, it means that it
-          // and therefore all other ones connected to it must be water.
-          if (isOnOuterLayer(next, boundaries)) {
-            isWater = true
-          }
         }
       })
     }
