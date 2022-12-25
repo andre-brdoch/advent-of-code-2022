@@ -29,7 +29,11 @@ export default async function solution(input: string): Promise<Solution24> {
   let grid = parseGrid(input)
   logger.log('Initial blizzards')
   logger.log(stringifyGrid(grid))
+
   grid = moveBlizzards(grid, 30)
+
+  const start = getStart(grid)
+  const end = getEnd(grid)
 
   return { answer1: 0, ...logger.getVisual('output-test-blizzards.txt') }
 }
@@ -143,6 +147,20 @@ function stringifyGrid(grid: Grid): string {
 function ensureArray<T>(item: T | T[]): T[] {
   if (Array.isArray(item)) return item
   return [item]
+}
+
+function getStart(grid: Grid): Coordinate {
+  const y = 0
+  const x = grid[y].indexOf('.')
+  if (x === -1) throw new Error('No start found')
+  return { x, y }
+}
+
+function getEnd(grid: Grid): Coordinate {
+  const y = grid.length - 1
+  const x = grid[y].indexOf('.')
+  if (x === -1) throw new Error('No end found')
+  return { x, y }
 }
 
 function parseGrid(input: string): Grid {
