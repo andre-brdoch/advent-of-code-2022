@@ -1,18 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-interface Flags {
-  isTest?: boolean
-  // test file name
-  file?: string
-  // input passed directly via CLI
-  cliInput?: string
-  visualize?: boolean
-}
-interface Args extends Flags {
-  day: number
-}
+import { parseArgs } from './utils/env-helpers.js'
 
 const { day, file, cliInput, isTest, visualize } = parseArgs()
 
@@ -34,30 +23,6 @@ async function getInputFile(): Promise<string | undefined> {
   catch (err) {
     return undefined
   }
-}
-
-function parseArgs(): Args {
-  const args = process.argv
-  const flagMap: Flags = args
-    .map(str => str.match(/^--(\w+)=(.+)$/))
-    .filter(match => match !== null)
-    .reduce((result, match) => {
-      const [, name, value] = match as RegExpMatchArray
-      const convertedValue =
-        value === 'true' ? true : value === 'false' ? false : value
-      return {
-        ...result,
-        [name]: convertedValue,
-      }
-    }, {})
-  const result = {
-    day: Number(args[2]),
-    ...flagMap,
-  }
-  if (flagMap.file?.includes('test')) {
-    result.isTest = true
-  }
-  return result
 }
 
 function printAnswers(answer1: unknown, answer2: unknown): void {
