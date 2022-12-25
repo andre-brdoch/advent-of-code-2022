@@ -5,6 +5,7 @@ interface Flags {
   // input passed directly via CLI
   cliInput?: string
   visualize?: boolean
+  noLog?: boolean
 }
 interface Args extends Flags {
   day: number
