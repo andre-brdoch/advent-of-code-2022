@@ -81,8 +81,8 @@ function getNextCoordinate(
       const forwards = ['>', 'v'].includes(blizzard)
       if (forwards) result[axis] = 0
       else {
-        if (axis === 'x') result[axis] = grid.length - 1
-        else result[axis] = grid[0].length
+        if (axis === 'y') result[axis] = grid.length - 1
+        else result[axis] = grid[0].length - 1
       }
     }
   }
