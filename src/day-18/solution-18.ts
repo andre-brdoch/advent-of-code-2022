@@ -20,7 +20,6 @@ interface Boundaries {
   minY: number
   minZ: number
 }
-type Boundary = keyof Boundaries
 
 const ALL_AXES: Axis[] = ['x', 'y', 'z']
 
@@ -39,41 +38,44 @@ export default async function solution(input: string): Promise<Solution18> {
   console.log('\nafter submerging:')
   grid.forEach(row => console.log(row))
 
+  console.log('air:')
+  console.log(grid.flat(2).filter(cube => cube.type === 'air').length)
+  console.log('water:')
+  console.log(grid.flat(2).filter(cube => cube.type === 'water').length)
+  console.log('lava:')
+  console.log(grid.flat(2).filter(cube => cube.type === 'lava').length)
+
+  console.log('all:')
+  console.log(grid.flat(2).length)
+
   const answer2 = getSurfaceArea(grid, boundaries, 'outer')
 
   return { answer1, answer2 }
 }
 
 function submergeInWater(grid: Grid, boundaries: Boundaries): void {
-  const unvisitedOuterWaterCubes: Cube[] = []
+  let unknownCubes = getUnknownCubes(grid)
 
-  // all non-lava cubes at the outside of the bounding cube must be water
-  getOuterCubes(grid, boundaries).forEach(cube => {
-    if (cube.type === 'unknown') {
-      unvisitedOuterWaterCubes.push(cube)
-    }
-  })
+  // repeat until type of every cube is known
+  while (unknownCubes.length > 0) {
+    // Pick an unknown cube and do a breath-first search to find all connected fields.
+    // Unknown fields must always be water or air.
+    // If any field of the searched batch is on the outer layer of the bounding cube,
+    // then it must be made of water, and so must be all the others. Otherwise its air.
 
-  // Using breath-first search, fill all reachable unknown cubes
-  // from the outher water cells, and switch their type to 'water'.
-  // Do so until all outer unknown cells had been switched to water,
-  // and their corresponding search finished:
-  while (unvisitedOuterWaterCubes.length) {
-    const start = unvisitedOuterWaterCubes.pop()
+    const start = unknownCubes[0]
+    console.log('start', start)
     if (start === undefined) break
     const frontier: Cube[] = [start]
-    const reached: { [key: string]: true } = {}
+    const reached: { [key: string]: Cube } = {
+      [stringifyCoordinate(start)]: start,
+    }
     let current: Cube | undefined
+    let isWater = false
 
     while (frontier.length) {
       current = frontier.shift()
       if (current === undefined) break
-      current.type = 'water'
-      // remove from unvisited outer water cubes
-      unvisitedOuterWaterCubes.splice(
-        unvisitedOuterWaterCubes.indexOf(current),
-        1
-      )
       const neighbors = getNeighbors(current, grid, boundaries).filter(
         c => c?.type === 'unknown'
       )
@@ -82,19 +84,26 @@ function submergeInWater(grid: Grid, boundaries: Boundaries): void {
         const id = stringifyCoordinate(next)
         if (next !== null && !(id in reached)) {
           frontier.push(next)
-          reached[id] = true
+          reached[id] = next
+          // if any cube is placed on the outer layer, it means that it
+          // and therefore all other ones connected to it must be water.
+          if (isOnOuterLayer(next, boundaries)) {
+            isWater = true
+          }
         }
       })
     }
-  }
 
-  // All remaining unknown cubes must be filled with air
-  grid
-    .flat(2)
-    .filter(cube => cube.type === 'unknown')
-    .forEach(cube => {
-      cube.type = 'air'
-    })
+    // add the now known cube types
+    Object.keys(reached)
+      .map(key => reached[key])
+      .forEach(cube => {
+        cube.type = isWater ? 'water' : 'air'
+        console.log(cube.type)
+      })
+
+    unknownCubes = getUnknownCubes(grid)
+  }
 }
 
 function buildGrid(cubes: Cube[], boundaries: Boundaries): Grid {
@@ -170,20 +179,21 @@ function getNeighboringCoordinates(cube: Cube): Coordinate[] {
   })
 }
 
-/** Returns the outer most cubes of the bounding cube */
-function getOuterCubes(grid: Grid, boundaries: Boundaries): Cube[] {
+function isOnOuterLayer(cube: Cube, boundaries: Boundaries): boolean {
+  const { x, y, z } = cube
   const { maxX, maxY, maxZ, minX, minY, minZ } = boundaries
-  return grid
-    .flat(2)
-    .filter(
-      ({ x, y, z }) =>
-        x === minX ||
-        x === maxX ||
-        y === minY ||
-        y === maxY ||
-        z === minZ ||
-        z === maxZ
-    )
+  return (
+    x === minX ||
+    x === maxX ||
+    y === minY ||
+    y === maxY ||
+    z === minZ ||
+    z === maxZ
+  )
+}
+
+function getUnknownCubes(grid: Grid): Cube[] {
+  return grid.flat(2).filter(cube => cube.type === 'unknown')
 }
 
 function isOnBoard(
