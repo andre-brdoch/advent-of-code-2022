@@ -30,13 +30,7 @@ export default async function solution(input: string): Promise<Solution18> {
 
   const answer1 = getSurfaceArea(grid, boundaries, 'all')
 
-  console.log('\ngrid:')
-  grid.forEach(row => console.log(row))
-
   submergeInWater(grid, boundaries)
-
-  console.log('\nafter submerging:')
-  grid.forEach(row => console.log(row))
 
   console.log('air:')
   console.log(grid.flat(2).filter(cube => cube.type === 'air').length)
@@ -64,7 +58,6 @@ function submergeInWater(grid: Grid, boundaries: Boundaries): void {
     // then it must be made of water, and so must be all the others. Otherwise its air.
 
     const start = unknownCubes[0]
-    console.log('start', start)
     if (start === undefined) break
     const frontier: Cube[] = [start]
     const reached: { [key: string]: Cube } = {
@@ -99,7 +92,6 @@ function submergeInWater(grid: Grid, boundaries: Boundaries): void {
       .map(key => reached[key])
       .forEach(cube => {
         cube.type = isWater ? 'water' : 'air'
-        console.log(cube.type)
       })
 
     unknownCubes = getUnknownCubes(grid)
@@ -226,8 +218,6 @@ function getBoundingCube(cubes: Cube[]): Boundaries {
     if (minY === null || y < minY) minY = y
     if (minZ === null || z < minZ) minZ = z
   })
-  console.log(`max: ${maxX}/${maxY}/${maxZ}`)
-  console.log(`min: ${minX}/${minY}/${minZ}`)
   if (
     maxX === null ||
     maxY === null ||
