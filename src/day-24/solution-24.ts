@@ -26,6 +26,12 @@ export default async function solution(input: string): Promise<Solution24> {
   console.log(stringifyGrid(grid))
   grid = moveBlizzards(grid)
   console.log(stringifyGrid(grid))
+  grid = moveBlizzards(grid)
+  console.log(stringifyGrid(grid))
+  grid = moveBlizzards(grid)
+  console.log(stringifyGrid(grid))
+  grid = moveBlizzards(grid)
+  console.log(stringifyGrid(grid))
 
   return { answer1: 0 }
 }
@@ -34,8 +40,6 @@ function moveBlizzards(grid: Grid): Grid {
   const newGrid: Grid = grid
     .slice()
     .map(row => row.slice().map(cell => (isBlizzard(cell) ? '.' : cell)))
-  console.log('new empty grid')
-  console.log(stringifyGrid(newGrid))
 
   for (let x = 0; x < grid.length; x++) {
     for (let y = 0; y < grid[0].length; y++) {
@@ -75,14 +79,15 @@ function getNextCoordinate(
     if (next === '#') {
       console.log('next is wall!!')
 
-      const axis = ['<', '>'].includes(blizzard) ? 'x' : 'y'
-      const forwards = ['>', '^'].includes(blizzard)
+      const axis = ['<', '>'].includes(blizzard) ? 'y' : 'x'
+      const forwards = ['>', 'v'].includes(blizzard)
       if (forwards) result[axis] = 0
       else {
         if (axis === 'x') result[axis] = grid.length - 1
         else result[axis] = grid[0].length
       }
     }
+    console.log(result)
   }
   return result
 }
