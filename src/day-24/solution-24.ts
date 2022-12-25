@@ -48,12 +48,12 @@ function moveBlizzards(grid: Grid): Grid {
       const cells = ensureArray(cell)
       cells.forEach(blizzard => {
         const next = getNextCoordinate({ x, y }, blizzard, newGrid)
-        console.log(
-          `(${blizzard}) current: ${x}/${y}. next: ${next.x}/${next.y}`
-        )
-
-        // todo: handle array
-        newGrid[next.x][next.y] = blizzard
+        const nextCell = newGrid[next.x][next.y]
+        // next cell already occupied by blizzard(s)
+        if (isBlizzard(nextCell)) {
+          newGrid[next.x][next.y] = [...ensureArray(nextCell), blizzard]
+        }
+        else newGrid[next.x][next.y] = blizzard
       })
     }
   }
@@ -77,8 +77,6 @@ function getNextCoordinate(
 
     // warp through walls
     if (next === '#') {
-      console.log('next is wall!!')
-
       const axis = ['<', '>'].includes(blizzard) ? 'y' : 'x'
       const forwards = ['>', 'v'].includes(blizzard)
       if (forwards) result[axis] = 0
@@ -87,7 +85,6 @@ function getNextCoordinate(
         else result[axis] = grid[0].length
       }
     }
-    console.log(result)
   }
   return result
 }
@@ -128,7 +125,8 @@ function stringifyGrid(grid: Grid): string {
   let string = ''
   for (let x = 0; x < grid.length; x++) {
     for (let y = 0; y < grid[0].length; y++) {
-      const sign = grid[x][y]
+      let sign: Cell | number = grid[x][y]
+      if (Array.isArray(sign)) sign = sign.length
       string += sign
     }
     string += '\n'
