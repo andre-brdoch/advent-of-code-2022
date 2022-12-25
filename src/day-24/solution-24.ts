@@ -44,12 +44,8 @@ function moveBlizzards(grid: Grid): Grid {
   for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[0].length; x++) {
       const cell = grid[y][x]
-
       if (!isBlizzard(cell)) continue
-      // console.log('----')
-      // console.log('before', newGrid)
       const cells = ensureArray(cell)
-
       cells.forEach(blizzard => {
         const next = getNextCoordinate({ x, y }, blizzard, newGrid)
         const nextCell = newGrid[next.y][next.x]
@@ -59,7 +55,6 @@ function moveBlizzards(grid: Grid): Grid {
         }
         else newGrid[next.y][next.x] = blizzard
       })
-      // console.log('after', newGrid)
     }
   }
   return newGrid
@@ -78,21 +73,11 @@ function getNextCoordinate(
       x: vector.x + next.x,
       y: vector.y + next.y,
     }
-
     nextCell = grid[next.y][next.x]
-    // console.log('blizzard', blizzard)
-    // console.log('coordinate', coordinate)
-    // console.log('vector', vector)
-    // console.log('result', next)
-    // console.log('next', nextCell)
 
     // warp through walls
     if (nextCell === '#') {
-      console.log('is a wall!!')
-
       const axis = ['<', '>'].includes(blizzard) ? 'x' : 'y'
-      console.log('axis', axis)
-
       const forwards = ['>', 'v'].includes(blizzard)
       if (forwards) next[axis] = 0
       else {
@@ -137,7 +122,7 @@ function isBlizzard(cell: Cell): cell is Blizzard {
 }
 
 function stringifyGrid(grid: Grid): string {
-  let string = ''
+  let string = '\n'
   for (let x = 0; x < grid.length; x++) {
     for (let y = 0; y < grid[0].length; y++) {
       let sign: Cell | number = grid[x][y]
