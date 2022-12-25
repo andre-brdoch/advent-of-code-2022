@@ -13,35 +13,47 @@ type Cell = Blizzard | Blizzard[] | Wall | Player | Empty
 type Grid = Cell[][]
 
 const VECTORS = {
-  '^': { x: 0, y: 1 },
-  '>': { x: 1, y: 0 },
-  v: { x: 0, y: -1 },
-  '<': { x: -1, y: 0 },
+  '^': { x: -1, y: 0 },
+  '>': { x: 0, y: 1 },
+  v: { x: 1, y: 0 },
+  '<': { x: 0, y: -1 },
 }
 
 export default async function solution(input: string): Promise<Solution24> {
-  const grid = parseGrid(input)
+  let grid = parseGrid(input)
   console.log(stringifyGrid(grid))
-  moveBlizzards(grid)
+  grid = moveBlizzards(grid)
+  console.log(stringifyGrid(grid))
+  grid = moveBlizzards(grid)
+  console.log(stringifyGrid(grid))
 
   return { answer1: 0 }
 }
 
 function moveBlizzards(grid: Grid): Grid {
+  const newGrid: Grid = grid
+    .slice()
+    .map(row => row.slice().map(cell => (isBlizzard(cell) ? '.' : cell)))
+  console.log('new empty grid')
+  console.log(stringifyGrid(newGrid))
+
   for (let x = 0; x < grid.length; x++) {
     for (let y = 0; y < grid[0].length; y++) {
       const cell = grid[x][y]
       if (!isBlizzard(cell)) continue
       const cells = ensureArray(cell)
-      console.log(cells)
-      cells.forEach(c => {
-        console.log(c)
-        grid[x][y] = '.'
-        console.log(getNextCoordinate({ x, y }, c, grid))
+      cells.forEach(blizzard => {
+        const next = getNextCoordinate({ x, y }, blizzard, newGrid)
+        console.log(
+          `(${blizzard}) current: ${x}/${y}. next: ${next.x}/${next.y}`
+        )
+
+        // todo: handle array
+        newGrid[next.x][next.y] = blizzard
       })
     }
   }
-  return []
+  return newGrid
 }
 
 function getNextCoordinate(
@@ -50,7 +62,7 @@ function getNextCoordinate(
   grid: Grid
 ): Coordinate {
   let next: Cell | undefined = undefined
-  let result = coordinate
+  let result = { ...coordinate }
   const vector = VECTORS[blizzard]
   while (next === undefined || next === '#') {
     result = {
@@ -58,7 +70,6 @@ function getNextCoordinate(
       y: vector.y + result.y,
     }
     next = grid[result.x][result.y]
-    console.log('next:', next)
 
     // warp through walls
     if (next === '#') {
