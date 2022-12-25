@@ -29,9 +29,9 @@ export default async function solution(input: string): Promise<Solution24> {
   let grid = parseGrid(input)
   logger.log('Initial blizzards')
   logger.log(stringifyGrid(grid))
-  grid = moveBlizzards(grid, 10)
+  grid = moveBlizzards(grid, 30)
 
-  return { answer1: 0, ...logger.getVisual('test-blizzard-movements.txt') }
+  return { answer1: 0, ...logger.getVisual('output-test-blizzards.txt') }
 }
 
 function moveBlizzards(grid: Grid, times = 1): Grid {
