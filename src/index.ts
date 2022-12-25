@@ -20,12 +20,12 @@ if (!day) {
   throw new Error('No day selected')
 }
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const dayFormatted = String(day).padStart(2, '0')
 
 async function getInputFile(): Promise<string | undefined> {
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = path.dirname(__filename)
-
   try {
     const filePath = path.join(__dirname, `./day-${dayFormatted}/${file}`)
     const input = await fs.readFile(filePath, 'utf8')
@@ -70,14 +70,24 @@ function printAnswers(answer1: unknown, answer2: unknown): void {
   }
 }
 
+async function toFile(fileName: string, data: string): Promise<void> {
+  const file = path.join(__dirname, `./day-${dayFormatted}/${fileName}`)
+  await fs.writeFile(file, data)
+}
+
 const solutionModule = await import(
   `./day-${dayFormatted}/solution-${dayFormatted}.js`
 )
 const inputs = cliInput ?? (await getInputFile())
 
-const { answer1, answer2 } = await solutionModule.default(inputs, {
-  isTest,
-  visualize,
-})
+const { answer1, answer2, visualFile, visualData } =
+  await solutionModule.default(inputs, {
+    isTest,
+    visualize,
+  })
 
 printAnswers(answer1, answer2)
+
+if (visualize && visualFile && visualData) {
+  await toFile(visualFile, visualData)
+}
