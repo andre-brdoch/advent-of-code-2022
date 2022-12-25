@@ -26,16 +26,65 @@ const VECTORS = {
 }
 
 export default async function solution(input: string): Promise<Solution24> {
-  let grid = parseGrid(input)
+  const grid = parseGrid(input)
   logger.log('Initial blizzards')
   logger.log(stringifyGrid(grid))
 
-  grid = moveBlizzards(grid, 30)
+  findPath(grid)
 
-  const start = getStart(grid)
-  const end = getEnd(grid)
+  // grid = moveBlizzards(grid, 30)
 
   return { answer1: 0, ...logger.getVisual('output-test-blizzards.txt') }
+}
+
+function findPath(grid: Grid): void {
+  const start = getStart(grid)
+  const end = getEnd(grid)
+  const frontier = new PriorityQueue<Coordinate>()
+  frontier.add(start, 0)
+  const cameFrom: { [key: string]: Coordinate | null } = {
+    [stringifyCoordinate(start)]: null,
+  }
+  let current: Coordinate | null
+
+  while (!frontier.empty()) {
+    current = frontier.get()
+    logger.log('current', current)
+    if (current === null || current === end) break
+    const neighbors = getAdjacentCoordinates(grid, current).filter(
+      ({ x, y }) => {
+        const cell = grid[y][x]
+        return cell === '.' || cell === 'E'
+      }
+    )
+    logger.log(neighbors)
+    neighbors.forEach(next => {
+      const id = stringifyCoordinate(next)
+      if (!(id in cameFrom)) {
+        const priority = heuristic(end, next)
+        frontier.add(next, priority)
+        cameFrom[id] = current
+      }
+    })
+  }
+
+  // build path
+  const path: Coordinate[] = []
+  let key: string = stringifyCoordinate(end)
+  let didEnd = false
+  while (!didEnd) {
+    const next = cameFrom[key]
+    if (next === null) {
+      didEnd = true
+      break
+    }
+    path.push(next)
+    key = stringifyCoordinate(next)
+  }
+  path.reverse()
+
+  logger.log(cameFrom)
+  logger.log(path)
 }
 
 function moveBlizzards(grid: Grid, times = 1): Grid {
@@ -73,7 +122,8 @@ function moveBlizzards(grid: Grid, times = 1): Grid {
 function getNextCoordinate(
   coordinate: Coordinate,
   blizzard: Blizzard,
-  grid: Grid
+  grid: Grid,
+  warp = true
 ): Coordinate {
   let nextCell: Cell | undefined = undefined
   let next = { ...coordinate }
@@ -83,10 +133,15 @@ function getNextCoordinate(
       x: vector.x + next.x,
       y: vector.y + next.y,
     }
+
+    // when not warping, allow returning off-grid coordinates
+    if (!warp && !isOnGrid(grid, next)) return next
+
     nextCell = grid[next.y][next.x]
 
     // warp through walls
-    if (nextCell === '#') {
+    if (warp && nextCell === '#') {
+      nextCell = grid[next.y][next.x]
       const axis = ['<', '>'].includes(blizzard) ? 'x' : 'y'
       const forwards = ['>', 'v'].includes(blizzard)
       if (forwards) next[axis] = 0
@@ -99,30 +154,16 @@ function getNextCoordinate(
   return next
 }
 
-// function getAdjacentCoordinates(
-//   grid: Grid,
-//   coordinate: Coordinate
-// ): Coordinate[] {
-//   const vectors: Coordinate[] = [-1, 0, 1]
-//     // get 9 fields
-//     .flatMap(x => [-1, 0, 1].map(y => ({ x, y })))
-//     // remove current coordinate
-//     .filter(({ x, y }) => x !== 0 || y !== 0)
-//   const neighbors = vectors.map(({ x, y }) => {
-//     let next: Cell | undefined = undefined
-//     let nextCoords = coordinate
-//     // warp through walls
-//     while (next === undefined || next === '#') {
-//       nextCoords = {
-//         x: x + nextCoords.x,
-//         y: y + nextCoords.y,
-//       }
-//       next = grid[nextCoords.x][nextCoords.y]
-//     }
-//     return nextCoords
-//   })
-//   return neighbors
-// }
+function getAdjacentCoordinates(
+  grid: Grid,
+  coordinate: Coordinate
+): Coordinate[] {
+  logger.log('pls get adjacent')
+
+  return (['^', '>', 'v', '<'] as Blizzard[])
+    .map(blizzard => getNextCoordinate(coordinate, blizzard, grid, false))
+    .filter(coordinate => isOnGrid(grid, coordinate))
+}
 
 function isBlizzard(cell: Cell): cell is Blizzard {
   if (Array.isArray(cell)) {
@@ -144,6 +185,20 @@ function stringifyGrid(grid: Grid): string {
   return string
 }
 
+function heuristic(a: Coordinate, b: Coordinate): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+}
+
+function isOnGrid(grid: Grid, coordinate: Coordinate): boolean {
+  const { x, y } = coordinate
+  try {
+    return !!grid[y][x]
+  }
+  catch (err) {
+    return false
+  }
+}
+
 function ensureArray<T>(item: T | T[]): T[] {
   if (Array.isArray(item)) return item
   return [item]
@@ -163,6 +218,39 @@ function getEnd(grid: Grid): Coordinate {
   return { x, y }
 }
 
+function stringifyCoordinate(coordinate: Coordinate): string {
+  const { x, y } = coordinate
+  return `${x}/${y}`
+}
+
 function parseGrid(input: string): Grid {
   return input.split('\n').map(line => line.split('') as Cell[])
+}
+
+class PriorityQueue<T> {
+  private items: {
+    item: T
+    priority: number
+  }[]
+
+  constructor() {
+    this.items = []
+  }
+
+  public add(item: T, priority: number) {
+    this.items.push({ item, priority })
+  }
+
+  public get() {
+    if (this.empty()) return null
+    // low to high
+    const highestPrio = this.items.sort((a, b) => a.priority - b.priority)[0]
+    const i = this.items.indexOf(highestPrio)
+    this.items.splice(i, 1)
+    return highestPrio.item
+  }
+
+  public empty() {
+    return this.items.length === 0
+  }
 }
