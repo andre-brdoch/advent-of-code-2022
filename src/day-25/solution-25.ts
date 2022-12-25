@@ -12,7 +12,47 @@ export default async function solution(input: string): Promise<Solution25> {
   const decimalSum = decimals.reduce((result, n) => result + n, 0)
   console.log(decimalSum)
 
+  console.log('---')
+
+  console.log(toSnafu(24))
+
   return { answer1: 0 }
+}
+
+function toSnafu(number: number): Snafu {
+  let counter = 0
+  const highestBase = 1
+  let didFindHighest = false
+  const bases = []
+
+  while (!didFindHighest) {
+    const base = Math.pow(5, counter)
+    console.log(base)
+    if (base <= number) {
+      // highestBase = base
+      bases.push(base)
+      counter += 1
+    }
+    else didFindHighest = true
+  }
+  console.log(bases)
+  console.log(`highest base fitting into ${number}: ${bases[counter - 1]}`)
+
+  bases.reverse()
+  let result = ''
+  let rest = number
+  for (let i = 0; i < counter; i++) {
+    console.log(rest)
+    const base = bases[i]
+    const fits = Math.floor(rest / base)
+    console.log('fits', fits, 'x')
+    rest -= fits * base
+    result += fits
+  }
+
+  console.log(`${number} is in snafu ${result}`)
+
+  return result
 }
 
 function toDecimal(snafu: Snafu): number {
