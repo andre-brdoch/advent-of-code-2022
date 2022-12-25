@@ -22,42 +22,41 @@ const VECTORS = {
 export default async function solution(input: string): Promise<Solution24> {
   let grid = parseGrid(input)
   console.log(stringifyGrid(grid))
-  grid = moveBlizzards(grid)
-  console.log(stringifyGrid(grid))
-  grid = moveBlizzards(grid)
-  console.log(stringifyGrid(grid))
-  grid = moveBlizzards(grid)
-  console.log(stringifyGrid(grid))
-  grid = moveBlizzards(grid)
-  console.log(stringifyGrid(grid))
-  grid = moveBlizzards(grid)
-  console.log(stringifyGrid(grid))
+  grid = moveBlizzards(grid, 10)
 
   return { answer1: 0 }
 }
 
-function moveBlizzards(grid: Grid): Grid {
-  const newGrid: Grid = grid
-    .slice()
-    .map(row => row.slice().map(cell => (isBlizzard(cell) ? '.' : cell)))
+function moveBlizzards(grid: Grid, times = 1): Grid {
+  let result: Grid = grid.slice().map(row => row.slice())
 
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[0].length; x++) {
-      const cell = grid[y][x]
-      if (!isBlizzard(cell)) continue
-      const cells = ensureArray(cell)
-      cells.forEach(blizzard => {
-        const next = getNextCoordinate({ x, y }, blizzard, newGrid)
-        const nextCell = newGrid[next.y][next.x]
-        // next cell already occupied by blizzard(s)
-        if (isBlizzard(nextCell)) {
-          newGrid[next.y][next.x] = [...ensureArray(nextCell), blizzard]
-        }
-        else newGrid[next.y][next.x] = blizzard
-      })
+  for (let i = 0; i < times; i++) {
+    console.log(`\nEnd of turn ${i}`)
+
+    const newGrid: Grid = result
+      .slice()
+      .map(row => row.slice().map(cell => (isBlizzard(cell) ? '.' : cell)))
+
+    for (let y = 0; y < result.length; y++) {
+      for (let x = 0; x < result[0].length; x++) {
+        const cell = result[y][x]
+        if (!isBlizzard(cell)) continue
+        const cells = ensureArray(cell)
+        cells.forEach(blizzard => {
+          const next = getNextCoordinate({ x, y }, blizzard, newGrid)
+          const nextCell = newGrid[next.y][next.x]
+          // next cell already occupied by blizzard(s)
+          if (isBlizzard(nextCell)) {
+            newGrid[next.y][next.x] = [...ensureArray(nextCell), blizzard]
+          }
+          else newGrid[next.y][next.x] = blizzard
+        })
+      }
     }
+    result = newGrid
+    console.log(stringifyGrid(newGrid))
   }
-  return newGrid
+  return result
 }
 
 function getNextCoordinate(
