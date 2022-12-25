@@ -1,5 +1,5 @@
 interface Solution25 {
-  answer1: number
+  answer1: string
 }
 type Snafu = string
 
@@ -13,21 +13,34 @@ export default async function solution(input: string): Promise<Solution25> {
   console.log(decimalSum)
 
   console.log('---')
+  toSnafu(1)
+  toSnafu(2)
+  toSnafu(3)
+  toSnafu(4)
+  toSnafu(5)
+  toSnafu(6)
+  toSnafu(7)
+  toSnafu(8)
+  toSnafu(9)
+  toSnafu(10)
+  toSnafu(15)
+  toSnafu(20)
+  toSnafu(2022)
+  toSnafu(12345)
+  toSnafu(314159265)
 
-  console.log(toSnafu(24))
+  const answer1 = toSnafu(decimalSum)
 
-  return { answer1: 0 }
+  return { answer1 }
 }
 
 function toSnafu(number: number): Snafu {
   let counter = 0
-  const highestBase = 1
   let didFindHighest = false
   const bases = []
 
   while (!didFindHighest) {
     const base = Math.pow(5, counter)
-    console.log(base)
     if (base <= number) {
       // highestBase = base
       bases.push(base)
@@ -35,22 +48,42 @@ function toSnafu(number: number): Snafu {
     }
     else didFindHighest = true
   }
-  console.log(bases)
-  console.log(`highest base fitting into ${number}: ${bases[counter - 1]}`)
 
   bases.reverse()
   let result = ''
   let rest = number
   for (let i = 0; i < counter; i++) {
-    console.log(rest)
     const base = bases[i]
     const fits = Math.floor(rest / base)
-    console.log('fits', fits, 'x')
     rest -= fits * base
     result += fits
   }
 
-  console.log(`${number} is in snafu ${result}`)
+  console.log('\ndecimal:', number)
+  console.log(`unadjusted: ${result}`)
+
+  // prevents highers number than 2 by carrying them over to the left as negatives
+  if (!isValidSnafu(result)) {
+    const newChars: string[] = []
+    let carryOver = 0
+    for (let i = result.length - 1; i >= 0 || carryOver; i--) {
+      const char = result.charAt(i)
+      const digit = Number(char) + carryOver
+      // console.log('char:', digit)
+      if (isValidSnafu(`${digit}`)) {
+        newChars.push(`${digit}`)
+        carryOver = 0
+        continue
+      }
+      if (digit === 3) newChars.push('=')
+      else if (digit === 4) newChars.push('-')
+      else newChars.push(`${digit % 5}`)
+      carryOver = 1
+    }
+    result = newChars.reverse().join('')
+  }
+
+  console.log(`snafu: ${result}\n`)
 
   return result
 }
@@ -68,6 +101,10 @@ function toDecimal(snafu: Snafu): number {
       }
       return result + base * n
     }, 0)
+}
+
+function isValidSnafu(snafu: Snafu): boolean {
+  return /^[0-2-=]*$/.test(snafu)
 }
 
 function parseSnafus(input: string): Snafu[] {
