@@ -18,6 +18,11 @@ type Player = 'E'
 type Empty = '.'
 type Cell = Blizzard | Blizzard[] | Wall | Player | Empty
 type Grid = Cell[][]
+interface CameFromByTurn {
+  [turn: string]: {
+    [id: string]: Coordinate | null
+  }
+}
 
 const logger = new Logger()
 
@@ -46,22 +51,17 @@ function findPath(grid: Grid): void {
   const frontier = new PriorityQueue<TimedCoordinate>()
   frontier.add({ ...start, turn: 0 }, 0)
   const startId = stringifyCoordinate(start)
-  let maxTurns = 0
-  interface CameFromByTurn {
-    [turn: string]: {
-      [id: string]: Coordinate | null
-    }
-  }
   const cameFrom: CameFromByTurn = {
     0: {
       [startId]: null,
     },
   }
+  const memoizedMoveBlizzards = memoizeMoveBlizzards()
+
   let current: TimedCoordinate | null
+  let maxTurns = 0
 
   while (!frontier.empty()) {
-    console.log('still not empty')
-
     current = frontier.get() as TimedCoordinate
     if (
       current === null ||
@@ -71,13 +71,15 @@ function findPath(grid: Grid): void {
     const { turn } = current
     logger.log(`Turn ${turn}: ${stringifyCoordinate(current)}`)
     const neighbors = [
-      ...getAdjacentCoordinates(grid, current).filter(({ x, y }) => {
-        const cell = grid[y][x]
-        return cell === '.' || cell === 'E'
-      }),
+      ...getAdjacentCoordinates(grid, current),
       // waiting is an option
-      // current,
-    ]
+      current,
+    ].filter(({ x, y }) => {
+      // simulate blizzards for next turn
+      const blizzardGrid = memoizedMoveBlizzards(grid, turn + 1)
+      const cell = blizzardGrid[y][x]
+      return cell === '.' || cell === 'E'
+    })
     neighbors.forEach(next => {
       const id = stringifyCoordinate(next)
       const newTurn = turn + 1
@@ -111,6 +113,18 @@ function findPath(grid: Grid): void {
 
   logger.log(cameFrom)
   logger.log(path)
+  logger.log(path.length)
+}
+
+function memoizeMoveBlizzards(): (grid: Grid, turn: number) => Grid {
+  const cache: { [turn: string]: Grid } = {}
+
+  return (grid: Grid, turn: number): Grid => {
+    if (!(turn in cache)) {
+      return moveBlizzards(grid, turn)
+    }
+    else return cache[`${turn}`]
+  }
 }
 
 function moveBlizzards(grid: Grid, times = 1): Grid {
