@@ -2,6 +2,7 @@ import { Logger } from '../utils/Logger.js'
 
 interface Solution24 {
   answer1: number
+  answer2: number
   visualFile?: string
   visualData?: string
 }
@@ -38,25 +39,39 @@ export default async function solution(input: string): Promise<Solution24> {
   logger.log('Initial blizzards')
   logger.log(stringifyGrid(grid))
 
-  const path = findPath(grid)
+  const start = getStart(grid)
+  const end = getEnd(grid)
+  const path1 = findPath(grid, start, end)
+  const path2 = findPath(moveBlizzards(grid, path1.length - 1), end, start)
+  const path3 = findPath(
+    moveBlizzards(grid, path1.length + path2.length - 2),
+    start,
+    end
+  )
 
-  const memoizedMoveBlizzards = memoizeMoveBlizzards(grid)
-  path.forEach((coordinate, turn) => {
-    const gridThatTurn = memoizedMoveBlizzards(turn)
-    gridThatTurn[coordinate.y][coordinate.x] = 'E'
-    logger.log(`\nEnd of turn ${turn}`)
-    logger.log(stringifyGrid(gridThatTurn))
-  })
+  // const memoizedMoveBlizzards = memoizeMoveBlizzards(grid)
+  // path1.forEach((coordinate, turn) => {
+  //   const gridThatTurn = memoizedMoveBlizzards(turn)
+  //   gridThatTurn[coordinate.y][coordinate.x] = 'E'
+  //   logger.log(`\nEnd of turn ${turn}`)
+  //   logger.log(stringifyGrid(gridThatTurn))
+  // })
+
+  const answer1 = path1.length - 1
+  const answer2 = path1.length - 1 + path2.length - 1 + path3.length - 1
 
   return {
-    answer1: path.length - 1,
+    answer1,
+    answer2,
     ...logger.getVisual('output-test-path.txt'),
   }
 }
 
-function findPath(grid: Grid): Coordinate[] {
-  const start = getStart(grid)
-  const end = getEnd(grid)
+function findPath(
+  grid: Grid,
+  start: Coordinate,
+  end: Coordinate
+): Coordinate[] {
   const frontier = new PriorityQueue<TimedCoordinate>()
   frontier.add({ ...start, turn: 0 }, 0)
   const startId = stringifyCoordinate(start)
