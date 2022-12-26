@@ -49,13 +49,15 @@ export default async function solution(input: string): Promise<Solution24> {
     end
   )
 
-  // const memoizedMoveBlizzards = memoizeMoveBlizzards(grid)
-  // path1.forEach((coordinate, turn) => {
-  //   const gridThatTurn = memoizedMoveBlizzards(turn)
-  //   gridThatTurn[coordinate.y][coordinate.x] = 'E'
-  //   logger.log(`\nEnd of turn ${turn}`)
-  //   logger.log(stringifyGrid(gridThatTurn))
-  // })
+  // visualize
+  const memoizedMoveBlizzards = memoizeMoveBlizzards(grid)
+  const combinedPaths = [...path1, ...path2.slice(2), ...path3.slice(2)]
+  combinedPaths.forEach((coordinate, turn) => {
+    const gridThatTurn = memoizedMoveBlizzards(turn)
+    gridThatTurn[coordinate.y][coordinate.x] = 'E'
+    logger.log(`\nEnd of turn ${turn}`)
+    logger.log(stringifyGrid(gridThatTurn))
+  })
 
   const answer1 = path1.length - 1
   const answer2 = path1.length - 1 + path2.length - 1 + path3.length - 1
