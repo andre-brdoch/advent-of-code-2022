@@ -1,4 +1,5 @@
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
 
 interface Solution24 {
   answer1: number
@@ -49,7 +50,7 @@ export default async function solution(input: string): Promise<Solution24> {
     end
   )
 
-  // visualize
+  // visualize movement
   const memoizedMoveBlizzards = memoizeMoveBlizzards(grid)
   const combinedPaths = [...path1, ...path2.slice(2), ...path3.slice(2)]
   combinedPaths.forEach((coordinate, turn) => {
@@ -65,7 +66,9 @@ export default async function solution(input: string): Promise<Solution24> {
   return {
     answer1,
     answer2,
-    ...logger.getVisual('output-path.txt'),
+    ...logger.getVisual(
+      parseArgs().file?.replace('input', 'output') ?? 'output.txt'
+    ),
   }
 }
 
