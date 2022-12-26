@@ -38,14 +38,23 @@ export default async function solution(input: string): Promise<Solution24> {
   logger.log('Initial blizzards')
   logger.log(stringifyGrid(grid))
 
-  findPath(grid)
+  const path = findPath(grid)
 
-  // grid = moveBlizzards(grid, 30)
+  const memoizedMoveBlizzards = memoizeMoveBlizzards(grid)
+  path.forEach((coordinate, turn) => {
+    const gridThatTurn = memoizedMoveBlizzards(turn)
+    gridThatTurn[coordinate.y][coordinate.x] = 'E'
+    logger.log(`\nEnd of turn ${turn}`)
+    logger.log(stringifyGrid(gridThatTurn))
+  })
 
-  return { answer1: 0, ...logger.getVisual('output-test-blizzards.txt') }
+  return {
+    answer1: path.length - 1,
+    ...logger.getVisual('output-test-path.txt'),
+  }
 }
 
-function findPath(grid: Grid): void {
+function findPath(grid: Grid): Coordinate[] {
   const start = getStart(grid)
   const end = getEnd(grid)
   const frontier = new PriorityQueue<TimedCoordinate>()
@@ -96,7 +105,7 @@ function findPath(grid: Grid): void {
   }
 
   // build path
-  const path: Coordinate[] = []
+  const path: Coordinate[] = [end]
   let key: string = stringifyCoordinate(end)
 
   for (let turn = maxTurns; turn > 0; turn--) {
@@ -110,8 +119,7 @@ function findPath(grid: Grid): void {
 
   path.reverse()
 
-  logger.log(path)
-  logger.log(path.length)
+  return path
 }
 
 function memoizeMoveBlizzards(grid: Grid): (turn: number) => Grid {
@@ -159,7 +167,6 @@ function moveBlizzards(grid: Grid, times = 1): Grid {
       }
     }
     result = newGrid
-    logger.log(stringifyGrid(newGrid))
   }
   return result
 }
