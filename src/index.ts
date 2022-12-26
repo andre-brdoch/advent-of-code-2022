@@ -35,8 +35,16 @@ function printAnswers(answer1: unknown, answer2: unknown): void {
   }
 }
 
+async function fileExists(path: string): Promise<boolean> {
+  return !!(await fs.stat(path).catch(() => false))
+}
+
 async function toFile(fileName: string, data: string): Promise<void> {
-  const file = path.join(__dirname, `./day-${dayFormatted}/${fileName}`)
+  const dir = path.join(__dirname, `./day-${dayFormatted}/output`)
+  if (!(await fileExists(dir))) {
+    await fs.mkdir(dir)
+  }
+  const file = path.join(dir, fileName)
   await fs.writeFile(file, data)
 }
 
