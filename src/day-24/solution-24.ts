@@ -65,7 +65,7 @@ export default async function solution(input: string): Promise<Solution24> {
   return {
     answer1,
     answer2,
-    ...logger.getVisual('output-test-mini-path.txt'),
+    ...logger.getVisual('output-path.txt'),
   }
 }
 
