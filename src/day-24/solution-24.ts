@@ -56,7 +56,7 @@ function findPath(grid: Grid): void {
       [startId]: null,
     },
   }
-  const memoizedMoveBlizzards = memoizeMoveBlizzards()
+  const memoizedMoveBlizzards = memoizeMoveBlizzards(grid)
 
   let current: TimedCoordinate | null
   let maxTurns = 0
@@ -69,14 +69,13 @@ function findPath(grid: Grid): void {
     )
       break
     const { turn } = current
-    logger.log(`Turn ${turn}: ${stringifyCoordinate(current)}`)
     const neighbors = [
       ...getAdjacentCoordinates(grid, current),
       // waiting is an option
       current,
     ].filter(({ x, y }) => {
       // simulate blizzards for next turn
-      const blizzardGrid = memoizedMoveBlizzards(grid, turn + 1)
+      const blizzardGrid = memoizedMoveBlizzards(turn + 1)
       const cell = blizzardGrid[y][x]
       return cell === '.' || cell === 'E'
     })
@@ -111,27 +110,22 @@ function findPath(grid: Grid): void {
 
   path.reverse()
 
-  logger.log(cameFrom)
   logger.log(path)
   logger.log(path.length)
 }
 
-function memoizeMoveBlizzards(): (grid: Grid, turn: number) => Grid {
-  const cache: { [turn: string]: Grid } = {}
+function memoizeMoveBlizzards(grid: Grid): (turn: number) => Grid {
+  let highest = 0
+  const cache: { [turn: string]: Grid } = { [highest]: grid }
 
-  return (grid: Grid, turn: number): Grid => {
+  return (turn: number): Grid => {
     if (!(turn in cache)) {
-      console.log('generate new...')
-
-      const newGrid = moveBlizzards(grid, turn)
+      const newGrid = moveBlizzards(cache[highest], Math.min(turn - highest, 1))
+      highest = turn
       cache[turn] = newGrid
       return newGrid
     }
-    else {
-      console.log('cache!!')
-
-      return cache[turn]
-    }
+    else return cache[turn]
   }
 }
 
@@ -139,8 +133,6 @@ function moveBlizzards(grid: Grid, times = 1): Grid {
   let result: Grid = grid.slice().map(row => row.slice())
 
   for (let i = 0; i < times; i++) {
-    logger.log(`\nEnd of turn ${i}`)
-
     const newGrid: Grid = result
       .slice()
       .map(row => row.slice().map(cell => (isBlizzard(cell) ? '.' : cell)))
