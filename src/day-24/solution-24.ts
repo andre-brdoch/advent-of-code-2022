@@ -9,6 +9,9 @@ interface Coordinate {
   x: number
   y: number
 }
+interface TimedCoordinate extends Coordinate {
+  turn: number
+}
 type Blizzard = '^' | '>' | 'v' | '<'
 type Wall = '#'
 type Player = 'E'
@@ -40,37 +43,53 @@ export default async function solution(input: string): Promise<Solution24> {
 function findPath(grid: Grid): void {
   const start = getStart(grid)
   const end = getEnd(grid)
-  const frontier = new PriorityQueue<Coordinate>()
-  frontier.add(start, 0)
+  const frontier = new PriorityQueue<TimedCoordinate>()
+  frontier.add({ ...start, turn: 0 }, 0)
   const startId = stringifyCoordinate(start)
-  const cameFrom: { [key: string]: Coordinate | null } = {
-    [startId]: null,
+  let maxTurns = 0
+  interface CameFromByTurn {
+    [turn: string]: {
+      [id: string]: Coordinate | null
+    }
   }
-  const costSoFar: { [key: string]: number } = { [startId]: 0 }
-  let current: Coordinate | null
+  const cameFrom: CameFromByTurn = {
+    0: {
+      [startId]: null,
+    },
+  }
+  let current: TimedCoordinate | null
 
   while (!frontier.empty()) {
-    current = frontier.get()
-    logger.log('current', current)
-    if (current === null || current === end) break
+    console.log('still not empty')
+
+    current = frontier.get() as TimedCoordinate
+    if (
+      current === null ||
+      stringifyCoordinate(current) === stringifyCoordinate(end)
+    )
+      break
+    const { turn } = current
+    logger.log(`Turn ${turn}: ${stringifyCoordinate(current)}`)
     const neighbors = [
       ...getAdjacentCoordinates(grid, current).filter(({ x, y }) => {
         const cell = grid[y][x]
         return cell === '.' || cell === 'E'
       }),
       // waiting is an option
-      current,
+      // current,
     ]
-    logger.log(neighbors)
     neighbors.forEach(next => {
       const id = stringifyCoordinate(next)
-      const newCost = costSoFar[id] + 1
-      console.log(costSoFar)
-      if (!(id in costSoFar || newCost < costSoFar[id])) {
-        const priority = newCost + heuristic(end, next)
-        frontier.add(next, priority)
-        costSoFar[id] = newCost
-        cameFrom[id] = current
+      const newTurn = turn + 1
+      const turnId = `${newTurn}`
+      if (!(turnId in cameFrom)) {
+        cameFrom[turnId] = {}
+        maxTurns += 1
+      }
+      if (!(id in cameFrom[turnId])) {
+        const priority = newTurn + heuristic(end, next)
+        frontier.add({ ...next, turn: newTurn }, priority)
+        cameFrom[turnId][id] = current
       }
     })
   }
@@ -78,16 +97,16 @@ function findPath(grid: Grid): void {
   // build path
   const path: Coordinate[] = []
   let key: string = stringifyCoordinate(end)
-  let didEnd = false
-  while (!didEnd) {
-    const next = cameFrom[key]
+
+  for (let turn = maxTurns; turn > 0; turn--) {
+    const next = cameFrom[turn][key]
     if (next === null) {
-      didEnd = true
       break
     }
     path.push(next)
     key = stringifyCoordinate(next)
   }
+
   path.reverse()
 
   logger.log(cameFrom)
@@ -165,8 +184,6 @@ function getAdjacentCoordinates(
   grid: Grid,
   coordinate: Coordinate
 ): Coordinate[] {
-  logger.log('pls get adjacent')
-
   return (['^', '>', 'v', '<'] as Blizzard[])
     .map(blizzard => getNextCoordinate(coordinate, blizzard, grid, false))
     .filter(coordinate => isOnGrid(grid, coordinate))
@@ -234,21 +251,23 @@ function parseGrid(input: string): Grid {
   return input.split('\n').map(line => line.split('') as Cell[])
 }
 
+interface PriorityQueueItem<T> {
+  item: T
+  priority: number
+}
+
 class PriorityQueue<T> {
-  private items: {
-    item: T
-    priority: number
-  }[]
+  private items: PriorityQueueItem<T>[]
 
   constructor() {
     this.items = []
   }
 
-  public add(item: T, priority: number) {
+  public add(item: T, priority: number): void {
     this.items.push({ item, priority })
   }
 
-  public get() {
+  public get(): T | null {
     if (this.empty()) return null
     // low to high
     const highestPrio = this.items.sort((a, b) => a.priority - b.priority)[0]
@@ -257,7 +276,7 @@ class PriorityQueue<T> {
     return highestPrio.item
   }
 
-  public empty() {
+  public empty(): boolean {
     return this.items.length === 0
   }
 }
