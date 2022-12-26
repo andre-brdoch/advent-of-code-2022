@@ -121,9 +121,17 @@ function memoizeMoveBlizzards(): (grid: Grid, turn: number) => Grid {
 
   return (grid: Grid, turn: number): Grid => {
     if (!(turn in cache)) {
-      return moveBlizzards(grid, turn)
+      console.log('generate new...')
+
+      const newGrid = moveBlizzards(grid, turn)
+      cache[turn] = newGrid
+      return newGrid
     }
-    else return cache[`${turn}`]
+    else {
+      console.log('cache!!')
+
+      return cache[turn]
+    }
   }
 }
 
