@@ -125,7 +125,10 @@ function memoizeMoveBlizzards(grid: Grid): (turn: number) => Grid {
       cache[turn] = newGrid
       return newGrid
     }
-    else return cache[turn]
+    else {
+      // return copy from cache
+      return cache[turn].slice().map(row => row.slice())
+    }
   }
 }
 
@@ -135,7 +138,9 @@ function moveBlizzards(grid: Grid, times = 1): Grid {
   for (let i = 0; i < times; i++) {
     const newGrid: Grid = result
       .slice()
-      .map(row => row.slice().map(cell => (isBlizzard(cell) ? '.' : cell)))
+      .map(row =>
+        row.slice().map(cell => (isBlizzard(cell) || cell === 'E' ? '.' : cell))
+      )
 
     for (let y = 0; y < result.length; y++) {
       for (let x = 0; x < result[0].length; x++) {
