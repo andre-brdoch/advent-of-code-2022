@@ -42,27 +42,34 @@ function findPath(grid: Grid): void {
   const end = getEnd(grid)
   const frontier = new PriorityQueue<Coordinate>()
   frontier.add(start, 0)
+  const startId = stringifyCoordinate(start)
   const cameFrom: { [key: string]: Coordinate | null } = {
-    [stringifyCoordinate(start)]: null,
+    [startId]: null,
   }
+  const costSoFar: { [key: string]: number } = { [startId]: 0 }
   let current: Coordinate | null
 
   while (!frontier.empty()) {
     current = frontier.get()
     logger.log('current', current)
     if (current === null || current === end) break
-    const neighbors = getAdjacentCoordinates(grid, current).filter(
-      ({ x, y }) => {
+    const neighbors = [
+      ...getAdjacentCoordinates(grid, current).filter(({ x, y }) => {
         const cell = grid[y][x]
         return cell === '.' || cell === 'E'
-      }
-    )
+      }),
+      // waiting is an option
+      current,
+    ]
     logger.log(neighbors)
     neighbors.forEach(next => {
       const id = stringifyCoordinate(next)
-      if (!(id in cameFrom)) {
-        const priority = heuristic(end, next)
+      const newCost = costSoFar[id] + 1
+      console.log(costSoFar)
+      if (!(id in costSoFar || newCost < costSoFar[id])) {
+        const priority = newCost + heuristic(end, next)
         frontier.add(next, priority)
+        costSoFar[id] = newCost
         cameFrom[id] = current
       }
     })
