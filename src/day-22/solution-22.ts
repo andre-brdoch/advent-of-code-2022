@@ -163,16 +163,21 @@ function parseInput(input: string): {
   let instructions: Instruction[] = []
   for (let i = 0; i < instructionString.length; i++) {
     const char = instructionString.charAt(i)
-    const digit = parseInt(char)
+    const digit = parseInt(char, 10)
     if (!isNaN(digit)) instructions.push(digit)
     else instructions.push(char as RotateInstruction)
   }
   instructions = instructions.reduce((result, item, i) => {
     // current and last signs were digits -> merge them
-    if (i > 0 && [item, result[i - 1]].every(el => typeof el === 'number')) {
+    if (
+      i > 0 &&
+      [item, result[result.length - 1]].every(el => typeof el === 'number')
+    ) {
+      console.log('merge it')
+
       return [
         ...result.slice(0, result.length - 1),
-        Number(`${result[i - 1]}${item}`),
+        Number(`${result[result.length - 1]}${item}`),
       ]
     }
     return [...result, item]
