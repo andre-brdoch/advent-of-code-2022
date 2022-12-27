@@ -32,8 +32,8 @@ interface Plane {
   edgeB: PlaneEdge | undefined
   edgeC: PlaneEdge | undefined
   edgeD: PlaneEdge | undefined
-  x?: number
-  y?: number
+  x: number
+  y: number
 }
 
 const { isTest, file } = parseArgs()
@@ -57,6 +57,7 @@ export default async function solution(input: string): Promise<Solution22> {
   const answer1 = getPassword(path[path.length - 1])
 
   const planes = getPlanes(grid)
+  console.log(planes)
   console.log(stringifyPlanes(planes))
 
   return {
@@ -76,8 +77,6 @@ function getPlanes(grid: Grid): Plane[] {
         isOnGrid(grid, {
           x: x * PLANE_SIZE,
           y: y * PLANE_SIZE,
-          // any facing will do here
-          facing: '>',
         }) &&
         grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
       ) {
@@ -96,10 +95,17 @@ function getPlanes(grid: Grid): Plane[] {
       }
     }
   }
+
+  const planeGrid = planesToGrid(planes)
   planes.forEach(plane => {
-    const rightNeighbor = planes.find(
-      p => plane.x && plane.y === p.y && p.x === plane.x + 1
-    )
+    const rightCoordinate = { y: plane.y, x: plane.x + 1 }
+    const topCoordinate = { y: plane.y + 1, x: plane.x }
+    const rightNeighbor = isOnGrid(planeGrid, rightCoordinate)
+      ? planeGrid[rightCoordinate.y][rightCoordinate.x]
+      : null
+    const topNeighbor = isOnGrid(planeGrid, topCoordinate)
+      ? planeGrid[topCoordinate.y][topCoordinate.x]
+      : null
     if (plane.edgeB === undefined && rightNeighbor) {
       plane.edgeB = {
         toPlane: rightNeighbor.name,
@@ -108,6 +114,16 @@ function getPlanes(grid: Grid): Plane[] {
       rightNeighbor.edgeD = {
         toPlane: plane.name,
         toEdge: 'b',
+      }
+    }
+    if (plane.edgeA === undefined && topNeighbor) {
+      plane.edgeB = {
+        toPlane: topNeighbor.name,
+        toEdge: 'c',
+      }
+      topNeighbor.edgeC = {
+        toPlane: plane.name,
+        toEdge: 'a',
       }
     }
   })
@@ -208,9 +224,9 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
   return next
 }
 
-function isOnGrid(grid: Grid, location: PlayerLocation) {
+function isOnGrid<T>(grid: T[][], coordinate: Coordinate) {
   try {
-    return !!grid[location.y][location.x]
+    return !!grid[coordinate.y][coordinate.x]
   }
   catch (err) {
     return false
@@ -229,17 +245,25 @@ function getStartLocation(grid: Grid): PlayerLocation {
   return { x, y, facing: INITIAL_FACING }
 }
 
-function stringifyPlanes(planes: Plane[]) {
-  let string = '\n\n'
+function planesToGrid(planes: Plane[]): (Plane | null)[][] {
+  const planeGrid = []
   for (let y = 0; y < 4; y++) {
+    const row = []
     for (let x = 0; x < 4; x++) {
       const plane = planes.find(p => p.x === x && p.y === y)
-      if (plane) string += plane.name + ' '
-      else string += '  '
+      if (plane) row.push(plane)
+      else row.push(null)
     }
-    string += '\n'
+    planeGrid.push(row)
   }
-  return string
+  return planeGrid
+}
+
+function stringifyPlanes(planes: Plane[]): string {
+  const planeGrid = planesToGrid(planes)
+  return planeGrid
+    .map(row => row.map(plane => plane?.name ?? ' ').join(' '))
+    .join('\n')
 }
 
 function stringifyGrid(grid: Grid, path: Path): string {
