@@ -86,19 +86,16 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
   const { facing } = location
   const vector = VECTORS[facing]
   const next = { facing, x: location.x + vector.x, y: location.y + vector.y }
+  // warp through empty space
   if (!isOnGrid(grid, next) || grid[next.y][next.x] === ' ') {
     const axis: Axis = ['<', '>'].includes(facing) ? 'x' : 'y'
     const forwards = ['>', 'v'].includes(facing)
-    console.log(`axis ${axis}, forwards: ${forwards}`)
     let newVal = location[axis]
-    let isDone = false
-    while (!isDone) {
+    // follow the axis back until the first field before empty space
+    while (true) {
       const nextVal = newVal + (forwards ? -1 : 1)
       const newNext = { ...location, [axis]: nextVal }
-      console.log(`${location.x}/${location.y} --> ${newNext.x}/${newNext.y}`)
-
       if (!isOnGrid(grid, newNext) || grid[newNext.y][newNext.x] === ' ') {
-        isDone = true
         break
       }
       newVal = nextVal
