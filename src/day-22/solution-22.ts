@@ -27,33 +27,53 @@ const VECTORS: { [facing: string]: Coordinate } = {
 
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
-  let path = [getStartLocation(grid)]
-  console.log(stringifyGrid(grid, path))
-  path = move(grid, path, 10)
-  console.log(stringifyGrid(grid, path))
-  rotate(path[path.length - 1], 'R')
-  console.log(stringifyGrid(grid, path))
-  path = move(grid, path, 5)
-  rotate(path[path.length - 1], 'L')
-  console.log(stringifyGrid(grid, path))
-  // TODO: wrong, change
-  path = move(grid, path, 5)
-  rotate(path[path.length - 1], 'R')
-  console.log(stringifyGrid(grid, path))
-  // TODO: wrong, change
-  path = move(grid, path, 10)
-  rotate(path[path.length - 1], 'L')
-  console.log(stringifyGrid(grid, path))
-  path = move(grid, path, 4)
-  rotate(path[path.length - 1], 'R')
-  console.log(stringifyGrid(grid, path))
-  path = move(grid, path, 5)
-  rotate(path[path.length - 1], 'L')
-  console.log(stringifyGrid(grid, path))
-  path = move(grid, path, 5)
-  console.log(stringifyGrid(grid, path))
+  const path = getPathFromInstructions(grid, instructions)
+
+  // let path = [getStartLocation(grid)]
+  // console.log(stringifyGrid(grid, path))
+  // path = move(grid, path, 10)
+  // console.log(stringifyGrid(grid, path))
+  // rotate(path[path.length - 1], 'R')
+  // console.log(stringifyGrid(grid, path))
+  // path = move(grid, path, 5)
+  // rotate(path[path.length - 1], 'L')
+  // console.log(stringifyGrid(grid, path))
+  // // TODO: wrong, change
+  // path = move(grid, path, 5)
+  // rotate(path[path.length - 1], 'R')
+  // console.log(stringifyGrid(grid, path))
+  // // TODO: wrong, change
+  // path = move(grid, path, 10)
+  // rotate(path[path.length - 1], 'L')
+  // console.log(stringifyGrid(grid, path))
+  // path = move(grid, path, 4)
+  // rotate(path[path.length - 1], 'R')
+  // console.log(stringifyGrid(grid, path))
+  // path = move(grid, path, 5)
+  // rotate(path[path.length - 1], 'L')
+  // console.log(stringifyGrid(grid, path))
+  // path = move(grid, path, 5)
+  // console.log(stringifyGrid(grid, path))
 
   return { answer1: 0 }
+}
+
+function getPathFromInstructions(
+  grid: Grid,
+  instructions: Instruction[]
+): Path {
+  let path = [getStartLocation(grid)]
+  instructions.forEach(instruction => {
+    if (typeof instruction === 'number') {
+      path = move(grid, path, instruction)
+    }
+    else {
+      // rotate last
+      rotate(path[path.length - 1], instruction)
+    }
+    console.log(stringifyGrid(grid, path))
+  })
+  return path
 }
 
 function move(grid: Grid, path: Path, amount: number): Path {
