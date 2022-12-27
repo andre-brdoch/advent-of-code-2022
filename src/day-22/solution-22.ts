@@ -14,7 +14,9 @@ interface PlayerLocation extends Coordinate {
   facing: Facing
 }
 type Path = PlayerLocation[]
-type Cell = '.' | '#' | ' ' | Facing
+interface Cell {
+  type: '.' | '#' | ' ' | Facing
+}
 type Grid = Cell[][]
 type RotateInstruction = 'L' | 'R'
 type MoveInstruction = number
@@ -94,8 +96,8 @@ function move(grid: Grid, path: Path, amount: number): Path {
     const next = getNextCoordinate(grid, newPath[newPath.length - 1])
     const cell = grid[next.y][next.x]
     // wall, stop
-    if (cell === '#') break
-    else if (cell === '.') newPath.push(next)
+    if (cell.type === '#') break
+    else if (cell.type === '.') newPath.push(next)
   }
   return newPath
 }
@@ -119,7 +121,7 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
   const vector = VECTORS[facing]
   const next = { facing, x: location.x + vector.x, y: location.y + vector.y }
   // warp through empty space
-  if (!isOnGrid(grid, next) || grid[next.y][next.x] === ' ') {
+  if (!isOnGrid(grid, next) || grid[next.y][next.x].type === ' ') {
     const axis: Axis = ['<', '>'].includes(facing) ? 'x' : 'y'
     const forwards = ['>', 'v'].includes(facing)
     let newVal = location[axis]
@@ -127,7 +129,7 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
     while (true) {
       const nextVal = newVal + (forwards ? -1 : 1)
       const newNext = { ...location, [axis]: nextVal }
-      if (!isOnGrid(grid, newNext) || grid[newNext.y][newNext.x] === ' ') {
+      if (!isOnGrid(grid, newNext) || grid[newNext.y][newNext.x].type === ' ') {
         break
       }
       newVal = nextVal
@@ -152,7 +154,7 @@ function getStartLocation(grid: Grid): PlayerLocation {
   outer: for (; y < grid.length; y++) {
     for (; x < grid[y].length; x++) {
       const cell = grid[y][x]
-      if (cell === '.') break outer
+      if (cell.type === '.') break outer
     }
   }
   return { x, y, facing: INITIAL_FACING }
@@ -161,9 +163,12 @@ function getStartLocation(grid: Grid): PlayerLocation {
 function stringifyGrid(grid: Grid, path: Path): string {
   const gridCopy = grid.slice().map(column => column.slice())
   path.forEach(player => {
-    gridCopy[player.y][player.x] = player.facing
+    gridCopy[player.y][player.x].type = player.facing
   })
-  return '\n\n' + gridCopy.map(column => column.join('')).join('\n')
+  return (
+    '\n\n' +
+    gridCopy.map(column => column.map(cell => cell.type).join('')).join('\n')
+  )
 }
 
 function stringifyInstructions(
@@ -182,7 +187,9 @@ function parseInput(input: string): {
   instructions: Instruction[]
 } {
   const [mapString, instructionString] = input.split('\n\n')
-  const grid: Grid = mapString.split('\n').map(line => line.split('') as Cell[])
+  const grid: Grid = mapString
+    .split('\n')
+    .map(line => line.split('').map(sign => ({ type: sign })) as Cell[])
   let instructions: Instruction[] = []
   for (let i = 0; i < instructionString.length; i++) {
     const char = instructionString.charAt(i)
