@@ -37,12 +37,20 @@ export default async function solution(input: string): Promise<Solution22> {
   rotate(path[path.length - 1], 'L')
   console.log(stringifyGrid(grid, path))
   // TODO: wrong, change
-  path = move(grid, path, 6)
+  path = move(grid, path, 5)
   rotate(path[path.length - 1], 'R')
   console.log(stringifyGrid(grid, path))
   // TODO: wrong, change
-  path = move(grid, path, 3)
+  path = move(grid, path, 10)
   rotate(path[path.length - 1], 'L')
+  console.log(stringifyGrid(grid, path))
+  path = move(grid, path, 4)
+  rotate(path[path.length - 1], 'R')
+  console.log(stringifyGrid(grid, path))
+  path = move(grid, path, 5)
+  rotate(path[path.length - 1], 'L')
+  console.log(stringifyGrid(grid, path))
+  path = move(grid, path, 5)
   console.log(stringifyGrid(grid, path))
 
   return { answer1: 0 }
@@ -84,20 +92,18 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
     console.log(`axis ${axis}, forwards: ${forwards}`)
     let newVal = location[axis]
     let isDone = false
-    if (forwards) {
-      while (!isDone) {
-        const nextVal = newVal - 1
-        const newNext = { ...location, [axis]: nextVal }
-        console.log(`${location.x}/${location.y} --> ${newNext.x}/${newNext.y}`)
+    while (!isDone) {
+      const nextVal = newVal + (forwards ? -1 : 1)
+      const newNext = { ...location, [axis]: nextVal }
+      console.log(`${location.x}/${location.y} --> ${newNext.x}/${newNext.y}`)
 
-        if (!isOnGrid(grid, newNext) || grid[newNext.y][newNext.x] === ' ') {
-          isDone = true
-          break
-        }
-        newVal = nextVal
+      if (!isOnGrid(grid, newNext) || grid[newNext.y][newNext.x] === ' ') {
+        isDone = true
+        break
       }
-      next[axis] = newVal as number
+      newVal = nextVal
     }
+    next[axis] = newVal as number
   }
   return next
 }
