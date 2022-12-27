@@ -13,11 +13,12 @@ module.exports = {
   plugins: ['@typescript-eslint', 'prettier'],
   rules: {
     'brace-style': [2, 'stroustrup'],
-    indent: [2, 2, { VariableDeclarator: 2 }],
+    "indent": [2, 2, { VariableDeclarator: 2 }],
     'no-console': 0,
     'no-var': 2,
     'prefer-const': 2,
     'no-constant-condition': 0,
+    'quote-props': [2, 'consistent-as-needed'],
     '@typescript-eslint/no-unused-vars': 2,
   },
 }

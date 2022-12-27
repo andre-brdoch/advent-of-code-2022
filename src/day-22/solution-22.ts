@@ -25,7 +25,7 @@ const INITIAL_FACING = '>'
 const VECTORS: { [facing: string]: Coordinate } = {
   '^': { x: 0, y: -1 },
   '>': { x: 1, y: 0 },
-  v: { x: 0, y: 1 },
+  "v": { x: 0, y: 1 },
   '<': { x: -1, y: 0 },
 }
 
@@ -47,7 +47,7 @@ function getPassword(location: PlayerLocation): number {
   const { x, y, facing } = location
   const faceValue = {
     '>': 0,
-    v: 1,
+    "v": 1,
     '<': 2,
     '^': 3,
   }

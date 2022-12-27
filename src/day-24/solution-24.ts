@@ -31,7 +31,7 @@ const logger = new Logger()
 const VECTORS = {
   '^': { x: 0, y: -1 },
   '>': { x: 1, y: 0 },
-  v: { x: 0, y: 1 },
+  "v": { x: 0, y: 1 },
   '<': { x: -1, y: 0 },
 }
 
