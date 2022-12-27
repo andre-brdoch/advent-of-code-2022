@@ -1,4 +1,5 @@
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
 
 interface Solution22 {
   answer1: number
@@ -33,7 +34,12 @@ export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
   const path = getPathFromInstructions(grid, instructions)
   const answer1 = getPassword(path[path.length - 1])
-  return { answer1 }
+  return {
+    answer1,
+    ...logger.getVisual(
+      parseArgs().file?.replace('input', 'output') ?? 'output.txt'
+    ),
+  }
 }
 
 function getPassword(location: PlayerLocation): number {
@@ -52,6 +58,8 @@ function getPathFromInstructions(
   instructions: Instruction[]
 ): Path {
   let path = [getStartLocation(grid)]
+  logger.log('===== Start position =====')
+  logger.log(stringifyGrid(grid, path))
   instructions.forEach(instruction => {
     if (typeof instruction === 'number') {
       path = move(grid, path, instruction)
@@ -60,6 +68,7 @@ function getPathFromInstructions(
       // rotate last
       rotate(path[path.length - 1], instruction)
     }
+    logger.log(stringifyInstruction(instruction))
     logger.log(stringifyGrid(grid, path))
   })
   return path
@@ -143,6 +152,13 @@ function stringifyGrid(grid: Grid, path: Path): string {
   return '\n\n' + gridCopy.map(column => column.join('')).join('\n')
 }
 
+function stringifyInstruction(instruction: Instruction): string {
+  let str = ''
+  if (typeof instruction === 'number') str = `Move ${instruction}`
+  else str = `Rotate to the ${instruction === 'R' ? 'right' : 'left'}`
+  return `\n\n===== ${str} =====`
+}
+
 function parseInput(input: string): {
   grid: Grid
   instructions: Instruction[]
@@ -162,8 +178,6 @@ function parseInput(input: string): {
       i > 0 &&
       [item, result[result.length - 1]].every(el => typeof el === 'number')
     ) {
-      logger.log('merge it')
-
       return [
         ...result.slice(0, result.length - 1),
         Number(`${result[result.length - 1]}${item}`),
