@@ -6,10 +6,10 @@ interface Coordinate {
   y: number
 }
 type Facing = '^' | '>' | 'v' | '<'
-interface Player extends Coordinate {
+interface PlayerLocation extends Coordinate {
   facing: Facing
 }
-type Path = Player[]
+type Path = PlayerLocation[]
 type Cell = '.' | '#' | ' ' | Facing
 type Grid = Cell[][]
 type RotateInstruction = 'L' | 'R'
@@ -17,16 +17,37 @@ type Instruction = number | RotateInstruction
 
 const INITIAL_FACING = '>'
 
+const VECTORS: { [facing: string]: Coordinate } = {
+  '^': { x: 0, y: 1 },
+  '>': { x: 1, y: 0 },
+  v: { x: 0, y: -1 },
+  '<': { x: -1, y: 0 },
+}
+
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
-  const player = createPlayer(grid)
+  const player = getStartLocation(grid)
   console.log(stringifyGrid(grid, [player, { ...player, x: player.x + 1 }]))
   console.log(player)
+  console.log('\nnext:')
+  const c = getNextCoordinate(grid, { ...player, x: player.x + 2 })
+  console.log(c)
+  console.log(grid[c.y][c.x])
 
   return { answer1: 0 }
 }
 
-function createPlayer(grid: Grid): Player {
+function getNextCoordinate(grid: Grid, location: PlayerLocation) {
+  const { facing } = location
+  const vector = VECTORS[facing]
+  const next = { facing, x: location.x + vector.x, y: location.y + vector.y }
+  if (grid[next.y][next.x] === ' ') {
+    // todo: empty, warp
+  }
+  return next
+}
+
+function getStartLocation(grid: Grid): PlayerLocation {
   let x = 0
   let y = 0
   outer: for (; y < grid.length; y++) {
