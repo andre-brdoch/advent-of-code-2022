@@ -14,11 +14,32 @@ type Grid = Cell[][]
 type RotateInstruction = 'L' | 'R'
 type Instruction = number | RotateInstruction
 
+const INITIAL_FACING = '>'
+
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
-  console.log(instructions)
+  const player = createPlayer(grid)
+  grid[player.y][player.x] = player.facing
+  console.log(stringifyGrid(grid))
+  console.log(player)
 
   return { answer1: 0 }
+}
+
+function createPlayer(grid: Grid): Player {
+  let x = 0
+  let y = 0
+  outer: for (; y < grid.length; y++) {
+    for (; x < grid[y].length; x++) {
+      const cell = grid[y][x]
+      if (cell === '.') break outer
+    }
+  }
+  return { x, y, facing: INITIAL_FACING }
+}
+
+function stringifyGrid(grid: Grid): string {
+  return grid.map(column => column.join('')).join('\n')
 }
 
 function parseInput(input: string): {
