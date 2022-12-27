@@ -9,6 +9,7 @@ type Facing = '^' | '>' | 'v' | '<'
 interface Player extends Coordinate {
   facing: Facing
 }
+type Path = Player[]
 type Cell = '.' | '#' | ' ' | Facing
 type Grid = Cell[][]
 type RotateInstruction = 'L' | 'R'
@@ -19,8 +20,7 @@ const INITIAL_FACING = '>'
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
   const player = createPlayer(grid)
-  grid[player.y][player.x] = player.facing
-  console.log(stringifyGrid(grid))
+  console.log(stringifyGrid(grid, [player, { ...player, x: player.x + 1 }]))
   console.log(player)
 
   return { answer1: 0 }
@@ -38,8 +38,12 @@ function createPlayer(grid: Grid): Player {
   return { x, y, facing: INITIAL_FACING }
 }
 
-function stringifyGrid(grid: Grid): string {
-  return grid.map(column => column.join('')).join('\n')
+function stringifyGrid(grid: Grid, path: Path): string {
+  const gridCopy = grid.slice().map(column => column.slice())
+  path.forEach(player => {
+    gridCopy[player.y][player.x] = player.facing
+  })
+  return gridCopy.map(column => column.join('')).join('\n')
 }
 
 function parseInput(input: string): {
