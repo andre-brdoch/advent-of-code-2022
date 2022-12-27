@@ -26,15 +26,33 @@ const VECTORS: { [facing: string]: Coordinate } = {
 
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
-  const player = getStartLocation(grid)
-  console.log(stringifyGrid(grid, [player, { ...player, x: player.x + 1 }]))
-  console.log(player)
-  console.log('\nnext:')
-  const c = getNextCoordinate(grid, { ...player, x: player.x + 2 })
-  console.log(c)
-  console.log(grid[c.y][c.x])
+  let path = [getStartLocation(grid)]
+  console.log(stringifyGrid(grid, path))
+  path = move(grid, path, 10)
+  console.log(stringifyGrid(grid, path))
+
+  // console.log(player)
+  // console.log('\nnext:')
+  // const c = getNextCoordinate(grid, { ...player, x: player.x + 2 })
+  // console.log(c)
+  // console.log(grid[c.y][c.x])
 
   return { answer1: 0 }
+}
+
+function move(grid: Grid, path: Path, amount: number): Path {
+  const newPath = [...path]
+  console.log(newPath)
+
+  for (let i = 0; i < amount; i++) {
+    const next = getNextCoordinate(grid, newPath[newPath.length - 1])
+    console.log(next)
+    const cell = grid[next.y][next.x]
+    // wall, stop
+    if (cell === '#') break
+    else if (cell === '.') newPath.push(next)
+  }
+  return newPath
 }
 
 function getNextCoordinate(grid: Grid, location: PlayerLocation) {
