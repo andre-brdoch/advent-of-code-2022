@@ -17,6 +17,7 @@ module.exports = {
     'no-console': 0,
     'no-var': 2,
     'prefer-const': 2,
+    'no-constant-condition': 0,
     '@typescript-eslint/no-unused-vars': 2,
   },
 }
