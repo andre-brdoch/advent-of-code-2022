@@ -30,6 +30,8 @@ export default async function solution(input: string): Promise<Solution22> {
   console.log(stringifyGrid(grid, path))
   path = move(grid, path, 10)
   console.log(stringifyGrid(grid, path))
+  rotate(path[path.length - 1], 'R')
+  console.log(stringifyGrid(grid, path))
 
   // console.log(player)
   // console.log('\nnext:')
@@ -53,6 +55,20 @@ function move(grid: Grid, path: Path, amount: number): Path {
     else if (cell === '.') newPath.push(next)
   }
   return newPath
+}
+
+function rotate(
+  playerLocation: PlayerLocation,
+  rotation: RotateInstruction
+): void {
+  const { facing } = playerLocation
+  const sortedFacings: Facing[] = ['^', '>', 'v', '<']
+  const i = sortedFacings.indexOf(facing)
+  let iNew = rotation === 'R' ? i + 1 : i - 1
+  if (iNew >= sortedFacings.length) iNew = 0
+  else if (iNew < 0) iNew = sortedFacings.length - 1
+  const newFacing = sortedFacings[iNew]
+  playerLocation.facing = newFacing
 }
 
 function getNextCoordinate(grid: Grid, location: PlayerLocation) {
@@ -82,7 +98,7 @@ function stringifyGrid(grid: Grid, path: Path): string {
   path.forEach(player => {
     gridCopy[player.y][player.x] = player.facing
   })
-  return gridCopy.map(column => column.join('')).join('\n')
+  return '\n' + gridCopy.map(column => column.join('')).join('\n')
 }
 
 function parseInput(input: string): {
