@@ -5,6 +5,7 @@ interface Coordinate {
   x: number
   y: number
 }
+type Axis = keyof Coordinate
 type Facing = '^' | '>' | 'v' | '<'
 interface PlayerLocation extends Coordinate {
   facing: Facing
@@ -18,9 +19,9 @@ type Instruction = number | RotateInstruction
 const INITIAL_FACING = '>'
 
 const VECTORS: { [facing: string]: Coordinate } = {
-  '^': { x: 0, y: 1 },
+  '^': { x: 0, y: -1 },
   '>': { x: 1, y: 0 },
-  v: { x: 0, y: -1 },
+  v: { x: 0, y: 1 },
   '<': { x: -1, y: 0 },
 }
 
@@ -32,23 +33,19 @@ export default async function solution(input: string): Promise<Solution22> {
   console.log(stringifyGrid(grid, path))
   rotate(path[path.length - 1], 'R')
   console.log(stringifyGrid(grid, path))
-
-  // console.log(player)
-  // console.log('\nnext:')
-  // const c = getNextCoordinate(grid, { ...player, x: player.x + 2 })
-  // console.log(c)
-  // console.log(grid[c.y][c.x])
+  path = move(grid, path, 5)
+  rotate(path[path.length - 1], 'L')
+  console.log(stringifyGrid(grid, path))
+  path = move(grid, path, 5)
+  console.log(stringifyGrid(grid, path))
 
   return { answer1: 0 }
 }
 
 function move(grid: Grid, path: Path, amount: number): Path {
   const newPath = [...path]
-  console.log(newPath)
-
   for (let i = 0; i < amount; i++) {
     const next = getNextCoordinate(grid, newPath[newPath.length - 1])
-    console.log(next)
     const cell = grid[next.y][next.x]
     // wall, stop
     if (cell === '#') break
@@ -75,10 +72,37 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
   const { facing } = location
   const vector = VECTORS[facing]
   const next = { facing, x: location.x + vector.x, y: location.y + vector.y }
-  if (grid[next.y][next.x] === ' ') {
-    // todo: empty, warp
+  if (!isOnGrid(grid, next) || grid[next.y][next.x] === ' ') {
+    const axis: Axis = ['<', '>'].includes(facing) ? 'x' : 'y'
+    const forwards = ['>', 'v'].includes(facing)
+    console.log(`axis ${axis}, forwards: ${forwards}`)
+    let newVal = location.x
+    let isDone = false
+    if (axis === 'x' && forwards) {
+      while (!isDone) {
+        const nextX = newVal - 1
+        const newNext = { ...location, x: nextX }
+        console.log(`${location.x}/${location.y} --> ${newNext.x}/${newNext.y}`)
+
+        if (!isOnGrid(grid, newNext) || grid[newNext.y][newNext.x] === ' ') {
+          isDone = true
+          break
+        }
+        newVal = nextX
+      }
+      next.x = newVal as number
+    }
   }
   return next
+}
+
+function isOnGrid(grid: Grid, location: PlayerLocation) {
+  try {
+    return !!grid[location.y][location.x]
+  }
+  catch (err) {
+    return false
+  }
 }
 
 function getStartLocation(grid: Grid): PlayerLocation {
@@ -98,7 +122,7 @@ function stringifyGrid(grid: Grid, path: Path): string {
   path.forEach(player => {
     gridCopy[player.y][player.x] = player.facing
   })
-  return '\n' + gridCopy.map(column => column.join('')).join('\n')
+  return '\n\n' + gridCopy.map(column => column.join('')).join('\n')
 }
 
 function parseInput(input: string): {
