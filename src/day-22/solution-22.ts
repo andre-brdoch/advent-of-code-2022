@@ -22,15 +22,18 @@ type RotateInstruction = 'L' | 'R'
 type MoveInstruction = number
 type Instruction = MoveInstruction | RotateInstruction
 interface PlaneEdge {
-  toPlane: Plane
+  // todo: switch to Plane
+  toPlane: string
   toEdge: 'a' | 'b' | 'c' | 'd'
 }
 interface Plane {
   name: string
-  edgeA: PlaneEdge
-  edgeB: PlaneEdge
-  edgeC: PlaneEdge
-  edgeD: PlaneEdge
+  edgeA: PlaneEdge | undefined
+  edgeB: PlaneEdge | undefined
+  edgeC: PlaneEdge | undefined
+  edgeD: PlaneEdge | undefined
+  x?: number
+  y?: number
 }
 
 const { isTest, file } = parseArgs()
@@ -54,7 +57,7 @@ export default async function solution(input: string): Promise<Solution22> {
   const answer1 = getPassword(path[path.length - 1])
 
   const planes = getPlanes(grid)
-  console.log(planes)
+  console.log(stringifyPlanes(planes))
 
   return {
     answer1,
@@ -62,8 +65,8 @@ export default async function solution(input: string): Promise<Solution22> {
   }
 }
 
-function getPlanes(grid: Grid): any {
-  const planes = []
+function getPlanes(grid: Grid): Plane[] {
+  const planes: Plane[] = []
   let name = 1
   // unfolded die must fit into a 4x4 grid
   for (let y = 0; y < 4; y++) {
@@ -78,11 +81,36 @@ function getPlanes(grid: Grid): any {
         }) &&
         grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
       ) {
-        planes.push({ name, x, y })
+        const plane: Plane = {
+          name: name.toString(),
+          x,
+          y,
+          edgeA: undefined,
+          edgeB: undefined,
+          edgeC: undefined,
+          edgeD: undefined,
+        }
+        planes.push(plane)
+
         name += 1
       }
     }
   }
+  planes.forEach(plane => {
+    const rightNeighbor = planes.find(
+      p => plane.x && plane.y === p.y && p.x === plane.x + 1
+    )
+    if (plane.edgeB === undefined && rightNeighbor) {
+      plane.edgeB = {
+        toPlane: rightNeighbor.name,
+        toEdge: 'd',
+      }
+      rightNeighbor.edgeD = {
+        toPlane: plane.name,
+        toEdge: 'b',
+      }
+    }
+  })
   return planes
 }
 
@@ -199,6 +227,19 @@ function getStartLocation(grid: Grid): PlayerLocation {
     }
   }
   return { x, y, facing: INITIAL_FACING }
+}
+
+function stringifyPlanes(planes: Plane[]) {
+  let string = '\n\n'
+  for (let y = 0; y < 4; y++) {
+    for (let x = 0; x < 4; x++) {
+      const plane = planes.find(p => p.x === x && p.y === y)
+      if (plane) string += plane.name + ' '
+      else string += '  '
+    }
+    string += '\n'
+  }
+  return string
 }
 
 function stringifyGrid(grid: Grid, path: Path): string {
