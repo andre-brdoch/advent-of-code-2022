@@ -1,3 +1,5 @@
+import { Logger } from '../utils/Logger.js'
+
 interface Solution22 {
   answer1: number
 }
@@ -24,6 +26,8 @@ const VECTORS: { [facing: string]: Coordinate } = {
   v: { x: 0, y: 1 },
   '<': { x: -1, y: 0 },
 }
+
+const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
@@ -56,7 +60,7 @@ function getPathFromInstructions(
       // rotate last
       rotate(path[path.length - 1], instruction)
     }
-    console.log(stringifyGrid(grid, path))
+    logger.log(stringifyGrid(grid, path))
   })
   return path
 }
@@ -158,7 +162,7 @@ function parseInput(input: string): {
       i > 0 &&
       [item, result[result.length - 1]].every(el => typeof el === 'number')
     ) {
-      console.log('merge it')
+      logger.log('merge it')
 
       return [
         ...result.slice(0, result.length - 1),
