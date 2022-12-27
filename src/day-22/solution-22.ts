@@ -21,6 +21,19 @@ type Grid = Cell[][]
 type RotateInstruction = 'L' | 'R'
 type MoveInstruction = number
 type Instruction = MoveInstruction | RotateInstruction
+interface PlaneEdge {
+  toPlane: Plane
+  toEdge: 'a' | 'b' | 'c' | 'd'
+}
+interface Plane {
+  name: string
+  edgeA: PlaneEdge
+  edgeB: PlaneEdge
+  edgeC: PlaneEdge
+  edgeD: PlaneEdge
+}
+
+const { isTest, file } = parseArgs()
 
 const INITIAL_FACING = '>'
 
@@ -31,18 +44,46 @@ const VECTORS: { [facing: string]: Coordinate } = {
   '<': { x: -1, y: 0 },
 }
 
+const PLANE_SIZE = isTest ? 4 : 50
+
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
   const path = getPathFromInstructions(grid, instructions)
   const answer1 = getPassword(path[path.length - 1])
+
+  const planes = getPlanes(grid)
+  console.log(planes)
+
   return {
     answer1,
-    ...logger.getVisual(
-      parseArgs().file?.replace('input', 'output') ?? 'output.txt'
-    ),
+    ...logger.getVisual(file?.replace('input', 'output') ?? 'output.txt'),
   }
+}
+
+function getPlanes(grid: Grid): any {
+  const planes = []
+  let name = 1
+  // unfolded die must fit into a 4x4 grid
+  for (let y = 0; y < 4; y++) {
+    for (let x = 0; x < 4; x++) {
+      // is plane if not empty
+      if (
+        isOnGrid(grid, {
+          x: x * PLANE_SIZE,
+          y: y * PLANE_SIZE,
+          // any facing will do here
+          facing: '>',
+        }) &&
+        grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
+      ) {
+        planes.push({ name, x, y })
+        name += 1
+      }
+    }
+  }
+  return planes
 }
 
 function getPassword(location: PlayerLocation): number {
