@@ -31,8 +31,9 @@ The first half of the monkeys' notes is a map of the board. It is comprised of a
 
 The second half is a description of the path you must follow. It consists of alternating numbers and letters:
 
-A number indicates the number of tiles to move in the direction you are facing. If you run into a wall, you stop moving forward and continue with the next instruction.
-A letter indicates whether to turn `90` degrees clockwise (`R`) or counterclockwise (`L`). Turning happens in-place; it does not change your current tile.
+- A number indicates the number of tiles to move in the direction you are facing. If you run into a wall, you stop moving forward and continue with the next instruction.
+- A letter indicates whether to turn `90` degrees clockwise (`R`) or counterclockwise (`L`). Turning happens in-place; it does not change your current tile.
+
 So, a path like `10R5` means "go forward `10` tiles, then turn clockwise `90` degrees, then go forward `5` tiles".
 
 You begin the path in the leftmost open tile of the top row of tiles. Initially, you are facing to the right (from the perspective of how the map is drawn).
