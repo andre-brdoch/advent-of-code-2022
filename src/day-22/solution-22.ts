@@ -17,7 +17,8 @@ type Path = PlayerLocation[]
 type Cell = '.' | '#' | ' ' | Facing
 type Grid = Cell[][]
 type RotateInstruction = 'L' | 'R'
-type Instruction = number | RotateInstruction
+type MoveInstruction = number
+type Instruction = MoveInstruction | RotateInstruction
 
 const INITIAL_FACING = '>'
 
@@ -60,16 +61,29 @@ function getPathFromInstructions(
   let path = [getStartLocation(grid)]
   logger.log('===== Start position =====')
   logger.log(stringifyGrid(grid, path))
-  instructions.forEach(instruction => {
+
+  instructions.forEach((instruction, i) => {
     if (typeof instruction === 'number') {
+      // movement
       path = move(grid, path, instruction)
+
+      if (i === instructions.length - 1) {
+        logger.log(stringifyInstructions(instruction))
+        logger.log(stringifyGrid(grid, path))
+      }
     }
     else {
       // rotate last
       rotate(path[path.length - 1], instruction)
+
+      logger.log(
+        stringifyInstructions(
+          instructions[i - 1] as MoveInstruction,
+          instruction
+        )
+      )
+      logger.log(stringifyGrid(grid, path))
     }
-    logger.log(stringifyInstruction(instruction))
-    logger.log(stringifyGrid(grid, path))
   })
   return path
 }
@@ -152,10 +166,14 @@ function stringifyGrid(grid: Grid, path: Path): string {
   return '\n\n' + gridCopy.map(column => column.join('')).join('\n')
 }
 
-function stringifyInstruction(instruction: Instruction): string {
-  let str = ''
-  if (typeof instruction === 'number') str = `Move ${instruction}`
-  else str = `Rotate to the ${instruction === 'R' ? 'right' : 'left'}`
+function stringifyInstructions(
+  moveInstruction: MoveInstruction,
+  rotateInstruction: RotateInstruction | undefined = undefined
+): string {
+  let str = `Move ${moveInstruction}`
+  if (rotateInstruction) {
+    str += `, rotate to the ${rotateInstruction === 'R' ? 'right' : 'left'}`
+  }
   return `\n\n===== ${str} =====`
 }
 
