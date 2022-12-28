@@ -37,23 +37,32 @@ type StoneBluePrintsByShape = Record<StoneShape, StoneBluePrint>
 // therefore save in constant to avoid unnecessary computations
 const STONE_BLUEPRINTS = getStoneBluePrints()
 
+const STONE_X_OFFSET = 2
+const STONE_Y_OFFSET = 3
+
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution17> {
   const jetPatterns = parseJetPatterns(input)
   const grid = createGrid(7, 5)
+  const gridHeight = getGridHeight(grid)
+  logger.log('height', gridHeight)
   logger.log(stringifyGrid(grid))
-  const stone = createStone('plus', { x: 2, y: 4 })
-  logger.log(stringifyGrid(grid, stone))
-  growGrid(grid, 5)
+  const stone = createStone('plus', {
+    x: STONE_X_OFFSET,
+    y: gridHeight + STONE_Y_OFFSET,
+  })
+  growGridTo(grid, stone.y + stone.height)
   logger.log(stringifyGrid(grid, stone))
 
   return { answer1: 0 }
 }
 
-function growGrid(grid: Grid, amount: number): void {
+function growGridTo(grid: Grid, amount: number): void {
+  const diff = amount - grid.length
+  if (diff < 1) return
   const width = grid[0].length
-  Array.from(Array(amount)).forEach(() => {
+  Array.from(Array(diff)).forEach(() => {
     const row: Cell[] = Array.from(Array(width)).map(() => ({ type: 'empty' }))
     grid.push(row)
   })
@@ -78,6 +87,15 @@ function createGrid(width: number, height: number): Grid {
   return Array.from(Array(height).keys()).map(y =>
     Array.from(Array(width)).map(() => ({ type: y === 0 ? 'floor' : 'empty' }))
   )
+}
+
+function getGridHeight(grid: Grid): number {
+  // grid height minus empty rows on top
+  const firstNonEmptyRow = grid
+    .slice()
+    .reverse()
+    .findIndex(row => row.some(cell => cell.type !== 'empty'))
+  return grid.length - firstNonEmptyRow
 }
 
 function getMax(cordinates: Coordinate[], axis: Axis): number {
@@ -151,8 +169,8 @@ function getStoneBluePrints(): StoneBluePrintsByShape {
       const pieceCoordinates = coordinatesByShape[key]
       const blueprint = {
         pieceCoordinates,
-        width: getMax(pieceCoordinates, 'x'),
-        height: getMax(pieceCoordinates, 'y'),
+        width: getMax(pieceCoordinates, 'x') + 1,
+        height: getMax(pieceCoordinates, 'y') + 1,
         type: 'stone',
       }
       return {
