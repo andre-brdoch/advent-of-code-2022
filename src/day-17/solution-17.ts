@@ -1,4 +1,5 @@
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
 
 interface Solution17 {
   answer1: number
@@ -53,9 +54,14 @@ export default async function solution(input: string): Promise<Solution17> {
   const jetPatternQueue = parseJetPatterns(input)
   const grid = createGrid(7, 5)
   const shapeQueue: StoneShape[] = ['minus', 'plus', 'l', 'i', 'square']
-  addFallingStones(grid, shapeQueue, jetPatternQueue, 3)
+  addFallingStones(grid, shapeQueue, jetPatternQueue, 10)
 
-  return { answer1: 0 }
+  return {
+    answer1: 0,
+    ...logger.getVisual(
+      parseArgs().file?.replace('input', 'output') ?? 'output.txt'
+    ),
+  }
 }
 
 function addFallingStones(
@@ -82,6 +88,7 @@ function addFallingStone(
 
   growGridTo(grid, stone.y + stone.height)
   nextInQueue(shapeQueue)
+  logger.log('\nA new rock begins falling:')
   logger.log(stringifyGrid(grid, stone))
 
   fall: while (!stone.resting) {
@@ -92,6 +99,7 @@ function addFallingStone(
     movement: for (let i = 0; i < movements.length; i++) {
       const direction = movements[i]
       const nextPieceCoordinates: (Coordinate | null)[] = []
+      logger.log(stringifyMovement(direction))
 
       for (let j = 0; j < stone.pieces.length; j++) {
         const piece = stone.pieces[j]
@@ -100,6 +108,7 @@ function addFallingStone(
           piece,
           direction
         )
+
         // if any piece reaches the floor, stop the whole stone
         if (nextCoordinate === null && direction === 'v') {
           stone.resting = true
@@ -110,7 +119,8 @@ function addFallingStone(
 
       // if moving into right/left wall:
       if (nextPieceCoordinates.some(c => c === null)) {
-        break movement
+        logger.log(stringifyGrid(grid, stone))
+        continue movement
       }
 
       // move all pieces and stone
@@ -129,8 +139,6 @@ function addFallingStone(
 
       logger.log(stringifyGrid(grid, stone))
     }
-
-    logger.log(stringifyGrid(grid, stone))
   }
 
   addRestingStoneToGrid(grid, stone)
@@ -223,7 +231,7 @@ function stringifyGrid(
   grid: Grid,
   fallingStone: Stone | undefined = undefined
 ): string {
-  let string = ''
+  let string = '\n\n'
   for (let y = grid.length - 1; y >= 0; y--) {
     const wallMarker = y === 0 ? '+' : '|'
     string += wallMarker
@@ -245,6 +253,11 @@ function stringifyGrid(
     string += wallMarker + '\n'
   }
   return string
+}
+
+function stringifyMovement(direction: Direction): string {
+  if (direction === 'v') return '\nRock falls 1 unit:'
+  return `\nJet of gas pushes rock ${direction === '>' ? 'right' : 'left'}:`
 }
 
 function getStoneBluePrints(): StoneBluePrintsByShape {
