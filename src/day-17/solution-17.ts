@@ -245,11 +245,6 @@ function stringifyGrid(
   return string
 }
 
-function stringifyMovement(direction: Direction): string {
-  if (direction === 'v') return '\nRock falls 1 unit:'
-  return `\nJet of gas pushes rock ${direction === '>' ? 'right' : 'left'}:`
-}
-
 function getStoneBluePrints(): StoneBluePrintsByShape {
   const coordinatesByShape: ShapeCoordinates = {
     plus: [
