@@ -53,18 +53,20 @@ export default async function solution(input: string): Promise<Solution17> {
   const jetPatternQueue = parseJetPatterns(input)
   const grid = createGrid(7, 5)
   const shapeQueue: StoneShape[] = ['minus', 'plus', 'l', 'i', 'square']
-  addFallingStone(grid, shapeQueue, jetPatternQueue)
-  // const gridHeight = getGridHeight(grid)
-  // logger.log('height', gridHeight)
-  // logger.log(stringifyGrid(grid))
-  // const stone = createStone('plus', {
-  //   x: STONE_X_OFFSET,
-  //   y: gridHeight + STONE_Y_OFFSET,
-  // })
-  // growGridTo(grid, stone.y + stone.height)
-  // logger.log(stringifyGrid(grid, stone))
+  addFallingStones(grid, shapeQueue, jetPatternQueue, 3)
 
   return { answer1: 0 }
+}
+
+function addFallingStones(
+  grid: Grid,
+  shapeQueue: StoneShape[],
+  jetPatternQueue: JetPattern[],
+  amount: number
+): void {
+  for (let i = 0; i < amount; i++) {
+    addFallingStone(grid, shapeQueue, jetPatternQueue)
+  }
 }
 
 function addFallingStone(
@@ -79,15 +81,17 @@ function addFallingStone(
   })
 
   growGridTo(grid, stone.y + stone.height)
+  nextInQueue(shapeQueue)
   logger.log(stringifyGrid(grid, stone))
 
   fall: while (!stone.resting) {
     const jetPattern = jetPatternQueue[0]
     const movements: Direction[] = [jetPattern, 'v']
+    nextInQueue(jetPatternQueue)
 
     movement: for (let i = 0; i < movements.length; i++) {
       const direction = movements[i]
-      const nextPieceCoordinates: Coordinate[] = []
+      const nextPieceCoordinates: (Coordinate | null)[] = []
 
       for (let j = 0; j < stone.pieces.length; j++) {
         const piece = stone.pieces[j]
@@ -96,25 +100,22 @@ function addFallingStone(
           piece,
           direction
         )
-        // if any piece would go out of the grid, stop the whole stone
-        if (nextCoordinate === null) {
-          break movement
-        }
         // if any piece reaches the floor, stop the whole stone
-        if (
-          ['floor', 'piece'].includes(
-            grid[nextCoordinate.y][nextCoordinate.y].type
-          )
-        ) {
+        if (nextCoordinate === null && direction === 'v') {
           stone.resting = true
           break fall
         }
         nextPieceCoordinates.push(nextCoordinate)
       }
 
-      // move all pieces
+      // if moving into right/left wall:
+      if (nextPieceCoordinates.some(c => c === null)) {
+        break movement
+      }
+
+      // move all pieces and stone
       stone.pieces.forEach((piece, i) => {
-        const { x, y } = nextPieceCoordinates[i]
+        const { x, y } = (nextPieceCoordinates as Coordinate[])[i]
         piece.x = x
         piece.y = y
       })
@@ -129,7 +130,6 @@ function addFallingStone(
       logger.log(stringifyGrid(grid, stone))
     }
 
-    nextInQueue(jetPatternQueue)
     logger.log(stringifyGrid(grid, stone))
   }
 
@@ -144,7 +144,10 @@ function moveCoordinate(
 ): Coordinate | null {
   const vector = VECTOR_BY_DIRECTION[direction]
   const next = addVectors(coordinate, vector)
-  if (!isOnGrid(grid, next)) {
+  if (
+    !isOnGrid(grid, next) ||
+    ['floor', 'piece'].includes(grid[next.y][next.x].type)
+  ) {
     return null
   }
   return next
