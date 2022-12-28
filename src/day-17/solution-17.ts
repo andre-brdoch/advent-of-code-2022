@@ -9,7 +9,7 @@ type Direction = JetPattern | 'v'
 type Axis = 'x' | 'y'
 type Coordinate = Record<Axis, number>
 type StoneShape = 'plus' | 'minus' | 'l' | 'i' | 'square'
-interface Stone extends Coordinate {
+interface Stone {
   shape: StoneShape
   pieces: StonePiece[]
   resting?: boolean
@@ -47,6 +47,7 @@ const VECTOR_BY_DIRECTION: Record<Direction, Coordinate> = {
 
 const STONE_X_OFFSET = 2
 const STONE_Y_OFFSET = 3
+const STONE_AMOUNT = 2022
 
 const logger = new Logger()
 
@@ -54,10 +55,11 @@ export default async function solution(input: string): Promise<Solution17> {
   const jetPatternQueue = parseJetPatterns(input)
   const grid = createGrid(7, 5)
   const shapeQueue: StoneShape[] = ['minus', 'plus', 'l', 'i', 'square']
-  addFallingStones(grid, shapeQueue, jetPatternQueue, 10)
+  addFallingStones(grid, shapeQueue, jetPatternQueue, STONE_AMOUNT)
+  const answer1 = getGridHeight(grid) - 1
 
   return {
-    answer1: 0,
+    answer1,
     ...logger.getVisual(
       parseArgs().file?.replace('input', 'output') ?? 'output.txt'
     ),
@@ -81,14 +83,14 @@ function addFallingStone(
   jetPatternQueue: JetPattern[]
 ): void {
   const gridHeight = getGridHeight(grid)
-  const stone = createStone(shapeQueue[0], {
+  const stoneStart = {
     x: STONE_X_OFFSET,
     y: gridHeight + STONE_Y_OFFSET,
-  })
+  }
+  const stone = createStone(shapeQueue[0], stoneStart)
 
-  growGridTo(grid, stone.y + stone.height)
+  growGridTo(grid, stoneStart.y + stone.height)
   nextInQueue(shapeQueue)
-  logger.log('\nA new rock begins falling:')
   logger.log(stringifyGrid(grid, stone))
 
   fall: while (!stone.resting) {
@@ -99,7 +101,6 @@ function addFallingStone(
     movement: for (let i = 0; i < movements.length; i++) {
       const direction = movements[i]
       const nextPieceCoordinates: (Coordinate | null)[] = []
-      logger.log(stringifyMovement(direction))
 
       for (let j = 0; j < stone.pieces.length; j++) {
         const piece = stone.pieces[j]
@@ -119,25 +120,15 @@ function addFallingStone(
 
       // if moving into right/left wall:
       if (nextPieceCoordinates.some(c => c === null)) {
-        logger.log(stringifyGrid(grid, stone))
         continue movement
       }
 
-      // move all pieces and stone
+      // move all pieces
       stone.pieces.forEach((piece, i) => {
         const { x, y } = (nextPieceCoordinates as Coordinate[])[i]
         piece.x = x
         piece.y = y
       })
-      const stoneCoordinates = moveCoordinate(
-        grid,
-        stone,
-        direction
-      ) as Coordinate
-      stone.x = stoneCoordinates.x
-      stone.y = stoneCoordinates.y
-
-      logger.log(stringifyGrid(grid, stone))
     }
   }
 
@@ -183,7 +174,6 @@ function addRestingStoneToGrid(grid: Grid, restingStone: Stone): void {
 function createStone(shape: StoneShape, startLocation: Coordinate): Stone {
   const blueprint = STONE_BLUEPRINTS[shape]
   const stone: Stone = {
-    ...startLocation,
     ...blueprint,
     pieces: [],
   }
