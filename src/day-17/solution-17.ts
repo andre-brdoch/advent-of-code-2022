@@ -31,59 +31,11 @@ interface Floor {
 type Cell = StonePiece | Empty | Floor
 type Grid = Cell[][]
 type ShapeCoordinates = Record<StoneShape, Coordinate[]>
-type StoneBluePrintByShape = Record<StoneShape, StoneBluePrint>
+type StoneBluePrintsByShape = Record<StoneShape, StoneBluePrint>
 
-const SHAPE_COORDINATES: Record<StoneShape, Coordinate[]> = {
-  plus: [
-    { x: 1, y: 0 },
-    { x: 0, y: 1 },
-    { x: 1, y: 1 },
-    { x: 2, y: 1 },
-    { x: 1, y: 2 },
-  ],
-  minus: [
-    { x: 0, y: 0 },
-    { x: 1, y: 0 },
-    { x: 2, y: 0 },
-    { x: 3, y: 0 },
-  ],
-  l: [
-    { x: 0, y: 0 },
-    { x: 1, y: 0 },
-    { x: 2, y: 0 },
-    { x: 2, y: 1 },
-    { x: 2, y: 2 },
-  ],
-  i: [
-    { x: 0, y: 0 },
-    { x: 0, y: 1 },
-    { x: 0, y: 2 },
-    { x: 0, y: 3 },
-  ],
-  square: [
-    { x: 0, y: 0 },
-    { x: 1, y: 0 },
-    { x: 0, y: 1 },
-    { x: 1, y: 1 },
-  ],
-}
-
-// piece coordinates, width and height will never change per stone shape
-const STONE_BLUEPRINTS: StoneBluePrintByShape = (
-  Object.keys(SHAPE_COORDINATES) as StoneShape[]
-).reduce((result, key) => {
-  const pieceCoordinates = SHAPE_COORDINATES[key]
-  const blueprint = {
-    pieceCoordinates,
-    width: getMax(pieceCoordinates, 'x'),
-    height: getMax(pieceCoordinates, 'y'),
-    type: 'stone',
-  }
-  return {
-    ...result,
-    [key]: blueprint,
-  }
-}, {} as StoneBluePrintByShape)
+// piece coordinates, width and height will never change per stone shape,
+// therefore save in constant to avoid unnecessary computations
+const STONE_BLUEPRINTS = getStoneBluePrints()
 
 const logger = new Logger()
 
@@ -108,14 +60,13 @@ function growGrid(grid: Grid, amount: number): void {
 }
 
 function createStone(shape: StoneShape, startLocation: Coordinate): Stone {
-  const pieceCoordinates = SHAPE_COORDINATES[shape]
   const blueprint = STONE_BLUEPRINTS[shape]
   const stone: Stone = {
     ...startLocation,
     ...blueprint,
     pieces: [],
   }
-  stone.pieces = pieceCoordinates.map(coordinate => ({
+  stone.pieces = blueprint.pieceCoordinates.map(coordinate => ({
     ...addVectors(coordinate, startLocation),
     type: 'piece',
     stone,
@@ -157,6 +108,60 @@ function stringifyGrid(
     string += wallMarker + '\n'
   }
   return string
+}
+
+function getStoneBluePrints(): StoneBluePrintsByShape {
+  const coordinatesByShape: ShapeCoordinates = {
+    plus: [
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 1, y: 1 },
+      { x: 2, y: 1 },
+      { x: 1, y: 2 },
+    ],
+    minus: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 3, y: 0 },
+    ],
+    l: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 2, y: 1 },
+      { x: 2, y: 2 },
+    ],
+    i: [
+      { x: 0, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: 2 },
+      { x: 0, y: 3 },
+    ],
+    square: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 1, y: 1 },
+    ],
+  }
+
+  return (Object.keys(coordinatesByShape) as StoneShape[]).reduce(
+    (result, key) => {
+      const pieceCoordinates = coordinatesByShape[key]
+      const blueprint = {
+        pieceCoordinates,
+        width: getMax(pieceCoordinates, 'x'),
+        height: getMax(pieceCoordinates, 'y'),
+        type: 'stone',
+      }
+      return {
+        ...result,
+        [key]: blueprint,
+      }
+    },
+    {} as StoneBluePrintsByShape
+  )
 }
 
 function parseJetPatterns(input: string): JetPattern[] {
