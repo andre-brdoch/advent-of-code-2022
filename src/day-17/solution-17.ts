@@ -11,6 +11,7 @@ type Coordinate = Record<Axis, number>
 type StoneShape = 'plus' | 'minus' | 'l' | 'i' | 'square'
 interface Stone {
   shape: StoneShape
+  name: string
   pieces: StonePiece[]
   resting?: boolean
   type: 'stone'
@@ -234,7 +235,7 @@ function stringifyGrid(
         cell.type === 'floor'
           ? '='
           : cell.type === 'piece'
-            ? '#'
+            ? cell.stone.name
             : piece !== undefined
               ? '@'
               : '.'
@@ -247,18 +248,18 @@ function stringifyGrid(
 
 function getStoneBluePrints(): StoneBluePrintsByShape {
   const coordinatesByShape: ShapeCoordinates = {
+    minus: [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 3, y: 0 },
+    ],
     plus: [
       { x: 1, y: 0 },
       { x: 0, y: 1 },
       { x: 1, y: 1 },
       { x: 2, y: 1 },
       { x: 1, y: 2 },
-    ],
-    minus: [
-      { x: 0, y: 0 },
-      { x: 1, y: 0 },
-      { x: 2, y: 0 },
-      { x: 3, y: 0 },
     ],
     l: [
       { x: 0, y: 0 },
@@ -282,12 +283,13 @@ function getStoneBluePrints(): StoneBluePrintsByShape {
   }
 
   return (Object.keys(coordinatesByShape) as StoneShape[]).reduce(
-    (result, key) => {
+    (result, key, i) => {
       const pieceCoordinates = coordinatesByShape[key]
       const blueprint = {
         pieceCoordinates,
         width: getMax(pieceCoordinates, 'x') + 1,
         height: getMax(pieceCoordinates, 'y') + 1,
+        name: `${i + 1}`,
         type: 'stone',
       }
       return {
