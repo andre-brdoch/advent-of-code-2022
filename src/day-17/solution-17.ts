@@ -4,6 +4,7 @@ interface Solution17 {
   answer1: number
 }
 type JetPattern = '<' | '>'
+type Direction = JetPattern | 'v'
 type Axis = 'x' | 'y'
 type Coordinate = Record<Axis, number>
 type StoneShape = 'plus' | 'minus' | 'l' | 'i' | 'square'
@@ -37,25 +38,116 @@ type StoneBluePrintsByShape = Record<StoneShape, StoneBluePrint>
 // therefore save in constant to avoid unnecessary computations
 const STONE_BLUEPRINTS = getStoneBluePrints()
 
+const VECTOR_BY_DIRECTION: Record<Direction, Coordinate> = {
+  '<': { x: -1, y: 0 },
+  '>': { x: 1, y: 0 },
+  v: { x: 0, y: -1 },
+}
+
 const STONE_X_OFFSET = 2
 const STONE_Y_OFFSET = 3
 
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution17> {
-  const jetPatterns = parseJetPatterns(input)
+  const jetPatternQueue = parseJetPatterns(input)
   const grid = createGrid(7, 5)
+  const shapeQueue: StoneShape[] = ['minus', 'plus', 'l', 'i', 'square']
+  addFallingStone(grid, shapeQueue, jetPatternQueue)
+  // const gridHeight = getGridHeight(grid)
+  // logger.log('height', gridHeight)
+  // logger.log(stringifyGrid(grid))
+  // const stone = createStone('plus', {
+  //   x: STONE_X_OFFSET,
+  //   y: gridHeight + STONE_Y_OFFSET,
+  // })
+  // growGridTo(grid, stone.y + stone.height)
+  // logger.log(stringifyGrid(grid, stone))
+
+  return { answer1: 0 }
+}
+
+function addFallingStone(
+  grid: Grid,
+  shapeQueue: StoneShape[],
+  jetPatternQueue: JetPattern[]
+): void {
   const gridHeight = getGridHeight(grid)
-  logger.log('height', gridHeight)
-  logger.log(stringifyGrid(grid))
-  const stone = createStone('plus', {
+  const stone = createStone(shapeQueue[0], {
     x: STONE_X_OFFSET,
     y: gridHeight + STONE_Y_OFFSET,
   })
+
   growGridTo(grid, stone.y + stone.height)
   logger.log(stringifyGrid(grid, stone))
 
-  return { answer1: 0 }
+  fall: while (!stone.resting) {
+    const jetPattern = jetPatternQueue[0]
+    const movements: Direction[] = [jetPattern, 'v']
+
+    movement: for (let i = 0; i < movements.length; i++) {
+      const direction = movements[i]
+      const nextPieceCoordinates: Coordinate[] = []
+
+      for (let j = 0; j < stone.pieces.length; j++) {
+        const piece = stone.pieces[j]
+        const nextCoordinate: Coordinate | null = moveCoordinate(
+          grid,
+          piece,
+          direction
+        )
+        // if any piece would go out of the grid, stop the whole stone
+        if (nextCoordinate === null) {
+          break movement
+        }
+        // if any piece reaches the floor, stop the whole stone
+        if (
+          ['floor', 'piece'].includes(
+            grid[nextCoordinate.y][nextCoordinate.y].type
+          )
+        ) {
+          stone.resting = true
+          break fall
+        }
+        nextPieceCoordinates.push(nextCoordinate)
+      }
+
+      // move all pieces
+      stone.pieces.forEach((piece, i) => {
+        const { x, y } = nextPieceCoordinates[i]
+        piece.x = x
+        piece.y = y
+      })
+      const stoneCoordinates = moveCoordinate(
+        grid,
+        stone,
+        direction
+      ) as Coordinate
+      stone.x = stoneCoordinates.x
+      stone.y = stoneCoordinates.y
+
+      logger.log(stringifyGrid(grid, stone))
+    }
+
+    nextInQueue(jetPatternQueue)
+    logger.log(stringifyGrid(grid, stone))
+  }
+
+  addRestingStoneToGrid(grid, stone)
+  logger.log(stringifyGrid(grid))
+}
+
+function moveCoordinate(
+  grid: Grid,
+  coordinate: Coordinate,
+  direction: Direction
+): Coordinate | null {
+  const vector = VECTOR_BY_DIRECTION[direction]
+  const next = addVectors(coordinate, vector)
+  if (!isOnGrid(grid, next)) {
+    return null
+  }
+  return next
 }
 
 function growGridTo(grid: Grid, amount: number): void {
@@ -65,6 +157,15 @@ function growGridTo(grid: Grid, amount: number): void {
   Array.from(Array(diff)).forEach(() => {
     const row: Cell[] = Array.from(Array(width)).map(() => ({ type: 'empty' }))
     grid.push(row)
+  })
+}
+
+function addRestingStoneToGrid(grid: Grid, restingStone: Stone): void {
+  if (!restingStone.resting) {
+    throw new Error('Can not add stone that is still moving')
+  }
+  restingStone.pieces.forEach(piece => {
+    grid[piece.y][piece.x] = piece
   })
 }
 
@@ -98,12 +199,21 @@ function getGridHeight(grid: Grid): number {
   return grid.length - firstNonEmptyRow
 }
 
+function isOnGrid(grid: Grid, coordinate: Coordinate) {
+  const { x, y } = coordinate
+  return x >= 0 && y >= 0 && x < grid[0].length && y < grid.length
+}
+
 function getMax(cordinates: Coordinate[], axis: Axis): number {
   return cordinates.map(cordinates => cordinates[axis]).sort((a, b) => b - a)[0]
 }
 
 function addVectors(a: Coordinate, b: Coordinate): Coordinate {
   return { x: a.x + b.x, y: a.y + b.y }
+}
+
+function nextInQueue<T>(queue: T[]): void {
+  queue.push(queue.shift() as T)
 }
 
 function stringifyGrid(
@@ -120,7 +230,13 @@ function stringifyGrid(
         piece => piece.x === x && piece.y === y
       )
       const marker =
-        cell.type === 'floor' ? '=' : piece !== undefined ? '@' : '.'
+        cell.type === 'floor'
+          ? '='
+          : cell.type === 'piece'
+            ? '#'
+            : piece !== undefined
+              ? '@'
+              : '.'
       string += marker
     }
     string += wallMarker + '\n'
