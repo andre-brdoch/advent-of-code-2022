@@ -6,16 +6,21 @@ interface Solution17 {
 type JetPattern = '<' | '>'
 type Axis = 'x' | 'y'
 type Coordinate = Record<Axis, number>
-interface StonePiece extends Coordinate {
-  stone: Stone
-  type: 'piece'
-}
 type StoneShape = 'plus' | 'minus' | 'l' | 'i' | 'square'
 interface Stone extends Coordinate {
   shape: StoneShape
   pieces: StonePiece[]
   resting?: boolean
   type: 'stone'
+  height: number
+  width: number
+}
+interface StonePiece extends Coordinate {
+  stone: Stone
+  type: 'piece'
+}
+interface StoneBluePrint extends Omit<Stone, 'pieces' | 'x' | 'y'> {
+  pieceCoordinates: Coordinate[]
 }
 interface Empty {
   type: 'empty'
@@ -25,8 +30,10 @@ interface Floor {
 }
 type Cell = StonePiece | Empty | Floor
 type Grid = Cell[][]
+type ShapeCoordinates = Record<StoneShape, Coordinate[]>
+type StoneBluePrintByShape = Record<StoneShape, StoneBluePrint>
 
-const PIECES_BY_SHAPE: Record<StoneShape, Coordinate[]> = {
+const SHAPE_COORDINATES: Record<StoneShape, Coordinate[]> = {
   plus: [
     { x: 1, y: 0 },
     { x: 0, y: 1 },
@@ -61,6 +68,23 @@ const PIECES_BY_SHAPE: Record<StoneShape, Coordinate[]> = {
   ],
 }
 
+// piece coordinates, width and height will never change per stone shape
+const STONE_BLUEPRINTS: StoneBluePrintByShape = (
+  Object.keys(SHAPE_COORDINATES) as StoneShape[]
+).reduce((result, key) => {
+  const pieceCoordinates = SHAPE_COORDINATES[key]
+  const blueprint = {
+    pieceCoordinates,
+    width: getMax(pieceCoordinates, 'x'),
+    height: getMax(pieceCoordinates, 'y'),
+    type: 'stone',
+  }
+  return {
+    ...result,
+    [key]: blueprint,
+  }
+}, {} as StoneBluePrintByShape)
+
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution17> {
@@ -69,16 +93,26 @@ export default async function solution(input: string): Promise<Solution17> {
   logger.log(stringifyGrid(grid))
   const stone = createStone('plus', { x: 2, y: 4 })
   logger.log(stringifyGrid(grid, stone))
+  growGrid(grid, 5)
+  logger.log(stringifyGrid(grid, stone))
 
   return { answer1: 0 }
 }
 
+function growGrid(grid: Grid, amount: number): void {
+  const width = grid[0].length
+  Array.from(Array(amount)).forEach(() => {
+    const row: Cell[] = Array.from(Array(width)).map(() => ({ type: 'empty' }))
+    grid.push(row)
+  })
+}
+
 function createStone(shape: StoneShape, startLocation: Coordinate): Stone {
-  const pieceCoordinates = PIECES_BY_SHAPE[shape]
+  const pieceCoordinates = SHAPE_COORDINATES[shape]
+  const blueprint = STONE_BLUEPRINTS[shape]
   const stone: Stone = {
     ...startLocation,
-    type: 'stone',
-    shape,
+    ...blueprint,
     pieces: [],
   }
   stone.pieces = pieceCoordinates.map(coordinate => ({
@@ -93,6 +127,10 @@ function createGrid(width: number, height: number): Grid {
   return Array.from(Array(height).keys()).map(y =>
     Array.from(Array(width)).map(() => ({ type: y === 0 ? 'floor' : 'empty' }))
   )
+}
+
+function getMax(cordinates: Coordinate[], axis: Axis): number {
+  return cordinates.map(cordinates => cordinates[axis]).sort((a, b) => b - a)[0]
 }
 
 function addVectors(a: Coordinate, b: Coordinate): Coordinate {
