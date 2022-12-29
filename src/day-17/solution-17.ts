@@ -3,6 +3,7 @@ import { parseArgs } from '../utils/env-helpers.js'
 
 interface Solution17 {
   answer1: number
+  answer2: number
 }
 type JetPattern = '<' | '>'
 type Direction = JetPattern | 'v'
@@ -35,6 +36,11 @@ type Cell = StonePiece | Empty | Floor
 type Grid = Cell[][]
 type ShapeCoordinates = Record<StoneShape, Coordinate[]>
 type StoneBluePrintsByShape = Record<StoneShape, StoneBluePrint>
+interface Segment {
+  stoneAmount: number
+  height: number
+  repeats?: number
+}
 type CycleDetector = Record<
   StoneShape,
   {
@@ -59,31 +65,54 @@ const VECTOR_BY_DIRECTION: Record<Direction, Coordinate> = {
 
 const STONE_X_OFFSET = 2
 const STONE_Y_OFFSET = 3
-const STONE_AMOUNT = 2022
+const STONE_AMOUNT_PT_1 = 2022
+const STONE_AMOUNT_PT_2 = 1000000000000
 
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution17> {
-  const jetPatternQueue = parseJetPatterns(input)
-  const grid = createGrid(7, 5)
-  const shapeQueue: StoneShape[] = ['minus', 'plus', 'l', 'i', 'square']
-  addFallingStones(grid, shapeQueue, jetPatternQueue, STONE_AMOUNT)
-  const answer1 = getGridHeight(grid) - 1
-
   return {
-    answer1,
+    answer1: getAnswer1(input),
+    answer2: getAnswer2(input),
     ...logger.getVisual(
       parseArgs().file?.replace('input', 'output') ?? 'output.txt'
     ),
   }
 }
 
+function getAnswer1(input: string): number {
+  const jetPatternQueue = parseJetPatterns(input)
+  const grid = createGrid(7, 5)
+  const shapeQueue: StoneShape[] = ['minus', 'plus', 'l', 'i', 'square']
+  return addFallingStones(grid, shapeQueue, jetPatternQueue, STONE_AMOUNT_PT_1)
+}
+
+function getAnswer2(input: string): number {
+  const jetPatternQueue = parseJetPatterns(input)
+  const grid = createGrid(7, 5)
+  const shapeQueue: StoneShape[] = ['minus', 'plus', 'l', 'i', 'square']
+  return addFallingStones(grid, shapeQueue, jetPatternQueue, STONE_AMOUNT_PT_2)
+}
+
+/**
+ * Adds all stones, calculates the resulting hight. Will detect if there
+ * are repeating cycles, and will SKIP all cycles after the first one.
+ * Those rocks will not be added to the grid.
+ * However, the resulting height will consider the whole tower, including
+ * the duplicate cycles.
+ *
+ * @param grid - Grid. Will be modified with results.
+ * @param shapeQueue - Queue of stone shapes. Will be updated.
+ * @param jetPatternQueue - Queue of jet patterns. Will be updated.
+ * @param times - Amount of stones that should be added.
+ * @returns Total height of the tower
+ */
 function addFallingStones(
   grid: Grid,
   shapeQueue: StoneShape[],
   jetPatternQueue: JetPattern[],
   times: number
-): void {
+): number {
   let jetPatternIndex = 0
   const cycleDetector: CycleDetector = (
     Object.keys(STONE_BLUEPRINTS) as StoneShape[]
@@ -100,10 +129,18 @@ function addFallingStones(
     }),
     {} as CycleDetector
   )
-  const cycleDetector: Record<
-    string,
-    Record<number, Record<string, number>>
-  > = {}
+  const preCycleSegment: Segment = {
+    stoneAmount: 0,
+    height: 0,
+  }
+  const cycleSegment: Segment = {
+    stoneAmount: 0,
+    height: 0,
+  }
+  const postCycleSegment: Segment = {
+    stoneAmount: 0,
+    height: 0,
+  }
 
   for (let i = 0; i < times; i++) {
     const gridHeight = getGridHeight(grid)
@@ -136,23 +173,27 @@ function addFallingStones(
             height: getGridHeight(grid),
           }
         }
-        // if (
-        //   stone.name === '4' &&
-        //   jetPatternIndex % jetPatternQueue.length === 28 &&
-        //   surface === '2,2,0,2,3,5,7'
-        // ) {
-        if (
-          cycleDetector[stone.shape][jetPatternIndex][surface].lastIndex !== i
-        ) {
-          const msg = `cycle - last ${
-            cycleDetector[stone.shape][jetPatternIndex][surface].lastIndex
-          }, now: ${i}. stone: ${
-            stone.shape
-          }, jet pattern index: ${jetPatternIndex}, surface: ${surface}, height: ${
-            cycleDetector[stone.shape][jetPatternIndex][surface].height
-          }`
-          throw new Error(msg)
-          console.log(msg)
+        const cdEntry = cycleDetector[stone.shape][jetPatternIndex][surface]
+        if (cdEntry.lastIndex !== i && cycleSegment.stoneAmount === 0) {
+          preCycleSegment.stoneAmount = cdEntry.lastIndex
+          preCycleSegment.height = cdEntry.height
+          cycleSegment.stoneAmount = i - cdEntry.lastIndex
+          cycleSegment.height = getGridHeight(grid) - cdEntry.height
+
+          console.log(
+            `Cycle detected - starting from stone ${i}, the cycle repeats every ${
+              i - cdEntry.lastIndex
+            } stones.`
+          )
+
+          const remaining = times - preCycleSegment.stoneAmount
+          cycleSegment.repeats = Math.floor(
+            remaining / cycleSegment.stoneAmount
+          )
+          const rest = remaining % cycleSegment.stoneAmount
+          postCycleSegment.stoneAmount = rest
+          // skip all repeated cycles
+          i += cycleSegment.stoneAmount * (cycleSegment.repeats - 1)
         }
 
         if (direction !== 'v') {
@@ -192,6 +233,17 @@ function addFallingStones(
     addRestingStoneToGrid(grid, stone)
     logger.log(stringifyGrid(grid))
   }
+
+  postCycleSegment.height =
+    getGridHeight(grid) - cycleSegment.height - preCycleSegment.height
+
+  return (
+    preCycleSegment.height +
+    cycleSegment.height * (cycleSegment.repeats as number) +
+    postCycleSegment.height -
+    // substract floor
+    1
+  )
 }
 
 function moveCoordinate(
