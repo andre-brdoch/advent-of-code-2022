@@ -35,6 +35,17 @@ type Cell = StonePiece | Empty | Floor
 type Grid = Cell[][]
 type ShapeCoordinates = Record<StoneShape, Coordinate[]>
 type StoneBluePrintsByShape = Record<StoneShape, StoneBluePrint>
+type CycleDetector = Record<
+  StoneShape,
+  {
+    [jetPatternIndex: string]: {
+      [surface: string]: {
+        lastIndex: number
+        height: number
+      }
+    }
+  }
+>
 
 // piece coordinates, width and height will never change per stone shape,
 // therefore save in constant to avoid unnecessary computations
@@ -74,6 +85,21 @@ function addFallingStones(
   times: number
 ): void {
   let jetPatternIndex = 0
+  const cycleDetector: CycleDetector = (
+    Object.keys(STONE_BLUEPRINTS) as StoneShape[]
+  ).reduce(
+    (result, shape) => ({
+      ...result,
+      [shape]: jetPatternQueue.reduce(
+        (result, _, i) => ({
+          ...result,
+          [i]: {},
+        }),
+        {}
+      ),
+    }),
+    {} as CycleDetector
+  )
   const cycleDetector: Record<
     string,
     Record<number, Record<string, number>>
@@ -104,26 +130,27 @@ function addFallingStones(
         // detect cycles, by checking the grids surface whenever both
         // the jet queue and the stone shape queue restart:
         const surface = getGridSurface(grid)
-        if (!(stone.name in cycleDetector)) {
-          cycleDetector[stone.name] = {}
-        }
-        if (!(jetPatternIndex in cycleDetector[stone.name])) {
-          cycleDetector[stone.name][jetPatternIndex] = {}
-        }
-        if (!(surface in cycleDetector[stone.name][jetPatternIndex])) {
-          cycleDetector[stone.name][jetPatternIndex][surface] = i
+        if (!(surface in cycleDetector[stone.shape][jetPatternIndex])) {
+          cycleDetector[stone.shape][jetPatternIndex][surface] = {
+            lastIndex: i,
+            height: getGridHeight(grid),
+          }
         }
         // if (
         //   stone.name === '4' &&
         //   jetPatternIndex % jetPatternQueue.length === 28 &&
         //   surface === '2,2,0,2,3,5,7'
         // ) {
-        if (cycleDetector[stone.name][jetPatternIndex][surface] !== i) {
+        if (
+          cycleDetector[stone.shape][jetPatternIndex][surface].lastIndex !== i
+        ) {
           const msg = `cycle - last ${
-            cycleDetector[stone.name][jetPatternIndex][surface]
+            cycleDetector[stone.shape][jetPatternIndex][surface].lastIndex
           }, now: ${i}. stone: ${
-            stone.name
-          }, jet pattern index: ${jetPatternIndex}, surface: ${surface}`
+            stone.shape
+          }, jet pattern index: ${jetPatternIndex}, surface: ${surface}, height: ${
+            cycleDetector[stone.shape][jetPatternIndex][surface].height
+          }`
           throw new Error(msg)
           console.log(msg)
         }
@@ -342,6 +369,7 @@ function getStoneBluePrints(): StoneBluePrintsByShape {
         width: getMax(pieceCoordinates, 'x') + 1,
         height: getMax(pieceCoordinates, 'y') + 1,
         name: `${i + 1}`,
+        shape: key,
         type: 'stone',
       }
       return {
