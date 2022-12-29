@@ -71,9 +71,11 @@ const STONE_AMOUNT_PT_2 = 1000000000000
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution17> {
+  const answer1 = getAnswer1(input)
+  const answer2 = getAnswer2(input)
   return {
-    answer1: getAnswer1(input),
-    answer2: getAnswer2(input),
+    answer1,
+    answer2,
     ...logger.getVisual(
       parseArgs().file?.replace('input', 'output') ?? 'output.txt'
     ),
@@ -180,7 +182,7 @@ function addFallingStones(
           cycleSegment.stoneAmount = i - cdEntry.lastIndex
           cycleSegment.height = getGridHeight(grid) - cdEntry.height
 
-          console.log(
+          logger.log(
             `Cycle detected - starting from stone ${i}, the cycle repeats every ${
               i - cdEntry.lastIndex
             } stones.`
