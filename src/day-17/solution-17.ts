@@ -73,6 +73,9 @@ function addFallingStones(
   jetPatternQueue: JetPattern[],
   times: number
 ): void {
+  let jetPatternIndex = 0
+  const cycleDetector: Record<string, number> = {}
+
   for (let i = 0; i < times; i++) {
     const gridHeight = getGridHeight(grid)
     const stoneStart = {
@@ -94,6 +97,22 @@ function addFallingStones(
         const direction = movements[j]
         const nextPieceCoordinates: (Coordinate | null)[] = []
 
+        // detect cycles, by checking the grids surface whenever both
+        // the jet queue and the stone shape queue restart:
+        if (
+          jetPatternIndex % jetPatternQueue.length === 0 &&
+          i % shapeQueue.length === 0
+        ) {
+          const surface = getGridSurface(grid)
+          if (surface in cycleDetector && cycleDetector[surface] !== i) {
+            console.log('detected cycle!!!!')
+            console.log('last:', cycleDetector[surface], ', now:', i)
+          }
+          else {
+            cycleDetector[surface] = i
+          }
+        }
+
         for (let k = 0; k < stone.pieces.length; k++) {
           const piece = stone.pieces[k]
           const nextCoordinate: Coordinate | null = moveCoordinate(
@@ -102,6 +121,9 @@ function addFallingStones(
             direction
           )
 
+          if (direction !== 'v') {
+            jetPatternIndex += 1
+          }
           // if any piece reaches the floor, stop the whole stone
           if (nextCoordinate === null && direction === 'v') {
             stone.resting = true
