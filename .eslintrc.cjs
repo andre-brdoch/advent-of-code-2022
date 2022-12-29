@@ -15,6 +15,7 @@ module.exports = {
     'brace-style': [2, 'stroustrup'],
     indent: [2, 2, { VariableDeclarator: 2 }],
     'no-console': 0,
+    'no-constant-condition': 0,
     'no-var': 2,
     'prefer-const': 2,
     '@typescript-eslint/no-unused-vars': 2,

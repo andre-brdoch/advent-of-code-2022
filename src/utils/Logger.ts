@@ -11,8 +11,9 @@ export class Logger {
   }
 
   public log(...inputs: unknown[]): void {
-    if (this.disabled) return
-    console.log(...inputs)
+    if (!this.disabled) {
+      console.log(...inputs)
+    }
 
     if (this.fullLog.length) this.fullLog += '\n'
     this.fullLog += inputs
