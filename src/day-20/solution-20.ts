@@ -1,3 +1,6 @@
+import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
+
 interface Solution20 {
   answer1: number
   answer2: number
@@ -9,23 +12,30 @@ type Sequence = Item[]
 
 const DECRYPTION_KEY = 811589153
 
+const logger = new Logger()
+
 export default async function solution(input: string): Promise<Solution20> {
   console.log('before:')
   const items = parseItems(input)
   printItems(items)
 
   const answer1 = getAnswer1(items)
-  const answer2 = getAnswer2(items)
+  // const answer2 = getAnswer2(items)
 
-  return { answer1, answer2 }
+  return {
+    answer1,
+    answer2: 0,
+    ...logger.getVisual(
+      parseArgs().file?.replace('input', 'output') ?? 'output.txt'
+    ),
+  }
 }
 
 function getAnswer1(items: Sequence): number {
   const mixed = mixItems(items)
 
-  console.log('\nanswer1:')
+  logger.log('\nanswer1:')
   printItems(mixed)
-  console.log('\n')
   const startItem = mixed.find(item => item.value === 0)
   if (!startItem) throw new Error('Start item not found!')
   const relevantNumbers = getRelevantNumbers(mixed, startItem)
@@ -50,12 +60,9 @@ function getNewIndex(
   // if not static, there is effectively 1 item less in the sequence
   fromIsStatic = false
 ): number {
-  // console.log('--')
   const le = fromIsStatic ? items.length : items.length - 1
   const modulo = moveBy % le
   let moveTo = from + modulo
-
-  // console.log(`${moveBy} % ${items.length - 1} = ${modulo}`)
 
   if (moveBy === 0) moveTo = from
   // if on right boundary while moving forward, wrap
@@ -85,9 +92,9 @@ function mixItems(items: Sequence, times = 1): Sequence {
       result.splice(i, 1)
       result.splice(iNew, 0, item)
 
-      // console.log(`---\nMove ${item.value} (from ${i} to ${iNew})`)
+      logger.log(`\n\nMove ${item.value} (from ${i} to ${iNew})`)
+      printItems(result)
     })
-    printItems(result)
   })
   return result
 }
@@ -104,7 +111,7 @@ function getRelevantNumbers(mixedItems: Sequence, startItem: Item): number[] {
 }
 
 function printItems(items: Sequence): void {
-  console.log(items.map(item => item.value).join(', '))
+  logger.log(items.map(item => item.value).join(', '))
 }
 
 function parseItems(input: string): Sequence {
