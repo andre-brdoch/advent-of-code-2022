@@ -193,6 +193,28 @@ function getGridHeight(grid: Grid): number {
   return grid.length - firstNonEmptyRow
 }
 
+/**
+ * The surface is the height of empty columns at the top of the grid.
+ * To allow for easier surface comparison, we represent it as a string
+ * resulting from concatenating the empty column heights.
+ */
+function getGridSurface(grid: Grid): string {
+  const trimmedGrid = grid.slice(0, getGridHeight(grid)).reverse()
+  const columns = []
+  for (let x = 0; x < trimmedGrid[0].length; x++) {
+    let height = 0
+    while (true) {
+      const newHeight = height + 1
+      if (trimmedGrid[newHeight - 1][x].type !== 'empty') {
+        break
+      }
+      height = newHeight
+    }
+    columns.push(height)
+  }
+  return columns.join(',')
+}
+
 function isOnGrid(grid: Grid, coordinate: Coordinate) {
   const { x, y } = coordinate
   return x >= 0 && y >= 0 && x < grid[0].length && y < grid.length
