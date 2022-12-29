@@ -74,7 +74,10 @@ function addFallingStones(
   times: number
 ): void {
   let jetPatternIndex = 0
-  const cycleDetector: Record<string, number> = {}
+  const cycleDetector: Record<
+    string,
+    Record<number, Record<string, number>>
+  > = {}
 
   for (let i = 0; i < times; i++) {
     const gridHeight = getGridHeight(grid)
@@ -91,6 +94,7 @@ function addFallingStones(
     fall: while (!stone.resting) {
       const jetPattern = jetPatternQueue[0]
       const movements: Direction[] = [jetPattern, 'v']
+
       nextInQueue(jetPatternQueue)
 
       movement: for (let j = 0; j < movements.length; j++) {
@@ -99,18 +103,33 @@ function addFallingStones(
 
         // detect cycles, by checking the grids surface whenever both
         // the jet queue and the stone shape queue restart:
-        if (
-          jetPatternIndex % jetPatternQueue.length === 0 &&
-          i % shapeQueue.length === 0
-        ) {
-          const surface = getGridSurface(grid)
-          if (surface in cycleDetector && cycleDetector[surface] !== i) {
-            console.log('detected cycle!!!!')
-            console.log('last:', cycleDetector[surface], ', now:', i)
-          }
-          else {
-            cycleDetector[surface] = i
-          }
+        const surface = getGridSurface(grid)
+        if (!(stone.name in cycleDetector)) {
+          cycleDetector[stone.name] = {}
+        }
+        if (!(jetPatternIndex in cycleDetector[stone.name])) {
+          cycleDetector[stone.name][jetPatternIndex] = {}
+        }
+        if (!(surface in cycleDetector[stone.name][jetPatternIndex])) {
+          cycleDetector[stone.name][jetPatternIndex][surface] = i
+        }
+        // if (
+        //   stone.name === '4' &&
+        //   jetPatternIndex % jetPatternQueue.length === 28 &&
+        //   surface === '2,2,0,2,3,5,7'
+        // ) {
+        if (cycleDetector[stone.name][jetPatternIndex][surface] !== i) {
+          const msg = `cycle - last ${
+            cycleDetector[stone.name][jetPatternIndex][surface]
+          }, now: ${i}. stone: ${
+            stone.name
+          }, jet pattern index: ${jetPatternIndex}, surface: ${surface}`
+          throw new Error(msg)
+          console.log(msg)
+        }
+
+        if (direction !== 'v') {
+          jetPatternIndex = (jetPatternIndex + 1) % jetPatternQueue.length
         }
 
         for (let k = 0; k < stone.pieces.length; k++) {
@@ -121,9 +140,6 @@ function addFallingStones(
             direction
           )
 
-          if (direction !== 'v') {
-            jetPatternIndex += 1
-          }
           // if any piece reaches the floor, stop the whole stone
           if (nextCoordinate === null && direction === 'v') {
             stone.resting = true
