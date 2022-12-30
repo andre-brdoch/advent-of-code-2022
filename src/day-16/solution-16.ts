@@ -37,11 +37,9 @@ const MAX_TURNS = 30
 const START_NAME = 'AA'
 
 export default async function solution(input: string): Promise<Solution16> {
-  console.log(input)
-  console.log('----')
-
   const valves = parseValves(input)
   const analyzedValves = analyzeValves(valves)
+
   const startingValve = getByName(START_NAME, analyzedValves)
   find(analyzedValves, startingValve)
   // const remaining = getRemaining(analyzedValves)
@@ -58,73 +56,61 @@ export default async function solution(input: string): Promise<Solution16> {
 function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
   const frontier = new PriorityQueue<ValveAnalyzed>()
   frontier.add(startingValve, 0)
-  const cameFrom: CameFromMap = { [startingValve.name]: null }
-  const costSoFar = { [startingValve.name]: 0 }
+  const potentialSoFar: Record<string, number> = { [startingValve.name]: 0 }
+  const cameFrom: Record<number, Record<string, ValveAnalyzed | null>> = {
+    [startingValve.name]: null,
+  }
+  const relevantValves = getRemaining(valves)
 
-  
   while (!frontier.empty()) {
-    const current = frontier.get()
-    if (current === null) throw new Error('Empty queue, what now?')
+    const current = frontier.get() as ValveAnalyzed
+    const neighbors = relevantValves.filter(valve => valve !== current)
 
-    current.neighbors.forEach(next => {
-      const newCost = costSoFar[current.name]
-    })
-  }
-}
+    // todo: implement ending codition
+    // todo: possibly lacking starting valve
+    if (getPath(cameFrom, current).length > 6) {
+      console.log('broke things')
+      console.log(getPath(cameFrom, current))
+      break
+    }
 
-function buildSequence(
-  currentValve: ValveAnalyzed,
-  remainingValves: ValveAnalyzed[],
-  currentTurn: number
-): Sequence {
-  if (remainingValves.length === 0) return []
+    neighbors.forEach(next => {
+      const distance = getShortestDistance(current, next)
+      const nextPotential = next.potentialByRound[distance]
+      const totalPotential = potentialSoFar[current.name] + nextPotential
+      console.log(`distance: ${distance}, potential: ${totalPotential}`)
 
-  if (currentTurn === 2) {
-    console.log('CURRENT:')
-    console.log(currentValve.name)
-    console.log('---')
-  }
+      if (
+        !(next.name in potentialSoFar) ||
+        totalPotential > potentialSoFar[next.name]
+      ) {
+        console.log('add to queue')
 
-  // find best next valve
-  const prioritized = remainingValves
-    .map(valve => {
-      const distance = getShortestDistance(currentValve, valve)
-      const turnOpened = distance + currentTurn + 1
-      const flowRateTotal = valve.potentialByRound[turnOpened]
-      const priority = flowRateTotal / turnOpened
-      return {
-        turnOpened,
-        flowRateTotal,
-        priority,
-        valve,
+        potentialSoFar[next.name] = totalPotential
+        frontier.add(next, totalPotential)
+        cameFrom[next.name] = current
       }
     })
-    .sort((a, b) => b.priority - a.priority)
-
-  if (currentTurn === 2) {
-    prioritized.slice(0, 3).forEach(({ valve, flowRateTotal, priority }) => {
-      console.log(valve.name)
-      console.log('flowRateTotal:', flowRateTotal)
-      console.log('priority:', priority)
-      console.log('---')
-    })
   }
 
-  const [selectedTurn, ...discardedTurns] = prioritized
-  const otherValves = discardedTurns.map(turn => turn.valve)
-  const nextTurns = buildSequence(
-    selectedTurn.valve,
-    otherValves,
-    selectedTurn.turnOpened
-  )
-  return [
-    selectedTurn,
-    ...buildSequence(
-      selectedTurn.valve,
-      nextTurns.map(turn => turn.valve),
-      selectedTurn.turnOpened
-    ),
-  ]
+  console.log(cameFrom)
+}
+
+function getPath(
+  cameFrom: CameFromMap,
+  endingValve: ValveAnalyzed
+): ValveAnalyzed[] {
+  // find shortest path from end till start
+  const path: ValveAnalyzed[] = [endingValve]
+  let current: ValveAnalyzed | null = endingValve
+  while (current !== null) {
+    const prev: ValveAnalyzed | null = cameFrom[current.name]
+    current = prev
+    if (prev === null) break
+    path.push(prev)
+  }
+
+  return path
 }
 
 function getDistances(startingValve: Valve): DistanceMap {
