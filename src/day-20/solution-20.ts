@@ -20,11 +20,11 @@ export default async function solution(input: string): Promise<Solution20> {
   printItems(items)
 
   const answer1 = getAnswer1(items)
-  // const answer2 = getAnswer2(items)
+  const answer2 = getAnswer2(items)
 
   return {
     answer1,
-    answer2: 0,
+    answer2,
     ...logger.getVisual(
       parseArgs().file?.replace('input', 'output') ?? 'output.txt'
     ),
@@ -34,7 +34,7 @@ export default async function solution(input: string): Promise<Solution20> {
 function getAnswer1(items: Sequence): number {
   const mixed = mixItems(items)
 
-  logger.log('\nanswer1:')
+  logger.log('\nFinal position:')
   printItems(mixed)
   const startItem = mixed.find(item => item.value === 0)
   if (!startItem) throw new Error('Start item not found!')
@@ -46,11 +46,12 @@ function getAnswer2(items: Sequence): number {
   const decrypted = items.map(item => ({ value: item.value * DECRYPTION_KEY }))
   console.log(decrypted)
   const mixed = mixItems(decrypted, 10)
+  printItems(mixed)
+
   const startItem = mixed.find(item => item.value === 0)
   if (!startItem) throw new Error('Start item not found!')
   const relevantNumbers = getRelevantNumbers(mixed, startItem)
   return getCoordinates(relevantNumbers)
-  return 0
 }
 
 function getNewIndex(

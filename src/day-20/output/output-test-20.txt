@@ -28,5 +28,5 @@ Move 0 (from 3 to 3)
 Move 4 (from 5 to 3)
 1, 2, -3, 4, 0, 3, -2
 
-answer1:
+Final position:
 1, 2, -3, 4, 0, 3, -2
