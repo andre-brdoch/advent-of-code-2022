@@ -1,27 +1,24 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseArgs } from './utils/env-helpers.js'
 
-const [, , day, mode, cliInput] = process.argv
+const { day, file, cliInput, isTest, visualize } = parseArgs()
 
 if (!day) {
   throw new Error('No day selected')
 }
 
-const dayFormatted = day.padStart(2, '0')
-const isTest = mode === 'test'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const dayFormatted = String(day).padStart(2, '0')
 
 async function getInputFile(): Promise<string | undefined> {
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = path.dirname(__filename)
-
   try {
-    const filePath = path.join(
-      __dirname,
-      `./day-${dayFormatted}/input-${isTest ? 'test-' : ''}${dayFormatted}.txt`
-    )
-    const file = await fs.readFile(filePath, 'utf8')
-    return file
+    const filePath = path.join(__dirname, `./day-${dayFormatted}/${file}`)
+    const input = await fs.readFile(filePath, 'utf8')
+    return input
   }
   catch (err) {
     return undefined
@@ -38,11 +35,32 @@ function printAnswers(answer1: unknown, answer2: unknown): void {
   }
 }
 
+async function fileExists(path: string): Promise<boolean> {
+  return !!(await fs.stat(path).catch(() => false))
+}
+
+async function toFile(fileName: string, data: string): Promise<void> {
+  const dir = path.join(__dirname, `./day-${dayFormatted}/output`)
+  if (!(await fileExists(dir))) {
+    await fs.mkdir(dir)
+  }
+  const file = path.join(dir, fileName)
+  await fs.writeFile(file, data)
+}
+
 const solutionModule = await import(
   `./day-${dayFormatted}/solution-${dayFormatted}.js`
 )
-const inputs = cliInput ?? await getInputFile()
+const inputs = cliInput ?? (await getInputFile())
 
-const { answer1, answer2 } = await solutionModule.default(inputs)
+const { answer1, answer2, visualFile, visualData } =
+  await solutionModule.default(inputs, {
+    isTest,
+    visualize,
+  })
 
 printAnswers(answer1, answer2)
+
+if (visualize && visualFile && visualData) {
+  await toFile(visualFile, visualData)
+}
