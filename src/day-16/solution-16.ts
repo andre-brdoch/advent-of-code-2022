@@ -26,11 +26,14 @@ interface Turn {
   flowRateTotal: number
 }
 type Sequence = Array<Turn>
-interface CameFromMap {
-  [key: string]: ValveAnalyzed | null
-}
+type CameFromMap = Record<string, QueueState | null>
 interface CostMap {
   [key: string]: number
+}
+interface QueueState {
+  valveName: string
+  currentTotalFlow: number
+  timeLeft: number
 }
 
 const MAX_TURNS = 30
@@ -54,63 +57,91 @@ export default async function solution(input: string): Promise<Solution16> {
 }
 
 function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
-  const frontier = new PriorityQueue<ValveAnalyzed>()
-  frontier.add(startingValve, 0)
-  const potentialSoFar: Record<string, number> = { [startingValve.name]: 0 }
-  const cameFrom: Record<number, Record<string, ValveAnalyzed | null>> = {
-    [startingValve.name]: null,
+  const queueState: QueueState = {
+    valveName: startingValve.name,
+    currentTotalFlow: 0,
+    timeLeft: MAX_TURNS,
   }
+  const startStateId = stringifyState(queueState)
+  const frontier = new PriorityQueue<QueueState>()
+  frontier.add(queueState, 0)
+  const cameFrom: CameFromMap = {
+    [startStateId]: null,
+  }
+  const costSoFar: Record<string, number> = {
+    [startStateId]: 0,
+  }
+  let maxFlow = 0
+  let bestPath: QueueState[] = []
+  console.log(cameFrom)
+
   const relevantValves = getRemaining(valves)
 
   while (!frontier.empty()) {
-    const current = frontier.get() as ValveAnalyzed
-    const neighbors = relevantValves.filter(valve => valve !== current)
+    const current = frontier.get() as QueueState
+    const currentValve = getByName(current.valveName, valves)
+    const currentStateId = stringifyState(current)
+    const pathSoFar = getPath(cameFrom, currentStateId)
+    const neighbors = relevantValves.filter(valve =>
+      pathSoFar.every(state => state.valveName !== valve.name)
+    )
 
     // todo: implement ending codition
     // todo: possibly lacking starting valve
-    if (getPath(cameFrom, current).length > 6) {
-      console.log('broke things')
-      console.log(getPath(cameFrom, current))
-      break
+    if (current.currentTotalFlow > maxFlow) {
+      maxFlow = current.currentTotalFlow
+      bestPath = pathSoFar
+      // console.log('broke things')
+      // console.log(cameFrom)
+
+      // console.log(getPath(cameFrom, currentStateId))
+      // break
     }
 
+    getPath(cameFrom, startStateId)
+
     neighbors.forEach(next => {
-      const distance = getShortestDistance(current, next)
-      const nextPotential = next.potentialByRound[distance]
-      const totalPotential = potentialSoFar[current.name] + nextPotential
-      console.log(`distance: ${distance}, potential: ${totalPotential}`)
+      const distance = getShortestDistance(currentValve, next)
+      const reachedByTurn = current.timeLeft - distance - 1
+      if (reachedByTurn < 0) return
+      const nextPotential = next.potentialByRound[reachedByTurn]
+      const newTotalFlow = current.currentTotalFlow + nextPotential
+      const nextQueueState: QueueState = {
+        valveName: next.name,
+        currentTotalFlow: newTotalFlow,
+        timeLeft: reachedByTurn,
+      }
+      const nextStateId = stringifyState(nextQueueState)
 
       if (
-        !(next.name in potentialSoFar) ||
-        totalPotential > potentialSoFar[next.name]
+        !(nextStateId in costSoFar) ||
+        newTotalFlow > costSoFar[nextStateId]
       ) {
-        console.log('add to queue')
-
-        potentialSoFar[next.name] = totalPotential
-        frontier.add(next, totalPotential)
-        cameFrom[next.name] = current
+        costSoFar[nextStateId] = newTotalFlow
+        frontier.add(nextQueueState, newTotalFlow)
+        cameFrom[nextStateId] = current
       }
     })
   }
 
-  console.log(cameFrom)
+  // console.log(cameFrom)
+  console.log(maxFlow)
+  console.log(bestPath)
+
+  // Object.keys(cameFrom).map(id => getByName(parseState(id).valveName)).sort()
 }
 
-function getPath(
-  cameFrom: CameFromMap,
-  endingValve: ValveAnalyzed
-): ValveAnalyzed[] {
+function getPath(cameFrom: CameFromMap, endingStateId: string): QueueState[] {
   // find shortest path from end till start
-  const path: ValveAnalyzed[] = [endingValve]
-  let current: ValveAnalyzed | null = endingValve
-  while (current !== null) {
-    const prev: ValveAnalyzed | null = cameFrom[current.name]
-    current = prev
-    if (prev === null) break
-    path.push(prev)
+  const path: QueueState[] = [parseState(endingStateId)]
+  let currentStateId: string | null = endingStateId
+  while (true) {
+    const prevState = cameFrom[currentStateId]
+    if (prevState === null) break
+    currentStateId = stringifyState(prevState)
+    path.push(prevState)
   }
-
-  return path
+  return path.reverse()
 }
 
 function getDistances(startingValve: Valve): DistanceMap {
@@ -146,16 +177,18 @@ function getRemaining<V>(valves: Array<V>): Array<V> {
   return valves.filter(valve => valve.flowRate > 0)
 }
 
-function stringifySequence(sequence: Sequence): string {
-  return sequence
-    .map(
-      turn =>
-        `${turn.valve.name}: ${String(turn.turnOpened).padStart(
-          2,
-          '0'
-        )}, releasing gas totalling ${turn.flowRateTotal}`
-    )
-    .join('\n')
+function stringifyState(queueState: QueueState): string {
+  const { valveName, currentTotalFlow, timeLeft } = queueState
+  return `${valveName};${currentTotalFlow};${timeLeft}`
+}
+
+function parseState(queueStateId: string): QueueState {
+  const [valveName, currentTotalFlow, timeLeft] = queueStateId.split(';')
+  return {
+    valveName,
+    currentTotalFlow: Number(currentTotalFlow),
+    timeLeft: Number(timeLeft),
+  }
 }
 
 function parseValves(input: string): Valve[] {
