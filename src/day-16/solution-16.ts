@@ -44,7 +44,7 @@ export default async function solution(input: string): Promise<Solution16> {
   const analyzedValves = analyzeValves(valves)
 
   const startingValve = getByName(START_NAME, analyzedValves)
-  find(analyzedValves, startingValve)
+  const answer1 = find(analyzedValves, startingValve)
   // const remaining = getRemaining(analyzedValves)
   // const sequence = buildSequence(startingValve, remaining, 0)
   // console.log(stringifySequence(sequence))
@@ -53,7 +53,7 @@ export default async function solution(input: string): Promise<Solution16> {
   //   0
   // )
 
-  return { answer1: 0 }
+  return { answer1 }
 }
 
 function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
@@ -86,30 +86,34 @@ function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
       pathSoFar.every(state => state.valveName !== valve.name)
     )
 
-    // todo: implement ending codition
-    // todo: possibly lacking starting valve
-    if (current.currentTotalFlow > maxFlow) {
+    // if (pathSoFar.length === 7) {
+    //   if (
+    //     pathSoFar.map(p => p.valveName).join(',') === 'AA,DD,BB,JJ,HH,EE,CC'
+    //   ) {
+    //     console.log(current)
+    //     console.log(pathSoFar)
+    //   }
+    //   // console.log(pathSoFar.map(p => p.valveName).join(','))
+    // }
+
+    if (
+      pathSoFar.length > relevantValves.length &&
+      current.currentTotalFlow > maxFlow
+    ) {
       maxFlow = current.currentTotalFlow
       bestPath = pathSoFar
-      // console.log('broke things')
-      // console.log(cameFrom)
-
-      // console.log(getPath(cameFrom, currentStateId))
-      // break
     }
-
-    getPath(cameFrom, startStateId)
 
     neighbors.forEach(next => {
       const distance = getShortestDistance(currentValve, next)
-      const reachedByTurn = current.timeLeft - distance - 1
-      if (reachedByTurn < 0) return
-      const nextPotential = next.potentialByRound[reachedByTurn]
+      const openedByTurn = current.timeLeft - distance - 1
+      if (openedByTurn < 0) return
+      const nextPotential = next.potentialByRound[MAX_TURNS - openedByTurn]
       const newTotalFlow = current.currentTotalFlow + nextPotential
       const nextQueueState: QueueState = {
         valveName: next.name,
         currentTotalFlow: newTotalFlow,
-        timeLeft: reachedByTurn,
+        timeLeft: openedByTurn,
       }
       const nextStateId = stringifyState(nextQueueState)
 
@@ -128,6 +132,8 @@ function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
   console.log(maxFlow)
   console.log(bestPath)
 
+  return maxFlow
+
   // Object.keys(cameFrom).map(id => getByName(parseState(id).valveName)).sort()
 }
 
@@ -142,6 +148,10 @@ function getPath(cameFrom: CameFromMap, endingStateId: string): QueueState[] {
     path.push(prevState)
   }
   return path.reverse()
+}
+
+function getPathSum(path: QueueState[]): number {
+  return path.reduce((result, state) => result + state.currentTotalFlow, 0)
 }
 
 function getDistances(startingValve: Valve): DistanceMap {
