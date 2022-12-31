@@ -22,16 +22,7 @@ interface ValveAnalyzed extends Valve {
   distances: DistanceMap
   potentialByRound: PotentialMap
 }
-interface Turn {
-  valve: ValveAnalyzed
-  turnOpened: number
-  flowRateTotal: number
-}
-type Sequence = Array<Turn>
 type CameFromMap = Record<string, QueueState | null>
-interface CostMap {
-  [key: string]: number
-}
 interface QueueState {
   valveName: string
   currentTotalFlow: number
@@ -46,14 +37,22 @@ const logger = new Logger()
 export default async function solution(input: string): Promise<Solution16> {
   const valves = parseValves(input)
   const analyzedValves = analyzeValves(valves)
-
   const startingValve = getByName(START_NAME, analyzedValves)
-  const answer1 = find(analyzedValves, startingValve)
 
-  return { answer1 }
+  const { path, totalFlow } = findShortestPath(analyzedValves, startingValve)
+  logger.log(
+    `Best path is ${path
+      .map(v => v.valveName)
+      .join(' -> ')}, resulting in a total flow of ${totalFlow}\n`
+  )
+
+  return { answer1: totalFlow }
 }
 
-function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
+function findShortestPath(
+  valves: ValveAnalyzed[],
+  startingValve: ValveAnalyzed
+): { path: QueueState[]; totalFlow: number } {
   const queueState: QueueState = {
     valveName: startingValve.name,
     currentTotalFlow: 0,
@@ -111,13 +110,10 @@ function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
     })
   }
 
-  logger.log(
-    `Best path is ${bestPath
-      .map(v => v.valveName)
-      .join(' -> ')}, resulting in a total flow of ${maxFlow}\n`
-  )
-
-  return maxFlow
+  return {
+    path: bestPath,
+    totalFlow: maxFlow,
+  }
 }
 
 function getPath(cameFrom: CameFromMap, endingStateId: string): QueueState[] {
