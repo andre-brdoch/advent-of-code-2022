@@ -99,16 +99,23 @@ function findBestPairing(
   maxTurns: number
 ): Pairing {
   const { allPaths, bestPath } = analyzePaths(valves, startingValve, maxTurns)
+  const bestFlowSinglePlayer = bestPath[bestPath.length - 1].currentTotalFlow
+  const minFlowToConsider = bestFlowSinglePlayer * 0.5
+
   const pathsStartVal: SimpleActionPath[] = []
   const paths = allPaths
     .slice()
-    // Reduce amount of paths. The 2 players might visit different amount of valves,
-    // so we don't know what amount both paths will take. But it safe to assume
-    // that each player will visit less valves than in the 1-player scenario.
-    .filter(path => path.length < bestPath.length)
     // Remove start valve
     .map(path => path.slice(1))
-    .filter(path => path.length > 0)
+    .filter(
+      path =>
+        // assume no player visits the full amount of vaults as for the single player
+        path.length < bestPath.length - 1 &&
+        // assume each player visits at least 2 valves
+        path.length >= 2 &&
+        // assume individual paths are in the top 50%
+        path[path.length - 1].currentTotalFlow >= minFlowToConsider
+    )
     .reduce(
       (result, path) => [
         ...result,
@@ -119,6 +126,8 @@ function findBestPairing(
       ],
       pathsStartVal
     )
+  console.log('so far, so good...')
+
   const pairingsStartVal: Pairing[] = []
   const pairings: Pairing[] = paths.reduce((result, actionPath) => {
     const counterParts = paths.filter(otherPath =>
@@ -133,6 +142,10 @@ function findBestPairing(
   }, pairingsStartVal)
 
   const bestPairing = pairings.sort((a, b) => b.totalFlow - a.totalFlow)[0]
+
+  console.log('best pairing:')
+  console.log(bestPairing)
+
   return bestPairing
 }
 
