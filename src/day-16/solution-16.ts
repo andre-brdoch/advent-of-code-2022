@@ -29,34 +29,44 @@ interface QueueState {
   timeLeft: number
 }
 
-const MAX_TURNS = 30
 const START_NAME = 'AA'
 
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution16> {
   const valves = parseValves(input)
-  const analyzedValves = analyzeValves(valves)
+  const answer1 = getAnswer1(valves)
+  return { answer1 }
+}
+
+function getAnswer1(valves: Valve[]): number {
+  const maxTurns = 30
+  const analyzedValves = analyzeValves(valves, maxTurns)
   const startingValve = getByName(START_NAME, analyzedValves)
 
-  const { path, totalFlow } = findShortestPath(analyzedValves, startingValve)
+  const { path, totalFlow } = findShortestPath(
+    analyzedValves,
+    startingValve,
+    maxTurns
+  )
   logger.log(
     `Best path is ${path
       .map(v => v.valveName)
       .join(' -> ')}, resulting in a total flow of ${totalFlow}\n`
   )
 
-  return { answer1: totalFlow }
+  return totalFlow
 }
 
 function findShortestPath(
   valves: ValveAnalyzed[],
-  startingValve: ValveAnalyzed
+  startingValve: ValveAnalyzed,
+  maxTurns: number
 ): { path: QueueState[]; totalFlow: number } {
   const queueState: QueueState = {
     valveName: startingValve.name,
     currentTotalFlow: 0,
-    timeLeft: MAX_TURNS,
+    timeLeft: maxTurns,
   }
   const startStateId = stringifyState(queueState)
   const frontier = new PriorityQueue<QueueState>()
@@ -90,7 +100,7 @@ function findShortestPath(
       const distance = getShortestDistance(currentValve, next)
       const openedByTurn = current.timeLeft - distance - 1
       if (openedByTurn < 0) return
-      const nextPotential = next.potentialByRound[MAX_TURNS - openedByTurn]
+      const nextPotential = next.potentialByRound[maxTurns - openedByTurn]
       const newTotalFlow = current.currentTotalFlow + nextPotential
       const nextQueueState: QueueState = {
         valveName: next.name,
@@ -202,15 +212,15 @@ function getShortestDistance(a: ValveAnalyzed, b: ValveAnalyzed): number {
   return a.distances[b.name]
 }
 
-function analyzeValves(valves: Valve[]): ValveAnalyzed[] {
+function analyzeValves(valves: Valve[], maxTurns: number): ValveAnalyzed[] {
   return valves.map(valve => {
     const distances: DistanceMap = getDistances(valve)
-    const potentialByRound = Array.from(Array(MAX_TURNS))
+    const potentialByRound = Array.from(Array(maxTurns))
       .map((_, i) => i)
       .reduce(
         (result, number) => ({
           ...result,
-          [number]: valve.flowRate * (MAX_TURNS - number),
+          [number]: valve.flowRate * (maxTurns - number),
         }),
         {} as PotentialMap
       )
