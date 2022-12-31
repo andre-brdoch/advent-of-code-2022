@@ -1,3 +1,5 @@
+import { Logger } from '../utils/Logger.js'
+
 interface Solution16 {
   answer1: number
 }
@@ -39,19 +41,14 @@ interface QueueState {
 const MAX_TURNS = 30
 const START_NAME = 'AA'
 
+const logger = new Logger()
+
 export default async function solution(input: string): Promise<Solution16> {
   const valves = parseValves(input)
   const analyzedValves = analyzeValves(valves)
 
   const startingValve = getByName(START_NAME, analyzedValves)
   const answer1 = find(analyzedValves, startingValve)
-  // const remaining = getRemaining(analyzedValves)
-  // const sequence = buildSequence(startingValve, remaining, 0)
-  // console.log(stringifySequence(sequence))
-  // const answer1 = sequence.reduce(
-  //   (result, turn) => result + turn.flowRateTotal,
-  //   0
-  // )
 
   return { answer1 }
 }
@@ -73,7 +70,6 @@ function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
   }
   let maxFlow = 0
   let bestPath: QueueState[] = []
-  console.log(cameFrom)
 
   const relevantValves = getRemaining(valves)
 
@@ -86,20 +82,7 @@ function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
       pathSoFar.every(state => state.valveName !== valve.name)
     )
 
-    // if (pathSoFar.length === 7) {
-    //   if (
-    //     pathSoFar.map(p => p.valveName).join(',') === 'AA,DD,BB,JJ,HH,EE,CC'
-    //   ) {
-    //     console.log(current)
-    //     console.log(pathSoFar)
-    //   }
-    //   // console.log(pathSoFar.map(p => p.valveName).join(','))
-    // }
-
-    if (
-      pathSoFar.length > relevantValves.length &&
-      current.currentTotalFlow > maxFlow
-    ) {
+    if (current.currentTotalFlow > maxFlow) {
       maxFlow = current.currentTotalFlow
       bestPath = pathSoFar
     }
@@ -128,13 +111,13 @@ function find(valves: ValveAnalyzed[], startingValve: ValveAnalyzed): any {
     })
   }
 
-  // console.log(cameFrom)
-  console.log(maxFlow)
-  console.log(bestPath)
+  logger.log(
+    `Best path is ${bestPath
+      .map(v => v.valveName)
+      .join(' -> ')}, resulting in a total flow of ${maxFlow}\n`
+  )
 
   return maxFlow
-
-  // Object.keys(cameFrom).map(id => getByName(parseState(id).valveName)).sort()
 }
 
 function getPath(cameFrom: CameFromMap, endingStateId: string): QueueState[] {
@@ -148,10 +131,6 @@ function getPath(cameFrom: CameFromMap, endingStateId: string): QueueState[] {
     path.push(prevState)
   }
   return path.reverse()
-}
-
-function getPathSum(path: QueueState[]): number {
-  return path.reduce((result, state) => result + state.currentTotalFlow, 0)
 }
 
 function getDistances(startingValve: Valve): DistanceMap {
