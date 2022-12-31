@@ -2,6 +2,7 @@ import { Logger } from '../utils/Logger.js'
 
 interface Solution16 {
   answer1: number
+  answer2: number
 }
 interface DistanceMap {
   [key: string]: number
@@ -28,6 +29,14 @@ interface QueueState {
   currentTotalFlow: number
   timeLeft: number
 }
+interface SimpleActionPath {
+  valveNames: string[]
+  totalFlow: number
+}
+interface Pairing {
+  actions: [SimpleActionPath, SimpleActionPath]
+  totalFlow: number
+}
 
 const START_NAME = 'AA'
 
@@ -36,33 +45,103 @@ const logger = new Logger()
 export default async function solution(input: string): Promise<Solution16> {
   const valves = parseValves(input)
   const answer1 = getAnswer1(valves)
-  return { answer1 }
+  const answer2 = getAnswer2(valves)
+  return { answer1, answer2 }
+}
+
+function getAnswer2(valves: Valve[]): number {
+  const maxTurns = 26
+  const analyzedValves = analyzeValves(valves, maxTurns)
+  const startingValve = getByName(START_NAME, analyzedValves)
+  return getHighestFlowRate(analyzedValves, startingValve, maxTurns, true)
 }
 
 function getAnswer1(valves: Valve[]): number {
   const maxTurns = 30
   const analyzedValves = analyzeValves(valves, maxTurns)
   const startingValve = getByName(START_NAME, analyzedValves)
+  return getHighestFlowRate(analyzedValves, startingValve, maxTurns)
+}
 
-  const { path, totalFlow } = findShortestPath(
-    analyzedValves,
-    startingValve,
-    maxTurns
-  )
-  logger.log(
-    `Best path is ${path
+function getHighestFlowRate(
+  valves: ValveAnalyzed[],
+  startingValve: ValveAnalyzed,
+  maxTurns: number,
+  withElephant = false
+): number {
+  let totalFlow
+  let msg
+  if (!withElephant) {
+    const { bestPath } = analyzePaths(valves, startingValve, maxTurns)
+    totalFlow = bestPath[bestPath.length - 1].currentTotalFlow
+    msg = `Best path is ${bestPath
       .map(v => v.valveName)
-      .join(' -> ')}, resulting in a total flow of ${totalFlow}\n`
-  )
+      .join(' -> ')}, resulting in a total flow of ${totalFlow}.\n`
+  }
+  else {
+    const bestPairing = findBestPairing(valves, startingValve, maxTurns)
+    const [player, elephant] = bestPairing.actions
+    totalFlow = bestPairing.totalFlow
+    msg = `Player visits ${player.valveNames.join(' -> ')} (${
+      player.totalFlow
+    }),\nElephant visits  ${elephant.valveNames.join(' -> ')},\nTotal flow: ${
+      elephant.totalFlow
+    }\n`
+  }
 
+  logger.log(msg)
   return totalFlow
 }
 
-function findShortestPath(
+function findBestPairing(
   valves: ValveAnalyzed[],
   startingValve: ValveAnalyzed,
   maxTurns: number
-): { path: QueueState[]; totalFlow: number } {
+): Pairing {
+  const { allPaths, bestPath } = analyzePaths(valves, startingValve, maxTurns)
+  const pathsStartVal: SimpleActionPath[] = []
+  const paths = allPaths
+    .slice()
+    // Reduce amount of paths. The 2 players might visit different amount of valves,
+    // so we don't know what amount both paths will take. But it safe to assume
+    // that each player will visit less valves than in the 1-player scenario.
+    .filter(path => path.length < bestPath.length)
+    // Remove start valve
+    .map(path => path.slice(1))
+    .filter(path => path.length > 0)
+    .reduce(
+      (result, path) => [
+        ...result,
+        {
+          valveNames: path.map(actionPath => actionPath.valveName),
+          totalFlow: path[path.length - 1].currentTotalFlow,
+        },
+      ],
+      pathsStartVal
+    )
+  const pairingsStartVal: Pairing[] = []
+  const pairings: Pairing[] = paths.reduce((result, actionPath) => {
+    const counterParts = paths.filter(otherPath =>
+      otherPath.valveNames.every(name => !actionPath.valveNames.includes(name))
+    )
+    if (counterParts.length === 0) return result
+    const pairings: Pairing[] = counterParts.map(counterPart => ({
+      actions: [actionPath, counterPart],
+      totalFlow: actionPath.totalFlow + counterPart.totalFlow,
+    }))
+    return [...result, ...pairings]
+  }, pairingsStartVal)
+
+  const bestPairing = pairings.sort((a, b) => b.totalFlow - a.totalFlow)[0]
+  return bestPairing
+}
+
+/** Dijkstra search */
+function analyzePaths(
+  valves: ValveAnalyzed[],
+  startingValve: ValveAnalyzed,
+  maxTurns: number
+): { bestPath: QueueState[]; allPaths: QueueState[][] } {
   const queueState: QueueState = {
     valveName: startingValve.name,
     currentTotalFlow: 0,
@@ -121,8 +200,8 @@ function findShortestPath(
   }
 
   return {
-    path: bestPath,
-    totalFlow: maxFlow,
+    bestPath: bestPath,
+    allPaths: Object.keys(cameFrom).map(stateId => getPath(cameFrom, stateId)),
   }
 }
 
