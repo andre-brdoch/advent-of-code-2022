@@ -128,8 +128,34 @@ function findBestPairing(
     )
   console.log('so far, so good...')
 
+  // todo: change any
+  const visitedCache: Record<string, any> = {}
+
   const pairingsStartVal: Pairing[] = []
   const pairings: Pairing[] = paths.reduce((result, actionPath) => {
+    const valvesString = actionPath.valveNames.join(';')
+    for (let i = 0; i < paths.length; i++) {
+      const otherActionPath = paths[i]
+      const otherValvesString = otherActionPath.valveNames.join(';')
+      if (
+        visitedCache[valvesString]?.[otherValvesString] ||
+        visitedCache[otherValvesString]?.[valvesString]
+      ) {
+        continue
+      }
+      if (!(valvesString in visitedCache)) {
+        visitedCache[valvesString] = {}
+      }
+      else if (!visitedCache[valvesString][otherValvesString]) {
+        visitedCache[valvesString][otherValvesString] = true
+      }
+      if (!(otherValvesString in visitedCache)) {
+        visitedCache[otherValvesString] = {}
+      }
+      else if (!visitedCache[otherValvesString][valvesString]) {
+        visitedCache[otherValvesString][valvesString] = true
+      }
+    }
     const counterParts = paths.filter(otherPath =>
       otherPath.valveNames.every(name => !actionPath.valveNames.includes(name))
     )
