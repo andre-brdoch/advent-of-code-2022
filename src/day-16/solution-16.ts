@@ -102,6 +102,9 @@ function findBestPairing(
   const bestFlowSinglePlayer = bestPath[bestPath.length - 1].currentTotalFlow
   const minFlowToConsider = bestFlowSinglePlayer * 0.5
 
+  logger.log('make paths...')
+  const timer1 = performance.now()
+
   const pathsStartVal: SimpleActionPath[] = []
   const paths = allPaths
     .slice()
@@ -126,17 +129,35 @@ function findBestPairing(
       ],
       pathsStartVal
     )
+    .sort((a, b) => b.valveNames.length - a.valveNames.length)
+
+  const timer2 = performance.now()
   console.log('so far, so good...')
+  console.log(`Time so far: ${formatTimeDuration(timer1, timer2)}\n`)
 
   // todo: change any
   const visitedCache: Record<string, any> = {}
 
-  const pairingsStartVal: Pairing[] = []
-  const pairings: Pairing[] = paths.reduce((result, actionPath) => {
+  const pairings: Pairing[] = []
+  for (let i = 0; i < paths.length; i++) {
+    const actionPath = paths[i]
     const valvesString = actionPath.valveNames.join(';')
-    for (let i = 0; i < paths.length; i++) {
-      const otherActionPath = paths[i]
+
+    // compare against reversed order, since short paths match with long ones,
+    // and vice versa
+    for (let j = paths.length - 1; j >= 0; j--) {
+      const otherActionPath = paths[j]
       const otherValvesString = otherActionPath.valveNames.join(';')
+
+      if (
+        otherActionPath.valveNames.some(name =>
+          actionPath.valveNames.includes(name)
+        ) ||
+        otherActionPath.valveNames.length === 0
+      ) {
+        continue
+      }
+
       if (
         visitedCache[valvesString]?.[otherValvesString] ||
         visitedCache[otherValvesString]?.[valvesString]
@@ -147,6 +168,14 @@ function findBestPairing(
         visitedCache[valvesString] = {}
       }
       else if (!visitedCache[valvesString][otherValvesString]) {
+        // skip if there were already longer matches
+        // const keys = Object.keys(visitedCache[valvesString])
+        // for (let i = 0; i < keys.length; i++) {
+        //   const str = keys[i]
+        //   if (str.startsWith(otherValvesString)) {
+        //     continue
+        //   }
+        // }
         visitedCache[valvesString][otherValvesString] = true
       }
       if (!(otherValvesString in visitedCache)) {
@@ -155,23 +184,20 @@ function findBestPairing(
       else if (!visitedCache[otherValvesString][valvesString]) {
         visitedCache[otherValvesString][valvesString] = true
       }
+
+      const pairing: Pairing = {
+        actions: [actionPath, otherActionPath],
+        totalFlow: actionPath.totalFlow + otherActionPath.totalFlow,
+      }
+      pairings.push(pairing)
     }
-    const counterParts = paths.filter(otherPath =>
-      otherPath.valveNames.every(name => !actionPath.valveNames.includes(name))
-    )
-    if (counterParts.length === 0) return result
-    const pairings: Pairing[] = counterParts.map(counterPart => ({
-      actions: [actionPath, counterPart],
-      totalFlow: actionPath.totalFlow + counterPart.totalFlow,
-    }))
-    return [...result, ...pairings]
-  }, pairingsStartVal)
+  }
+
+  const timer3 = performance.now()
+  console.log('done combining')
+  console.log(`Time so far: ${formatTimeDuration(timer1, timer3)}\n`)
 
   const bestPairing = pairings.sort((a, b) => b.totalFlow - a.totalFlow)[0]
-
-  console.log('best pairing:')
-  console.log(bestPairing)
-
   return bestPairing
 }
 
@@ -328,6 +354,10 @@ function parseValves(input: string): Valve[] {
 
 function getShortestDistance(a: ValveAnalyzed, b: ValveAnalyzed): number {
   return a.distances[b.name]
+}
+
+function formatTimeDuration(fromMs: number, toMs: number): string {
+  return `${Math.round((toMs - fromMs) / 1000)}s`
 }
 
 function analyzeValves(valves: Valve[], maxTurns: number): ValveAnalyzed[] {
