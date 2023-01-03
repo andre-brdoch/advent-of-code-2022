@@ -84,9 +84,9 @@ function getHighestFlowRate(
     totalFlow = bestPairing.totalFlow
     msg = `Player visits ${player.valveNames.join(' -> ')} (${
       player.totalFlow
-    }),\nElephant visits  ${elephant.valveNames.join(' -> ')},\nTotal flow: ${
+    }),\nElephant visits  ${elephant.valveNames.join(' -> ')}, (${
       elephant.totalFlow
-    }\n`
+    })\nTotal flow: ${bestPairing.totalFlow}\n`
   }
 
   logger.log(msg)
@@ -100,7 +100,7 @@ function findBestPairing(
 ): Pairing {
   const { allPaths, bestPath } = analyzePaths(valves, startingValve, maxTurns)
   const bestFlowSinglePlayer = bestPath[bestPath.length - 1].currentTotalFlow
-  const minFlowToConsider = bestFlowSinglePlayer * 0.5
+  const minFlowToConsider = bestFlowSinglePlayer * 0.25
 
   logger.log('make paths...')
   const timer1 = performance.now()
@@ -113,11 +113,12 @@ function findBestPairing(
     .filter(
       path =>
         // assume no player visits the full amount of vaults as for the single player
-        path.length < bestPath.length - 1 &&
-        // assume each player visits at least 2 valves
-        path.length >= 2 &&
-        // assume individual paths are in the top 50%
-        path[path.length - 1].currentTotalFlow >= minFlowToConsider
+        // path.length < bestPath.length - 1 &&
+        // assume each player visits at least 1 valve
+        path.length >= 1
+      // &&
+      // assume individual paths are in the top 75%
+      // path[path.length - 1].currentTotalFlow >= minFlowToConsider
     )
     .reduce(
       (result, path) => [
@@ -142,6 +143,7 @@ function findBestPairing(
   for (let i = 0; i < paths.length; i++) {
     const actionPath = paths[i]
     const valvesString = actionPath.valveNames.join(';')
+    let bestOtherFlow = 0
 
     // compare against reversed order, since short paths match with long ones,
     // and vice versa
@@ -150,28 +152,28 @@ function findBestPairing(
       const otherValvesString = otherActionPath.valveNames.join(';')
 
       if (
+        // if cache hit
+        visitedCache[valvesString]?.[otherValvesString] ||
+        visitedCache[otherValvesString]?.[valvesString] ||
+        // if other path is not the best so far
+        // todo: this leads to wrong results somehow
+        otherActionPath.totalFlow <= bestOtherFlow ||
+        // if overlapping paths
         otherActionPath.valveNames.some(name =>
           actionPath.valveNames.includes(name)
-        ) ||
-        otherActionPath.valveNames.length === 0
+        )
       ) {
         continue
       }
 
-      if (
-        visitedCache[valvesString]?.[otherValvesString] ||
-        visitedCache[otherValvesString]?.[valvesString]
-      ) {
-        continue
-      }
       if (!(valvesString in visitedCache)) {
         visitedCache[valvesString] = {}
       }
       else if (!visitedCache[valvesString][otherValvesString]) {
-        // skip if there were already longer matches
+        // // skip if there were already longer matches
         // const keys = Object.keys(visitedCache[valvesString])
-        // for (let i = 0; i < keys.length; i++) {
-        //   const str = keys[i]
+        // for (let k = 0; k < keys.length; k++) {
+        //   const str = keys[k]
         //   if (str.startsWith(otherValvesString)) {
         //     continue
         //   }
@@ -189,6 +191,8 @@ function findBestPairing(
         actions: [actionPath, otherActionPath],
         totalFlow: actionPath.totalFlow + otherActionPath.totalFlow,
       }
+      bestOtherFlow = otherActionPath.totalFlow
+
       pairings.push(pairing)
     }
   }
@@ -196,6 +200,8 @@ function findBestPairing(
   const timer3 = performance.now()
   console.log('done combining')
   console.log(`Time so far: ${formatTimeDuration(timer1, timer3)}\n`)
+
+  console.log(pairings.sort((a, b) => b.totalFlow - a.totalFlow))
 
   const bestPairing = pairings.sort((a, b) => b.totalFlow - a.totalFlow)[0]
   return bestPairing
