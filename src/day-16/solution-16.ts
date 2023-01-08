@@ -140,16 +140,17 @@ function findBestPairing(
   const visitedCache: Record<string, any> = {}
 
   const pairings: Pairing[] = []
+  let bestFlow = 0
   for (let i = 0; i < paths.length; i++) {
     const actionPath = paths[i]
     const valvesString = actionPath.valveNames.join(';')
-    let bestOtherFlow = 0
 
     // compare against reversed order, since short paths match with long ones,
     // and vice versa
     for (let j = paths.length - 1; j >= 0; j--) {
       const otherActionPath = paths[j]
       const otherValvesString = otherActionPath.valveNames.join(';')
+      const newTotalFlow = actionPath.totalFlow + otherActionPath.totalFlow
 
       if (
         // if cache hit
@@ -157,7 +158,7 @@ function findBestPairing(
         visitedCache[otherValvesString]?.[valvesString] ||
         // if other path is not the best so far
         // todo: this leads to wrong results somehow
-        otherActionPath.totalFlow <= bestOtherFlow ||
+        // newTotalFlow <= bestFlow ||
         // if overlapping paths
         otherActionPath.valveNames.some(name =>
           actionPath.valveNames.includes(name)
@@ -187,15 +188,18 @@ function findBestPairing(
         visitedCache[otherValvesString][valvesString] = true
       }
 
+      bestFlow = newTotalFlow
       const pairing: Pairing = {
         actions: [actionPath, otherActionPath],
-        totalFlow: actionPath.totalFlow + otherActionPath.totalFlow,
+        totalFlow: newTotalFlow,
       }
-      bestOtherFlow = otherActionPath.totalFlow
 
       pairings.push(pairing)
     }
   }
+
+  console.log('bestflow:')
+  console.log(bestFlow)
 
   const timer3 = performance.now()
   console.log('done combining')
