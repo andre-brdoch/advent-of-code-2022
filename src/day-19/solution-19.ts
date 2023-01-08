@@ -44,6 +44,52 @@ export default async function solution(input: string): Promise<Solution19> {
   return { answer1: 0 }
 }
 
+function getNextPossibleBuyTurns(
+  blueprint: Blueprint,
+  currentTurn: Turn
+): Turn[] {
+  const currentRobots = currentTurn.finalRobots
+  const output = getOutput(currentRobots)
+  const nextTurns: Turn[] = (Object.keys(blueprint.robots) as Material[])
+    .map(material => blueprint.robots[material])
+    .map(robot => {
+      if (robot.costs.some(([costName]) => output[costName] === 0)) {
+        // not purchasable with current robots
+        return null
+      }
+      let turnsToWait = 0
+      let newStock: MaterialAmounts | undefined = undefined
+      while (true) {
+        turnsToWait += 1
+
+        if (turnsToWait + currentTurn.number > MAX_TURNS) {
+          return null
+        }
+
+        newStock = sumMaterialAmounts(
+          newStock ?? currentTurn.finalStock,
+          output
+        )
+
+        const costsAreCovered = robot.costs.every(
+          ([costMaterial, costAmount]) =>
+            (newStock as MaterialAmounts)[costMaterial] >= costAmount
+        )
+        if (costsAreCovered) break
+      }
+
+      return {
+        finalRobots: [...currentRobots, createRobot(robot.material)],
+        finalStock: newStock,
+        buy: robot,
+        number: currentTurn.number + turnsToWait,
+      }
+    })
+    // filter out null
+    .flatMap(robot => (robot !== null ? [robot] : []))
+  return nextTurns
+}
+
 function getOutput(robots: Robot[], turns = 1): MaterialAmounts {
   const start: Record<Material, number> = {
     ore: 0,
@@ -55,6 +101,19 @@ function getOutput(robots: Robot[], turns = 1): MaterialAmounts {
     result[robot.material] += turns
     return result
   }, start)
+}
+
+function sumMaterialAmounts(
+  a: MaterialAmounts,
+  b: MaterialAmounts
+): MaterialAmounts {
+  return (Object.keys(a) as Material[]).reduce(
+    (result, material) => ({
+      ...result,
+      [material]: a[material] + b[material],
+    }),
+    {} as MaterialAmounts
+  )
 }
 
 function countRobotsByMaterial(robots: Robot[], material: Material): number {
