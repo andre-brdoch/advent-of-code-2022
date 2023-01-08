@@ -6,11 +6,13 @@ import {
   Robot,
   RobotBlueprint,
   Blueprint,
+  OutputByMinute,
 } from './types'
 
 const logger = new Logger()
 
 const START_ROBOTS = [createRobot('ore')]
+const MAX_TURNS = 24
 
 export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
@@ -20,12 +22,14 @@ export default async function solution(input: string): Promise<Solution19> {
   const output = getOutput(robots)
   logger.log('\nOutput:')
   logger.log(output)
+  logger.log('\nOutput in 3 turns:')
+  logger.log(getOutput(robots, 3))
 
   logger.log('\n')
   return { answer1: 0 }
 }
 
-function getOutput(robots: Robot[]): any {
+function getOutput(robots: Robot[], turns = 1): OutputByMinute {
   const start: Record<Material, number> = {
     ore: 0,
     clay: 0,
@@ -33,9 +37,8 @@ function getOutput(robots: Robot[]): any {
     geode: 0,
   }
   return robots.reduce((result, robot) => {
-    result[robot.material] += 1
+    result[robot.material] += turns
     return result
-    ////
   }, start)
 }
 
