@@ -1,18 +1,52 @@
-import type { Solution19, Material, Cost, Robot, Blueprint } from './types'
+import { Logger } from '../utils/Logger.js'
+import {
+  Solution19,
+  Material,
+  Cost,
+  Robot,
+  RobotBlueprint,
+  Blueprint,
+} from './types'
+
+const logger = new Logger()
+
+const START_ROBOTS = [createRobot('ore')]
 
 export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
-  console.log(bps)
   console.log(bps[0].robots.ore)
   console.log(bps[0].robots.geode)
+  const robots = [...START_ROBOTS]
+  const output = getOutput(robots)
+  logger.log('\nOutput:')
+  logger.log(output)
 
+  logger.log('\n')
   return { answer1: 0 }
+}
+
+function getOutput(robots: Robot[]): any {
+  const start: Record<Material, number> = {
+    ore: 0,
+    clay: 0,
+    obsidian: 0,
+    geode: 0,
+  }
+  return robots.reduce((result, robot) => {
+    result[robot.material] += 1
+    return result
+    ////
+  }, start)
+}
+
+function createRobot(material: Material): Robot {
+  return { material }
 }
 
 function parseBlueprints(input: string): Blueprint[] {
   return input.split('\n').map(line => {
     const [name, robotInfos] = line.split(': ')
-    const robots: Record<Material, Robot> = robotInfos
+    const robots: Record<Material, RobotBlueprint> = robotInfos
       // 'Blueprint 1: Each ore robot costs 4 ore. Each obsidian robot costs 3 ore and 14 clay.'
       .split('. ')
       // "Each obsidian robot costs 3 ore and 14 clay"
@@ -27,12 +61,12 @@ function parseBlueprints(input: string): Blueprint[] {
           const [costStr, material] = str.split(' ') as [string, Material]
           return [material, Number(costStr)]
         })
-        const robot: Robot = { material: targetMaterial, costs }
+        const robot: RobotBlueprint = { material: targetMaterial, costs }
         return {
           ...result,
           [targetMaterial]: robot,
         }
-      }, {} as Record<Material, Robot>)
+      }, {} as Record<Material, RobotBlueprint>)
     const bp: Blueprint = {
       name,
       robots,
