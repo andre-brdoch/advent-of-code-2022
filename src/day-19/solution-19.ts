@@ -100,16 +100,18 @@ function stringifyTurn(turn: Turn): string {
 
 function parseBlueprints(input: string): Blueprint[] {
   return input.split('\n').map(line => {
-    const [name, robotInfos] = line.split(': ')
+    const [name, robotInfos] = line.split(':')
     const robots: Record<Material, RobotBlueprint> = robotInfos
       // 'Blueprint 1: Each ore robot costs 4 ore. Each obsidian robot costs 3 ore and 14 clay.'
-      .split('. ')
-      // "Each obsidian robot costs 3 ore and 14 clay"
+      .split('.')
+      // remove empty
+      .filter(str => str)
+      // " Each obsidian robot costs 3 ore and 14 clay"
       .reduce((result, robotInfo) => {
         const [intro, costsString] = robotInfo.split(' costs ')
-        // "Each ore robot" -> "ore"
+        // " Each ore robot" -> "ore"
         const targetMaterial = intro
-          .replace(/^Each /, '')
+          .replace(/^ Each /, '')
           .replace(/ robot$/, '') as Material
         // "costs 3 ore and 14 clay" -> [['ore', 3], ['clay', 14]]
         const costs: Cost[] = costsString.split(' and ').map(str => {
