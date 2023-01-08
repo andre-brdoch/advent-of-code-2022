@@ -1,22 +1,10 @@
-interface Solution19 {
-  answer1: number
-}
-type Material = 'ore' | 'clay' | 'obsidian' | 'geode'
-type Cost = [Material, number]
-interface Robot {
-  material: Material
-  costs: Cost[]
-}
-interface Blueprint {
-  name: string
-  robots: Record<Material, Robot>
-}
+import type { Solution19, Material, Cost, Robot, Blueprint } from './types'
 
 export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
   console.log(bps)
   console.log(bps[0].robots.ore)
-  console.log(bps[0].robots.obsidian)
+  console.log(bps[0].robots.geode)
 
   return { answer1: 0 }
 }
