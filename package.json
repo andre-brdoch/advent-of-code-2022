@@ -4,8 +4,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "day": "ts-node --project tsconfig.json src/index.ts",
-    "watch-day": "nodemon --exec \"ts-node --project tsconfig.json src/index.ts\" -e .ts,.js",
+    "day": "export NODE_OPTIONS=--max_old_space_size=8192 && ts-node --project tsconfig.json src/index.ts",
+    "watch-day": "export NODE_OPTIONS=--max_old_space_size=8192 && nodemon --exec \"ts-node --project tsconfig.json src/index.ts\" -e .ts,.js",
     "lint": "eslint . --ext .js,.ts --ignore-path ./.gitignore"
   },
   "repository": {
