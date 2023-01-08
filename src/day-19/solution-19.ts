@@ -6,7 +6,9 @@ import {
   Robot,
   RobotBlueprint,
   Blueprint,
-  OutputByMinute,
+  MaterialAmounts,
+  Turn,
+  Sequence,
 } from './types'
 
 const logger = new Logger()
@@ -25,11 +27,24 @@ export default async function solution(input: string): Promise<Solution19> {
   logger.log('\nOutput in 3 turns:')
   logger.log(getOutput(robots, 3))
 
+  const turn: Turn = {
+    number: 2,
+    finalRobots: [createRobot('ore'), createRobot('clay')],
+    buy: bps[0].robots.clay,
+    finalStock: {
+      ore: 3,
+      clay: 3,
+      obsidian: 0,
+      geode: 0,
+    },
+  }
+  logger.log(stringifyTurn(turn))
+
   logger.log('\n')
   return { answer1: 0 }
 }
 
-function getOutput(robots: Robot[], turns = 1): OutputByMinute {
+function getOutput(robots: Robot[], turns = 1): MaterialAmounts {
   const start: Record<Material, number> = {
     ore: 0,
     clay: 0,
@@ -42,8 +57,45 @@ function getOutput(robots: Robot[], turns = 1): OutputByMinute {
   }, start)
 }
 
+function countRobotsByMaterial(robots: Robot[], material: Material): number {
+  return robots.filter(robot => robot.material === material).length
+}
+
 function createRobot(material: Material): Robot {
   return { material }
+}
+
+function stringifyTurn(turn: Turn): string {
+  const { finalRobots, finalStock, buy, number } = turn
+  let str = `\n== Minute ${number} ==`
+  if (buy) {
+    str += `\nSpends ${buy.costs
+      .map(([material, amount]) => `${amount} ${material}`)
+      .join(' and ')} to start building a ${buy.material} robot.`
+  }
+  ;(Object.keys(finalStock) as Material[]).forEach(material => {
+    let amount = countRobotsByMaterial(finalRobots, material)
+    if (material === buy?.material) amount -= 1
+    const hasRobots = amount > 0
+    const hasMaterial = finalStock[material] > 0
+    if (hasRobots || hasMaterial) str += '\n'
+    if (hasRobots) {
+      str += `${amount} ${material} robot${amount === 1 ? '' : 's'} collect${
+        amount === 1 ? 's' : ''
+      } ${amount} ${material}; `
+    }
+    if (hasMaterial) {
+      str += `You now have ${finalStock[material]} ${material}.`
+    }
+  })
+  if (buy) {
+    str += `\nThe new ${buy.material} robot is ready; `
+    str += `You now have ${countRobotsByMaterial(
+      finalRobots,
+      buy.material
+    )} of them.`
+  }
+  return str
 }
 
 function parseBlueprints(input: string): Blueprint[] {

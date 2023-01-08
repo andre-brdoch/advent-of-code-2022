@@ -13,4 +13,11 @@ export interface Blueprint {
   name: string
   robots: Record<Material, RobotBlueprint>
 }
-export type OutputByMinute = Record<Material, number>
+export type MaterialAmounts = Record<Material, number>
+export interface Turn {
+  finalRobots: Robot[]
+  finalStock: MaterialAmounts
+  buy?: RobotBlueprint
+  number: number
+}
+export type Sequence = Turn[]
