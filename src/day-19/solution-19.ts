@@ -9,41 +9,111 @@ import {
   MaterialAmounts,
   Turn,
   Sequence,
+  CameFrom,
 } from './types'
 
 const logger = new Logger()
 
 const START_ROBOTS = [createRobot('ore')]
+const MATERIAL_TO_MAXIMIZE = 'geode'
 const MAX_TURNS = 24
 
 export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
-  console.log(bps[0].robots.ore)
-  console.log(bps[0].robots.geode)
+  // console.log(bps[0].robots.ore)
+  // console.log(bps[0].robots.geode)
   const robots = [...START_ROBOTS]
-  const output = getOutput(robots)
-  logger.log('\nOutput:')
-  logger.log(output)
-  logger.log('\nOutput in 3 turns:')
-  logger.log(getOutput(robots, 3))
+  // const output = getOutput(robots)
+  // logger.log('\nOutput:')
+  // logger.log(output)
+  // logger.log('\nOutput in 3 turns:')
+  // logger.log(getOutput(robots, 3))
 
-  const turn: Turn = {
-    number: 2,
-    finalRobots: [createRobot('ore'), createRobot('clay')],
-    buy: bps[0].robots.clay,
-    finalStock: {
-      ore: 3,
-      clay: 3,
-      obsidian: 0,
-      geode: 0,
-    },
-  }
-  logger.log(stringifyTurn(turn))
+  // const turn: Turn = {
+  //   number: 0,
+  //   finalRobots: [
+  //     createRobot('ore'),
+  //     // createRobot('clay'),
+  //     // createRobot('obsidian'),
+  //     // createRobot('obsidian'),
+  //   ],
+  //   // buy: bps[0].robots.clay,
+  //   finalStock: {
+  //     ore: 1,
+  //     clay: 1,
+  //     obsidian: 0,
+  //     geode: 0,
+  //   },
+  // }
+  // logger.log(stringifyTurn(turn))
+  // const next = getNextPossibleBuyTurns(bps[0], turn)
+  // logger.log('\n Next options:')
+  // logger.log(next)
+
+  // const id = turnToId(turn)
+  // logger.log(id)
+  // logger.log(idToTurn(bps[0], id))
+
+  const sequence = findBestSequence(bps[0], robots)
+  logger.log('\nBest sequence:')
+  logger.log(sequence)
 
   logger.log('\n')
   return { answer1: 0 }
 }
 
+function findBestSequence(
+  blueprint: Blueprint,
+  startingRobots: Robot[]
+): Sequence {
+  const frontier = new PriorityQueue<Turn>()
+  const firstTurn: Turn = {
+    finalRobots: startingRobots,
+    finalStock: getOutput(startingRobots),
+    number: 1,
+  }
+  const firstTurnId = turnToId(firstTurn)
+  frontier.add(firstTurn, 0)
+  const cameFrom: CameFrom = {
+    [firstTurnId]: null,
+  }
+  // tracks amount of collected resources which is being maximized
+  const collectedSoFar: { [turnId: string]: number } = {
+    [firstTurnId]: 0,
+  }
+
+  let max = 0
+  let bestSequence: Sequence = []
+
+  while (!frontier.empty()) {
+    const current = frontier.get() as Turn
+    const currentId = turnToId(current)
+    console.log(currentId)
+
+    const nextOptions = getNextPossibleBuyTurns(blueprint, current)
+
+    const amount = current?.finalStock?.[MATERIAL_TO_MAXIMIZE]
+    if (amount && amount > max) {
+      max = amount
+      bestSequence = buildPath(blueprint, cameFrom, currentId)
+    }
+
+    nextOptions.forEach(next => {
+      const nextId = turnToId(next)
+      // TODO: get actual amount
+      // const NEW_AMOUNT = 0
+      if (!(nextId in cameFrom)) {
+        cameFrom[nextId] = current
+        // collectedSoFar[nextId] = NEW_AMOUNT
+        frontier.add(next, 0)
+      }
+    })
+  }
+
+  return bestSequence
+}
+
+// TODO: refactor using the same newStock loop for all robots
 function getNextPossibleBuyTurns(
   blueprint: Blueprint,
   currentTurn: Turn
@@ -62,7 +132,8 @@ function getNextPossibleBuyTurns(
       while (true) {
         turnsToWait += 1
 
-        if (turnsToWait + currentTurn.number > MAX_TURNS) {
+        const isTooLate = turnsToWait + currentTurn.number > MAX_TURNS
+        if (isTooLate) {
           return null
         }
 
@@ -75,7 +146,10 @@ function getNextPossibleBuyTurns(
           ([costMaterial, costAmount]) =>
             (newStock as MaterialAmounts)[costMaterial] >= costAmount
         )
-        if (costsAreCovered) break
+        if (costsAreCovered) {
+          newStock = applyCostsToMaterialAmounts(newStock, robot.costs)
+          break
+        }
       }
 
       return {
@@ -88,6 +162,22 @@ function getNextPossibleBuyTurns(
     // filter out null
     .flatMap(robot => (robot !== null ? [robot] : []))
   return nextTurns
+}
+
+function buildPath(
+  blueprint: Blueprint,
+  cameFrom: CameFrom,
+  lastTurnId: string
+): Sequence {
+  const path: Sequence = [idToTurn(blueprint, lastTurnId)]
+  let currentId: string | null = lastTurnId
+  while (true) {
+    const prevTurn = cameFrom[currentId]
+    if (prevTurn === null) break
+    currentId = turnToId(prevTurn)
+    path.push(prevTurn)
+  }
+  return path.reverse()
 }
 
 function getOutput(robots: Robot[], turns = 1): MaterialAmounts {
@@ -116,8 +206,54 @@ function sumMaterialAmounts(
   )
 }
 
+function applyCostsToMaterialAmounts(
+  materialAmounts: MaterialAmounts,
+  costs: Cost[]
+): MaterialAmounts {
+  const result = { ...materialAmounts }
+  costs.forEach(([costMaterial, costAmount]) => {
+    result[costMaterial] -= costAmount
+  })
+  return result
+}
+
 function countRobotsByMaterial(robots: Robot[], material: Material): number {
   return robots.filter(robot => robot.material === material).length
+}
+
+/** Creates a unique string ID from a given turn */
+function turnToId(turn: Turn): string {
+  const robots = turn.finalRobots.map(robot => robot.material).join(',')
+  const stock = (Object.keys(turn.finalStock) as Material[])
+    .reduce(
+      (result, material) => [
+        ...result,
+        `${material}=${turn.finalStock[material]}`,
+      ],
+      [] as string[]
+    )
+    .join(',')
+  const buy = turn.buy?.material ?? 'null'
+  return [turn.number, robots, stock, buy].join(';')
+}
+
+/** Converts a turn ID back to a turn object */
+function idToTurn(blueprint: Blueprint, id: string): Turn {
+  const [numStr, robotsStr, stockStr, buyStr] = id.split(';')
+  const number = Number(numStr)
+  const finalRobots = (robotsStr.split(',') as Material[]).map(createRobot)
+  const finalStock = stockStr.split(',').reduce((result, materialPair) => {
+    const [material, amountStr] = materialPair.split('=')
+    return {
+      ...result,
+      [material]: Number(amountStr),
+    }
+  }, {} as MaterialAmounts)
+  const result: Turn = { number, finalRobots, finalStock }
+  if (buyStr !== 'null') {
+    result.buy = blueprint.robots[buyStr as Material]
+  }
+  return result
 }
 
 function createRobot(material: Material): Robot {
@@ -189,4 +325,31 @@ function parseBlueprints(input: string): Blueprint[] {
     }
     return bp
   })
+}
+
+class PriorityQueue<T> {
+  private items: {
+    item: T
+    priority: number
+  }[]
+
+  constructor() {
+    this.items = []
+  }
+
+  public add(item: T, priority: number) {
+    this.items.push({ item, priority })
+  }
+
+  public get() {
+    if (this.empty()) return null
+    const highestPrio = this.items.sort((a, b) => b.priority - a.priority)[0]
+    const i = this.items.indexOf(highestPrio)
+    this.items.splice(i, 1)
+    return highestPrio.item
+  }
+
+  public empty() {
+    return this.items.length === 0
+  }
 }

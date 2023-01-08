@@ -21,3 +21,6 @@ export interface Turn {
   number: number
 }
 export type Sequence = Turn[]
+export interface CameFrom {
+  [turnId: string]: Turn | null
+}
