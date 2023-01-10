@@ -16,22 +16,28 @@ import {
 const logger = new Logger()
 
 const START_ROBOTS = [createRobot('ore')]
-const MATERIAL_TO_MAXIMIZE = 'geode'
 const MAX_TURNS = 24
+
+const MATERIALS_PRIORITIZED: Material[] = ['geode', 'obsidian', 'clay', 'ore']
 
 export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
   const robots = [...START_ROBOTS]
 
-  const turn: Turn = {
+  const sequence = findBestSequence(bps[0], robots)
+  logger.log(sequence.map(stringifyTurn).join('\n'))
+
+  logger.log('\n')
+  return { answer1: 0 }
+}
+
+function findBestSequence(
+  blueprint: Blueprint,
+  startingRobots: Robot[]
+): Sequence {
+  const startingTurn: Turn = {
     number: 0,
-    finalRobots: [
-      createRobot('ore'),
-      // createRobot('clay'),
-      // createRobot('obsidian'),
-      // createRobot('obsidian'),
-    ],
-    // buy: bps[0].robots.clay,
+    finalRobots: startingRobots,
     finalStock: {
       ore: 0,
       clay: 0,
@@ -39,13 +45,36 @@ export default async function solution(input: string): Promise<Solution19> {
       geode: 0,
     },
   }
+  let currentTurnNumber = 0
+  const robotTypes = new Set(startingRobots.map(robot => robot.material))
+  const totalSequence: Sequence = [startingTurn]
+  // one at a time, find the shortest path to the next level material:
+  while (currentTurnNumber < MAX_TURNS) {
+    let nextMaterial = MATERIALS_PRIORITIZED.slice()
+      .reverse()
+      .find(material => !robotTypes.has(material)) as Material | undefined
 
-  const sequence = findShortestSequenceTo(bps[0], 'obsidian', turn)
+    // if all robots exist at least once, concentrate on highest value one:
+    if (nextMaterial === undefined) {
+      const highestValue = MATERIALS_PRIORITIZED[0]
+      nextMaterial = highestValue
+    }
 
-  logger.log(sequence.map(stringifyTurn).join('\n'))
+    const sequence = findShortestSequenceTo(
+      blueprint,
+      nextMaterial,
+      totalSequence[totalSequence.length - 1]
+    )
+    sequence.forEach(turn => {
+      if (!turn.buy) return
+      robotTypes.add(turn.buy.material)
+    })
+    currentTurnNumber = sequence[sequence.length - 1].number
+    // dont re-add previously last turn
+    totalSequence.push(...sequence.slice(1))
+  }
 
-  logger.log('\n')
-  return { answer1: 0 }
+  return totalSequence.slice(1)
 }
 
 function findShortestSequenceTo(
@@ -70,7 +99,11 @@ function findShortestSequenceTo(
   while (!frontier.empty()) {
     const currentTurn = frontier.get() as Turn
 
-    if (currentTurn.buy?.material === targetMaterial) {
+    if (
+      currentTurn.buy?.material === targetMaterial &&
+      // prevent early exit if starting robot type equals the target's one
+      Object.keys(cameFrom).length > 1
+    ) {
       bestLastTurn = currentTurn
       break
     }
@@ -86,9 +119,6 @@ function findShortestSequenceTo(
       }
     })
   }
-
-  logger.log('best last turn:')
-  logger.log(bestLastTurn)
 
   if (bestLastTurn === undefined) {
     throw new Error('Could not determine turn')
