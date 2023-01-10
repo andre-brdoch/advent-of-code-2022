@@ -81,6 +81,8 @@ function findShortestSequenceTo(
     [lastTurnId]: lastTurn.number,
   }
 
+  // TODO: right now it over prioritizes time over producing geodes
+
   while (!frontier.empty()) {
     const currentTurn = frontier.get() as Turn
 
@@ -171,8 +173,10 @@ function getNextPossibleBuyTurns(
         return null
       }
       let turnsToWait = 0
-      let newStock: MaterialAmounts | undefined = undefined
-      while (true) {
+      let newStock: MaterialAmounts = { ...currentTurn.finalStock }
+      let costsAreCovered = false
+
+      while (!costsAreCovered) {
         turnsToWait += 1
 
         const isTooLate = turnsToWait + currentTurn.number > MAX_TURNS
@@ -180,20 +184,14 @@ function getNextPossibleBuyTurns(
           return null
         }
 
-        newStock = sumMaterialAmounts(
-          newStock ?? currentTurn.finalStock,
-          output
-        )
-
-        const costsAreCovered = robot.costs.every(
+        costsAreCovered = robot.costs.every(
           ([costMaterial, costAmount]) =>
             (newStock as MaterialAmounts)[costMaterial] >= costAmount
         )
-        if (costsAreCovered) {
-          newStock = applyCostsToMaterialAmounts(newStock, robot.costs)
-          break
-        }
+
+        newStock = sumMaterialAmounts(newStock, output)
       }
+      newStock = applyCostsToMaterialAmounts(newStock, robot.costs)
 
       return {
         finalRobots: [...currentRobots, createRobot(robot.material)],
