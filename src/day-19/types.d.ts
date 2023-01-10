@@ -10,7 +10,7 @@ export interface RobotBlueprint extends Robot {
   costs: Cost[]
 }
 export interface Blueprint {
-  name: string
+  id: number
   robots: Record<Material, RobotBlueprint>
 }
 export type MaterialAmounts = Record<Material, number>

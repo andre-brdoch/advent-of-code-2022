@@ -24,11 +24,32 @@ export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
   const robots = [...START_ROBOTS]
 
-  const sequence = findBestSequence(bps[0], robots)
-  logger.log(sequence.map(stringifyTurn).join('\n'))
+  const a = getQualityLevel(bps[0], robots)
+  console.log(bps[1])
+
+  const b = getQualityLevel(bps[1], robots)
 
   logger.log('\n')
   return { answer1: 0 }
+}
+
+function getQualityLevel(
+  blueprint: Blueprint,
+  startingRobots: Robot[]
+): number {
+  const sequence = findBestSequence(blueprint, startingRobots)
+  const amount =
+    sequence[sequence.length - 1].finalStock[MATERIALS_PRIORITIZED[0]]
+
+  const qualityLevel = amount * blueprint.id
+
+  logger.log(`The best sequence for blueprint ${blueprint.id} is:`)
+  logger.log(sequence.map(stringifyTurn).join('\n'))
+  logger.log(
+    `\nThe quality level of blueprint ${blueprint.id} is: ${qualityLevel}`
+  )
+
+  return qualityLevel
 }
 
 function findBestSequence(
@@ -286,6 +307,8 @@ function stringifyTurn(turn: Turn): string {
 function parseBlueprints(input: string): Blueprint[] {
   return input.split('\n').map(line => {
     const [name, robotInfos] = line.split(':')
+    // 'Blueprint 1' -> 1
+    const id = Number(name.split(' ')[1])
     const robots: Record<Material, RobotBlueprint> = robotInfos
       // 'Blueprint 1: Each ore robot costs 4 ore. Each obsidian robot costs 3 ore and 14 clay.'
       .split('.')
@@ -310,7 +333,7 @@ function parseBlueprints(input: string): Blueprint[] {
         }
       }, {} as Record<Material, RobotBlueprint>)
     const bp: Blueprint = {
-      name,
+      id,
       robots,
     }
     return bp
