@@ -40,7 +40,7 @@ function getQualityLevel(
   blueprint: Blueprint,
   startingRobots: Robot[]
 ): number {
-  const buySequence = findBestSequence(blueprint, startingRobots)
+  const buySequence = findBestBuySequence(blueprint, startingRobots)
   const sequence = addNonBuyTurnsToSequence(buySequence)
   const amount =
     sequence[sequence.length - 1].finalStock[MATERIALS_PRIORITIZED[0]]
@@ -56,7 +56,7 @@ function getQualityLevel(
   return qualityLevel
 }
 
-function findBestSequence(
+function findBestBuySequence(
   blueprint: Blueprint,
   startingRobots: Robot[]
 ): Sequence {
@@ -80,7 +80,7 @@ function findBestSequence(
       nextMaterial = highestValue
     }
 
-    const sequence = findShortestSequenceTo(
+    const sequence = findShortestBuySequenceTo(
       blueprint,
       nextMaterial,
       totalSequence[totalSequence.length - 1]
@@ -88,7 +88,6 @@ function findBestSequence(
     if (sequence === null) {
       break
     }
-    console.log(sequence)
 
     sequence.forEach(turn => {
       if (!turn.buy) return
@@ -102,7 +101,7 @@ function findBestSequence(
   return totalSequence
 }
 
-function findShortestSequenceTo(
+function findShortestBuySequenceTo(
   blueprint: Blueprint,
   targetMaterial: Material,
   prevTurn: Turn
@@ -128,8 +127,6 @@ function findShortestSequenceTo(
       Object.keys(cameFrom).length > 1
     ) {
       bestLastTurn = currentTurn
-      console.log(bestLastTurn)
-
       break
     }
 
@@ -159,9 +156,6 @@ function addNonBuyTurnsToSequence(sequence: Sequence): Sequence {
   for (let i = 1; i <= MAX_TURNS; i++) {
     const buyTurn = sequence.find(turn => turn.number === i)
     if (buyTurn) {
-      console.log('found buy turn:')
-      console.log(buyTurn)
-
       result.push(buyTurn)
     }
     else {
