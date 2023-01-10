@@ -24,10 +24,13 @@ export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
   const robots = [...START_ROBOTS]
 
-  const a = getQualityLevel(bps[0], robots)
-  console.log(bps[1])
+  // const a = getQualityLevel(bps[0], robots)
+  // console.log(bps[1].robots.ore.costs)
+  // console.log(bps[1].robots.clay.costs)
+  // console.log(bps[1].robots.obsidian.costs)
+  // console.log(bps[1].robots.geode.costs)
 
-  const b = getQualityLevel(bps[1], robots)
+  const b = getQualityLevel(bps[0], robots)
 
   logger.log('\n')
   return { answer1: 0 }
@@ -37,7 +40,8 @@ function getQualityLevel(
   blueprint: Blueprint,
   startingRobots: Robot[]
 ): number {
-  const sequence = findBestSequence(blueprint, startingRobots)
+  const buySequence = findBestSequence(blueprint, startingRobots)
+  const sequence = addNonBuyTurnsToSequence(buySequence)
   const amount =
     sequence[sequence.length - 1].finalStock[MATERIALS_PRIORITIZED[0]]
 
@@ -57,14 +61,9 @@ function findBestSequence(
   startingRobots: Robot[]
 ): Sequence {
   const startingTurn: Turn = {
-    number: 0,
+    number: 1,
     finalRobots: startingRobots,
-    finalStock: {
-      ore: 0,
-      clay: 0,
-      obsidian: 0,
-      geode: 0,
-    },
+    finalStock: getOutput(startingRobots),
   }
   let currentTurnNumber = 0
   const robotTypes = new Set(startingRobots.map(robot => robot.material))
@@ -86,23 +85,28 @@ function findBestSequence(
       nextMaterial,
       totalSequence[totalSequence.length - 1]
     )
+    if (sequence === null) {
+      break
+    }
+    console.log(sequence)
+
     sequence.forEach(turn => {
       if (!turn.buy) return
       robotTypes.add(turn.buy.material)
     })
-    currentTurnNumber = sequence[sequence.length - 1].number
     // dont re-add previously last turn
     totalSequence.push(...sequence.slice(1))
+    currentTurnNumber = totalSequence[sequence.length - 1].number
   }
 
-  return totalSequence.slice(1)
+  return totalSequence
 }
 
 function findShortestSequenceTo(
   blueprint: Blueprint,
   targetMaterial: Material,
   prevTurn: Turn
-): Sequence {
+): Sequence | null {
   const frontier = new PriorityQueue<Turn>()
   const prevTurnId = turnToState(prevTurn)
   frontier.add(prevTurn, 0)
@@ -112,8 +116,6 @@ function findShortestSequenceTo(
   const costSoFar: CostSoFar = {
     [prevTurnId]: prevTurn.number,
   }
-
-  // TODO: right now it over prioritizes time over producing geodes
 
   let bestLastTurn: Turn | undefined = undefined
 
@@ -126,6 +128,8 @@ function findShortestSequenceTo(
       Object.keys(cameFrom).length > 1
     ) {
       bestLastTurn = currentTurn
+      console.log(bestLastTurn)
+
       break
     }
 
@@ -142,12 +146,36 @@ function findShortestSequenceTo(
   }
 
   if (bestLastTurn === undefined) {
-    throw new Error('Could not determine turn')
+    return null
   }
 
-  const sequence = buildPath(cameFrom, bestLastTurn)
+  const sequence = buildSequence(cameFrom, bestLastTurn)
 
   return sequence
+}
+
+function addNonBuyTurnsToSequence(sequence: Sequence): Sequence {
+  const result = []
+  for (let i = 1; i <= MAX_TURNS; i++) {
+    const buyTurn = sequence.find(turn => turn.number === i)
+    if (buyTurn) {
+      console.log('found buy turn:')
+      console.log(buyTurn)
+
+      result.push(buyTurn)
+    }
+    else {
+      const lastTurn = result[result.length - 1]
+      const output = getOutput(lastTurn.finalRobots)
+      const newTurn: Turn = {
+        finalRobots: lastTurn.finalRobots,
+        finalStock: sumMaterialAmounts(lastTurn.finalStock, output),
+        number: i,
+      }
+      result.push(newTurn)
+    }
+  }
+  return result
 }
 
 // TODO: refactor using the same newStock loop for all robots
@@ -171,7 +199,7 @@ function getNextPossibleBuyTurns(
       while (!costsAreCovered) {
         turnsToWait += 1
 
-        const isTooLate = turnsToWait + currentTurn.number > MAX_TURNS
+        const isTooLate = turnsToWait + currentTurn.number > MAX_TURNS - 1
         if (isTooLate) {
           return null
         }
@@ -197,17 +225,17 @@ function getNextPossibleBuyTurns(
   return nextTurns
 }
 
-function buildPath(cameFrom: CameFrom, lastTurn: Turn): Sequence {
+function buildSequence(cameFrom: CameFrom, lastTurn: Turn): Sequence {
   const lastTurnId = turnToState(lastTurn)
-  const path: Sequence = [lastTurn]
+  const sequence: Sequence = [lastTurn]
   let currentId: string | null = lastTurnId
   while (true) {
     const prevTurn = cameFrom[currentId]
     if (prevTurn === null) break
     currentId = turnToState(prevTurn)
-    path.push(prevTurn)
+    sequence.push(prevTurn)
   }
-  return path.reverse()
+  return sequence.reverse()
 }
 
 function getOutput(robots: Robot[], turns = 1): MaterialAmounts {
