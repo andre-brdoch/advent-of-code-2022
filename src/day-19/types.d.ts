@@ -24,3 +24,6 @@ export type Sequence = Turn[]
 export interface CameFrom {
   [turnId: string]: Turn | null
 }
+export interface CostSoFar {
+  [turnId: string]: number
+}

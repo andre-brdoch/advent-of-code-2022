@@ -10,6 +10,7 @@ import {
   Turn,
   Sequence,
   CameFrom,
+  CostSoFar,
 } from './types'
 
 const logger = new Logger()
@@ -20,14 +21,7 @@ const MAX_TURNS = 24
 
 export default async function solution(input: string): Promise<Solution19> {
   const bps = parseBlueprints(input)
-  // console.log(bps[0].robots.ore)
-  // console.log(bps[0].robots.geode)
   const robots = [...START_ROBOTS]
-  // const output = getOutput(robots)
-  // logger.log('\nOutput:')
-  // logger.log(output)
-  // logger.log('\nOutput in 3 turns:')
-  // logger.log(getOutput(robots, 3))
 
   const turn: Turn = {
     number: 0,
@@ -46,21 +40,9 @@ export default async function solution(input: string): Promise<Solution19> {
     },
   }
 
-  const s = findShortestSequenceTo(bps[0], 'geode', turn)
-  console.log(s)
+  const sequence = findShortestSequenceTo(bps[0], 'obsidian', turn)
 
-  // logger.log(stringifyTurn(turn))
-  // const next = getNextPossibleBuyTurns(bps[0], turn)
-  // logger.log('\n Next options:')
-  // logger.log(next)
-
-  // const id = turnToId(turn)
-  // logger.log(id)
-  // logger.log(idToTurn(bps[0], id))
-
-  // const sequence = findBestSequence(bps[0], robots)
-  // logger.log('\nBest sequence:')
-  // logger.log(sequence)
+  logger.log(sequence.map(stringifyTurn).join('\n'))
 
   logger.log('\n')
   return { answer1: 0 }
@@ -69,26 +51,27 @@ export default async function solution(input: string): Promise<Solution19> {
 function findShortestSequenceTo(
   blueprint: Blueprint,
   targetMaterial: Material,
-  lastTurn: Turn
+  prevTurn: Turn
 ): Sequence {
   const frontier = new PriorityQueue<Turn>()
-  const lastTurnId = turnToState(lastTurn)
-  frontier.add(lastTurn, 0)
+  const prevTurnId = turnToState(prevTurn)
+  frontier.add(prevTurn, 0)
   const cameFrom: CameFrom = {
-    [lastTurnId]: null,
+    [prevTurnId]: null,
   }
-  const costSoFar: { [turnId: string]: number } = {
-    [lastTurnId]: lastTurn.number,
+  const costSoFar: CostSoFar = {
+    [prevTurnId]: prevTurn.number,
   }
 
   // TODO: right now it over prioritizes time over producing geodes
+
+  let bestLastTurn: Turn | undefined = undefined
 
   while (!frontier.empty()) {
     const currentTurn = frontier.get() as Turn
 
     if (currentTurn.buy?.material === targetMaterial) {
-      console.log('found shortest path to', targetMaterial)
-      console.log(currentTurn)
+      bestLastTurn = currentTurn
       break
     }
 
@@ -104,58 +87,16 @@ function findShortestSequenceTo(
     })
   }
 
-  return []
-}
+  logger.log('best last turn:')
+  logger.log(bestLastTurn)
 
-function findBestSequence(
-  blueprint: Blueprint,
-  startingRobots: Robot[]
-): Sequence {
-  const frontier = new PriorityQueue<Turn>()
-  const firstTurn: Turn = {
-    finalRobots: startingRobots,
-    finalStock: getOutput(startingRobots),
-    number: 1,
-  }
-  const firstTurnId = turnToId2(firstTurn)
-  frontier.add(firstTurn, 0)
-  const cameFrom: CameFrom = {
-    [firstTurnId]: null,
-  }
-  // tracks amount of collected resources which is being maximized
-  const collectedSoFar: { [turnId: string]: number } = {
-    [firstTurnId]: 0,
+  if (bestLastTurn === undefined) {
+    throw new Error('Could not determine turn')
   }
 
-  let max = 0
-  let bestSequence: Sequence = []
+  const sequence = buildPath(cameFrom, bestLastTurn)
 
-  while (!frontier.empty()) {
-    const current = frontier.get() as Turn
-    const currentId = turnToId2(current)
-    console.log(currentId)
-
-    const nextOptions = getNextPossibleBuyTurns(blueprint, current)
-
-    const amount = current?.finalStock?.[MATERIAL_TO_MAXIMIZE]
-    if (amount && amount > max) {
-      max = amount
-      bestSequence = buildPath(blueprint, cameFrom, currentId)
-    }
-
-    nextOptions.forEach(next => {
-      const nextId = turnToId2(next)
-      // TODO: get actual amount
-      // const NEW_AMOUNT = 0
-      if (!(nextId in cameFrom)) {
-        cameFrom[nextId] = current
-        // collectedSoFar[nextId] = NEW_AMOUNT
-        frontier.add(next, 0)
-      }
-    })
-  }
-
-  return bestSequence
+  return sequence
 }
 
 // TODO: refactor using the same newStock loop for all robots
@@ -205,17 +146,14 @@ function getNextPossibleBuyTurns(
   return nextTurns
 }
 
-function buildPath(
-  blueprint: Blueprint,
-  cameFrom: CameFrom,
-  lastTurnId: string
-): Sequence {
-  const path: Sequence = [idToTurn(blueprint, lastTurnId)]
+function buildPath(cameFrom: CameFrom, lastTurn: Turn): Sequence {
+  const lastTurnId = turnToState(lastTurn)
+  const path: Sequence = [lastTurn]
   let currentId: string | null = lastTurnId
   while (true) {
     const prevTurn = cameFrom[currentId]
     if (prevTurn === null) break
-    currentId = turnToId2(prevTurn)
+    currentId = turnToState(prevTurn)
     path.push(prevTurn)
   }
   return path.reverse()
@@ -262,6 +200,7 @@ function countRobotsByMaterial(robots: Robot[], material: Material): number {
   return robots.filter(robot => robot.material === material).length
 }
 
+/** Creates unique ID from a given turn */
 function turnToState(turn: Turn): string {
   const robots = turn.finalRobots.map(robot => robot.material).join(',')
   const stock = (Object.keys(turn.finalStock) as Material[])
@@ -275,41 +214,6 @@ function turnToState(turn: Turn): string {
     .join(',')
   const buy = turn.buy?.material ?? 'null'
   return [robots, stock, buy].join(';')
-}
-
-/** Creates a unique string ID from a given turn */
-function turnToId2(turn: Turn): string {
-  const robots = turn.finalRobots.map(robot => robot.material).join(',')
-  const stock = (Object.keys(turn.finalStock) as Material[])
-    .reduce(
-      (result, material) => [
-        ...result,
-        `${material}=${turn.finalStock[material]}`,
-      ],
-      [] as string[]
-    )
-    .join(',')
-  const buy = turn.buy?.material ?? 'null'
-  return [turn.number, robots, stock, buy].join(';')
-}
-
-/** Converts a turn ID back to a turn object */
-function idToTurn(blueprint: Blueprint, id: string): Turn {
-  const [numStr, robotsStr, stockStr, buyStr] = id.split(';')
-  const number = Number(numStr)
-  const finalRobots = (robotsStr.split(',') as Material[]).map(createRobot)
-  const finalStock = stockStr.split(',').reduce((result, materialPair) => {
-    const [material, amountStr] = materialPair.split('=')
-    return {
-      ...result,
-      [material]: Number(amountStr),
-    }
-  }, {} as MaterialAmounts)
-  const result: Turn = { number, finalRobots, finalStock }
-  if (buyStr !== 'null') {
-    result.buy = blueprint.robots[buyStr as Material]
-  }
-  return result
 }
 
 function createRobot(material: Material): Robot {
