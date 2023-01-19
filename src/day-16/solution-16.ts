@@ -100,20 +100,16 @@ function findBestPairing(
   startingValve: ValveAnalyzed,
   maxTurns: number
 ): Pairing {
-  const { allPaths, bestPath } = analyzePaths(valves, startingValve, maxTurns)
-  // const bestFlowSinglePlayer = bestPath[bestPath.length - 1].currentTotalFlow
-  // const minFlowToConsider = bestFlowSinglePlayer * 0.25
+  const { allPaths } = analyzePaths(valves, startingValve, maxTurns)
 
   logger.log('make paths...')
   const timer1 = performance.now()
 
-  const bestFlow = 0
   const pairings: Pairing[] = []
   const pathsById: { [id: string]: SimpleActionPath[] } = {}
   const bestPathById: { [id: string]: SimpleActionPath } = {}
   const pairedIds: { [id: string]: string } = {}
 
-  // TODO: do this already when analyzing paths
   allPaths.forEach(path => {
     const valveNames = path
       // remove starting valve, since both players start at same point
@@ -167,10 +163,23 @@ function findBestPairing(
     const otherValves = valves.filter(valve =>
       otherValveNames.includes(valve.name)
     )
-    const withStart = [startingValve, ...otherValves]
-    const otherTotal =
-      bestPathById[otherId]?.totalFlow ??
-      getHighestFlowRate(withStart, startingValve, maxTurns, false, false)
+    const otherValvesWithStart = [startingValve, ...otherValves]
+    let otherTotal
+    if (otherId in bestPathById) {
+      otherTotal = bestPathById[otherId].totalFlow
+      // dont check the same pair again:
+      remainingKeys.splice(remainingKeys.indexOf(otherId), 1)
+    }
+    else {
+      otherTotal = getHighestFlowRate(
+        otherValvesWithStart,
+        startingValve,
+        maxTurns,
+        false,
+        false
+      )
+    }
+
     console.log(otherTotal)
     const action = {
       valveNames: valveNames,
@@ -184,19 +193,9 @@ function findBestPairing(
     pairings.push(pairing)
   })
 
-  // console.log(pathsById)
-  // console.log(Object.keys(pathsById).length)
-  // console.log(bestPathById)
-  // console.log(pairedIds)
-
-  console.log('bestflow:')
-  console.log(bestFlow)
-
   const timer3 = performance.now()
   console.log('done combining')
   console.log(`Time so far: ${formatTimeDuration(timer1, timer3)}\n`)
-
-  // console.log(pairings.sort((a, b) => b.totalFlow - a.totalFlow))
 
   const bestPairing = pairings.sort((a, b) => b.totalFlow - a.totalFlow)[0]
   return bestPairing
