@@ -43,9 +43,15 @@ const START_NAME = 'AA'
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution16> {
+  const timer1 = performance.now()
+
   const valves = parseValves(input)
   const answer1 = getAnswer1(valves)
   const answer2 = getAnswer2(valves)
+
+  const timer2 = performance.now()
+  console.log(`Solved in: ${formatTimeDuration(timer1, timer2)}\n`)
+
   return { answer1, answer2 }
 }
 
@@ -72,11 +78,12 @@ function getHighestFlowRate(
 ): number {
   let totalFlow
   let msg
+
   if (!withElephant) {
     const { bestPath } = analyzePaths(valves, startingValve, maxTurns)
     if (bestPath.length === 0) return 0
     totalFlow = bestPath[bestPath.length - 1].currentTotalFlow
-    msg = `Best path is ${bestPath
+    msg = `---- Single Player:\nBest path is ${bestPath
       .map(v => v.valveName)
       .join(' -> ')}, resulting in a total flow of ${totalFlow}.\n`
   }
@@ -84,11 +91,11 @@ function getHighestFlowRate(
     const bestPairing = findBestPairing(valves, startingValve, maxTurns)
     const [player, elephant] = bestPairing.actions
     totalFlow = bestPairing.totalFlow
-    msg = `Player visits ${player.valveNames.join(' -> ')} (${
-      player.totalFlow
-    }),\nElephant visits  ${elephant.valveNames.join(' -> ')}, (${
-      elephant.totalFlow
-    })\nTotal flow: ${bestPairing.totalFlow}\n`
+    msg = `---- Multi Player:\nPlayer visits ${player.valveNames.join(
+      ' -> '
+    )} (${player.totalFlow}),\nElephant visits  ${elephant.valveNames.join(
+      ' -> '
+    )}, (${elephant.totalFlow})\n`
   }
 
   if (log) logger.log(msg)
@@ -101,8 +108,6 @@ function findBestPairing(
   maxTurns: number
 ): Pairing {
   const { allPaths } = analyzePaths(valves, startingValve, maxTurns)
-
-  const timer1 = performance.now()
 
   const pairings: Pairing[] = []
   const pathsById: { [id: string]: SimpleActionPath[] } = {}
@@ -191,10 +196,6 @@ function findBestPairing(
     }
     pairings.push(pairing)
   })
-
-  const timer3 = performance.now()
-  console.log('done combining')
-  console.log(`Time so far: ${formatTimeDuration(timer1, timer3)}\n`)
 
   const bestPairing = pairings.sort((a, b) => b.totalFlow - a.totalFlow)[0]
   return bestPairing
