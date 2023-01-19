@@ -102,7 +102,6 @@ function findBestPairing(
 ): Pairing {
   const { allPaths } = analyzePaths(valves, startingValve, maxTurns)
 
-  logger.log('make paths...')
   const timer1 = performance.now()
 
   const pairings: Pairing[] = []
@@ -152,7 +151,6 @@ function findBestPairing(
   })
 
   const remainingKeys = Object.keys(pairedIds).filter(
-    // todo: update comment
     // assume every player visits at least 2 valves
     id => (id.match(/,/g) || []).length > 1
   )
@@ -171,6 +169,8 @@ function findBestPairing(
       remainingKeys.splice(remainingKeys.indexOf(otherId), 1)
     }
     else {
+      // this is very slow, takes ~100 seconds with production data.
+      // but one only has so much time for this (:
       otherTotal = getHighestFlowRate(
         otherValvesWithStart,
         startingValve,
@@ -180,7 +180,6 @@ function findBestPairing(
       )
     }
 
-    console.log(otherTotal)
     const action = {
       valveNames: valveNames,
       totalFlow: bestPathById[id].totalFlow,
@@ -224,7 +223,9 @@ function analyzePaths(
   let maxFlow = 0
   let bestPath: QueueState[] = []
 
-  const relevantValves = getRemaining(valves)
+  const relevantValves = valves.filter(
+    valve => typeof valve?.flowRate === 'number' && valve.flowRate > 0
+  )
 
   while (!frontier.empty()) {
     const current = frontier.get() as QueueState
@@ -287,16 +288,13 @@ function getDistances(startingValve: Valve): DistanceMap {
   // breath first search
   const frontier = [startingValve]
   const distances = { [startingValve.name]: 0 }
-  // @ts-ignore
-  let current
+  let current: Valve
 
   while (frontier.length) {
-    current = frontier.shift()
-    // @ts-ignore
+    current = frontier.shift() as Valve
     current.neighbors.forEach(next => {
       if (!(next.name in distances)) {
         frontier.push(next)
-        // @ts-ignore
         distances[next.name] = distances[current.name] + 1
       }
     })
@@ -309,11 +307,6 @@ function getByName<V extends { name: string }>(name: string, items: V[]): V {
   const result = items.find(item => item.name === name)
   if (!result) throw new Error(`Valve with name "${name}" does not exist.`)
   return result
-}
-
-function getRemaining<V>(valves: Array<V>): Array<V> {
-  // @ts-ignore
-  return valves.filter(valve => valve.flowRate > 0)
 }
 
 function stringifyState(queueState: QueueState): string {
