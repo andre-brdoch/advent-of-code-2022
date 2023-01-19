@@ -105,98 +105,46 @@ function findBestPairing(
   logger.log('make paths...')
   const timer1 = performance.now()
 
-  const pathsStartVal: SimpleActionPath[] = []
-  const paths = allPaths
-    .slice()
-    // Remove start valve
-    .map(path => path.slice(1))
-    .filter(
-      path =>
-        // assume no player visits the full amount of vaults as for the single player
-        // path.length < bestPath.length - 1 &&
-        // assume each player visits at least 1 valve
-        path.length >= 1
-      // &&
-      // assume individual paths are in the top 75%
-      // path[path.length - 1].currentTotalFlow >= minFlowToConsider
-    )
-    .reduce(
-      (result, path) => [
-        ...result,
-        {
-          valveNames: path.map(actionPath => actionPath.valveName),
-          totalFlow: path[path.length - 1].currentTotalFlow,
-        },
-      ],
-      pathsStartVal
-    )
-    .sort((a, b) => b.valveNames.length - a.valveNames.length)
-
-  const timer2 = performance.now()
-  console.log('so far, so good...')
-  console.log(`Time so far: ${formatTimeDuration(timer1, timer2)}\n`)
-
-  // todo: change any
-  const visitedCache: Record<string, any> = {}
-
+  const bestFlow = 0
   const pairings: Pairing[] = []
-  let bestFlow = 0
-  for (let i = 0; i < paths.length; i++) {
-    const actionPath = paths[i]
-    const valvesString = actionPath.valveNames.join(';')
+  const pathsById: { [id: string]: SimpleActionPath[] } = {}
+  const bestPathById: { [id: string]: SimpleActionPath } = {}
 
-    // compare against reversed order, since short paths match with long ones,
-    // and vice versa
-    for (let j = paths.length - 1; j >= 0; j--) {
-      const otherActionPath = paths[j]
-      const otherValvesString = otherActionPath.valveNames.join(';')
-      const newTotalFlow = actionPath.totalFlow + otherActionPath.totalFlow
+  // TODO: do this already when analyzing paths
+  allPaths.forEach(path => {
+    console.log(path)
+    const valveNames = path
+      // remove starting valve, since both players start at same point
+      .slice(1)
+      .map(({ valveName }) => valveName)
+    // create ID by sorting alphabetically
+    const id = valveNames.sort().join('')
 
-      if (
-        // if cache hit
-        visitedCache[valvesString]?.[otherValvesString] ||
-        visitedCache[otherValvesString]?.[valvesString] ||
-        // if other path is not the best so far
-        // todo: this leads to wrong results somehow
-        // newTotalFlow <= bestFlow ||
-        // if overlapping paths
-        otherActionPath.valveNames.some(name =>
-          actionPath.valveNames.includes(name)
-        )
-      ) {
-        continue
-      }
+    if (valveNames.length === 0) return
 
-      if (!(valvesString in visitedCache)) {
-        visitedCache[valvesString] = {}
-      }
-      else if (!visitedCache[valvesString][otherValvesString]) {
-        // // skip if there were already longer matches
-        // const keys = Object.keys(visitedCache[valvesString])
-        // for (let k = 0; k < keys.length; k++) {
-        //   const str = keys[k]
-        //   if (str.startsWith(otherValvesString)) {
-        //     continue
-        //   }
-        // }
-        visitedCache[valvesString][otherValvesString] = true
-      }
-      if (!(otherValvesString in visitedCache)) {
-        visitedCache[otherValvesString] = {}
-      }
-      else if (!visitedCache[otherValvesString][valvesString]) {
-        visitedCache[otherValvesString][valvesString] = true
-      }
-
-      bestFlow = newTotalFlow
-      const pairing: Pairing = {
-        actions: [actionPath, otherActionPath],
-        totalFlow: newTotalFlow,
-      }
-
-      pairings.push(pairing)
+    const item: SimpleActionPath = {
+      valveNames,
+      totalFlow: path[path.length - 1].currentTotalFlow,
     }
-  }
+
+    // group together paths with identical valves (but differing order) under the same cache key
+    if (!(id in pathsById)) {
+      pathsById[id] = [item]
+    }
+    else {
+      pathsById[id].push(item)
+    }
+  })
+
+  Object.keys(pathsById).forEach(id => {
+    bestPathById[id] = pathsById[id].sort(
+      (a, b) => b.totalFlow - a.totalFlow
+    )[0]
+  })
+
+  console.log(pathsById)
+  console.log(Object.keys(pathsById).length)
+  console.log(bestPathById)
 
   console.log('bestflow:')
   console.log(bestFlow)
@@ -205,7 +153,7 @@ function findBestPairing(
   console.log('done combining')
   console.log(`Time so far: ${formatTimeDuration(timer1, timer3)}\n`)
 
-  console.log(pairings.sort((a, b) => b.totalFlow - a.totalFlow))
+  // console.log(pairings.sort((a, b) => b.totalFlow - a.totalFlow))
 
   const bestPairing = pairings.sort((a, b) => b.totalFlow - a.totalFlow)[0]
   return bestPairing
