@@ -67,12 +67,14 @@ function getHighestFlowRate(
   valves: ValveAnalyzed[],
   startingValve: ValveAnalyzed,
   maxTurns: number,
-  withElephant = false
+  withElephant = false,
+  log = true
 ): number {
   let totalFlow
   let msg
   if (!withElephant) {
     const { bestPath } = analyzePaths(valves, startingValve, maxTurns)
+    if (bestPath.length === 0) return 0
     totalFlow = bestPath[bestPath.length - 1].currentTotalFlow
     msg = `Best path is ${bestPath
       .map(v => v.valveName)
@@ -89,7 +91,7 @@ function getHighestFlowRate(
     })\nTotal flow: ${bestPairing.totalFlow}\n`
   }
 
-  logger.log(msg)
+  if (log) logger.log(msg)
   return totalFlow
 }
 
@@ -99,8 +101,8 @@ function findBestPairing(
   maxTurns: number
 ): Pairing {
   const { allPaths, bestPath } = analyzePaths(valves, startingValve, maxTurns)
-  const bestFlowSinglePlayer = bestPath[bestPath.length - 1].currentTotalFlow
-  const minFlowToConsider = bestFlowSinglePlayer * 0.25
+  // const bestFlowSinglePlayer = bestPath[bestPath.length - 1].currentTotalFlow
+  // const minFlowToConsider = bestFlowSinglePlayer * 0.25
 
   logger.log('make paths...')
   const timer1 = performance.now()
@@ -109,16 +111,16 @@ function findBestPairing(
   const pairings: Pairing[] = []
   const pathsById: { [id: string]: SimpleActionPath[] } = {}
   const bestPathById: { [id: string]: SimpleActionPath } = {}
+  const pairedIds: { [id: string]: string } = {}
 
   // TODO: do this already when analyzing paths
   allPaths.forEach(path => {
-    console.log(path)
     const valveNames = path
       // remove starting valve, since both players start at same point
       .slice(1)
       .map(({ valveName }) => valveName)
     // create ID by sorting alphabetically
-    const id = valveNames.sort().join('')
+    const id = valveNames.sort().join(',')
 
     if (valveNames.length === 0) return
 
@@ -142,9 +144,50 @@ function findBestPairing(
     )[0]
   })
 
-  console.log(pathsById)
-  console.log(Object.keys(pathsById).length)
-  console.log(bestPathById)
+  const allValveNames = valves.map(({ name }) => name)
+  Object.keys(bestPathById).forEach(id => {
+    const names = id.split(',')
+    const otherId = allValveNames
+      .filter(name => !names.includes(name))
+      .sort()
+      .slice(1)
+      .join(',')
+    pairedIds[id] = otherId
+  })
+
+  const remainingKeys = Object.keys(pairedIds).filter(
+    // todo: update comment
+    // assume every player visits at least 2 valves
+    id => (id.match(/,/g) || []).length > 1
+  )
+  remainingKeys.forEach(id => {
+    const valveNames = id.split(',')
+    const otherId = pairedIds[id]
+    const otherValveNames = otherId.split(',')
+    const otherValves = valves.filter(valve =>
+      otherValveNames.includes(valve.name)
+    )
+    const withStart = [startingValve, ...otherValves]
+    const otherTotal =
+      bestPathById[otherId]?.totalFlow ??
+      getHighestFlowRate(withStart, startingValve, maxTurns, false, false)
+    console.log(otherTotal)
+    const action = {
+      valveNames: valveNames,
+      totalFlow: bestPathById[id].totalFlow,
+    }
+    const otherAction = { valveNames: otherValveNames, totalFlow: otherTotal }
+    const pairing: Pairing = {
+      actions: [action, otherAction],
+      totalFlow: action.totalFlow + otherAction.totalFlow,
+    }
+    pairings.push(pairing)
+  })
+
+  // console.log(pathsById)
+  // console.log(Object.keys(pathsById).length)
+  // console.log(bestPathById)
+  // console.log(pairedIds)
 
   console.log('bestflow:')
   console.log(bestFlow)
