@@ -70,8 +70,23 @@ function findBestSequence(
 
   while (frontier.length !== 0) {
     const currentTurn = frontier.shift() as Turn
-    // const nextTurns = getNextTurns()
+    console.log(turnToState(currentTurn))
+
+    const nextTurns = getNextTurns(blueprint, currentTurn, cameFrom)
+    nextTurns.forEach(nextTurn => {
+      frontier.push(nextTurn)
+      const nextTurnId = turnToState(nextTurn)
+      cameFrom[nextTurnId] = currentTurn
+    })
   }
+
+  const best = Object.keys(cameFrom)
+    .map(key => cameFrom[key])
+    .flatMap(turn => (turn !== null ? [turn] : []))
+    .sort((a, b) => b.finalStock.geode - a.finalStock.geode)[0]
+
+  console.log('WINNER:')
+  console.log(best.finalStock)
 
   return []
 }
