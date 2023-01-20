@@ -145,25 +145,41 @@ function getNextTurns(
 function pruneNextTurns(blueprint: Blueprint, nextTurns: Turn[]): Turn[] {
   // TODO: if waited last turn for a robot that was buyable, do not buy it this turn either
 
-  const prunedMaterials = []
+  const prunedMaterials: Material[] = []
   const prunedTurns = nextTurns.reduce((result, turn) => {
     const isWaiting = turn?.buy === undefined
 
     if (isWaiting) {
-      // dont wait if a robot of each material had been pruned
+      // dont wait if a robot of each material had been pruned (exep. highest prio):
       if (
         prunedMaterials.length > 0 &&
-        prunedMaterials.length >= nextTurns.length - 1
+        prunedMaterials.length >=
+          nextTurns.filter(
+            turn =>
+              turn?.buy !== undefined &&
+              turn?.buy?.material !== MATERIALS_PRIORITIZED[0]
+          ).length
       ) {
+        console.log(nextTurns.length)
+        console.log(prunedMaterials)
+
+        console.log('each had been pruned')
         return result
       }
-      // TODO: might not work if materials had been pruned
-      // dont wait if every robot can be built
-      if (result.length === MATERIALS_PRIORITIZED.length) {
+
+      console.log(nextTurns.length)
+
+      // dont wait if every robot can be built:
+      if (
+        nextTurns.filter(turn => turn.buy !== undefined).length ===
+        MATERIALS_PRIORITIZED.length
+      ) {
+        console.log('dont wait, can build every robot')
         return result
       }
     }
-    else {
+    // if buy turn for non-highest prio (we never prune highest prio material):
+    else if (!isWaiting && turn?.buy?.material !== MATERIALS_PRIORITIZED[0]) {
       const buyRobot = turn.buy as RobotBlueprint
       const { material } = buyRobot
       const existingRobotsOfType = turn.finalRobots.filter(
@@ -172,9 +188,9 @@ function pruneNextTurns(blueprint: Blueprint, nextTurns: Turn[]): Turn[] {
       const blueprintRobots = (Object.keys(blueprint.robots) as Material[]).map(
         key => blueprint.robots[key]
       )
-      // dont buy if current robots already produce every turn enough
-      // to pay for the most expensive cost
       if (
+        // dont buy if current robots already produce every turn enough
+        // to pay for the most expensive cost:
         blueprintRobots.every(
           bpRobot =>
             existingRobotsOfType.length >
