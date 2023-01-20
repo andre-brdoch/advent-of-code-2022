@@ -107,7 +107,7 @@ function getNextTurns(
   const possibleTurns = [...MATERIALS_PRIORITIZED, null]
     .map(action => {
       const nextTurn: Turn = {
-        finalRobots: [...oldRobots],
+        finalRobots: [...oldRobots.map(robot => ({ ...robot }))],
         finalStock: { ...oldStock },
         number: oldNumber + 1,
       }
@@ -130,7 +130,7 @@ function getNextTurns(
           return null
         }
         nextTurn.buy = blueprint.robots[material]
-        nextTurn.finalRobots = [...oldRobots, createRobot(material)]
+        nextTurn.finalRobots = [...nextTurn.finalRobots, createRobot(material)]
         nextTurn.finalStock = sumMaterialAmounts(nextTurn.finalStock, output)
       }
       return nextTurn
@@ -138,21 +138,26 @@ function getNextTurns(
     // filter out null
     .flatMap(turn => (turn !== null ? [turn] : []))
 
+  return pruneNextTurns(blueprint, possibleTurns)
+}
+
+/** Reduces the set of next possible turns by removing nonsensical options */
+function pruneNextTurns(blueprint: Blueprint, nextTurns: Turn[]): Turn[] {
   // TODO: if waited last turn for a robot that was buyable, do not buy it this turn either
 
   const prunedMaterials = []
-  const prunedTurns = possibleTurns.reduce((result, turn) => {
+  const prunedTurns = nextTurns.reduce((result, turn) => {
     const isWaiting = turn?.buy === undefined
 
     if (isWaiting) {
-      // TODO: unless it just started
-      // dont wait if no robot should be built anymore
+      // dont wait if a robot of each material had been pruned
       if (
         prunedMaterials.length > 0 &&
-        prunedMaterials.length >= possibleTurns.length - 1
+        prunedMaterials.length >= nextTurns.length - 1
       ) {
         return result
       }
+      // TODO: might not work if materials had been pruned
       // dont wait if every robot can be built
       if (result.length === MATERIALS_PRIORITIZED.length) {
         return result
@@ -172,13 +177,12 @@ function getNextTurns(
       if (
         blueprintRobots.every(
           bpRobot =>
-            existingRobotsOfType.length >=
+            existingRobotsOfType.length >
             (bpRobot.costs.find(
               ([costMaterial]) => costMaterial === material
             ) ?? [material, 0])[1]
         )
       ) {
-        console.log('too rich!')
         prunedMaterials.push(buyRobot.material)
         return result
       }
@@ -301,6 +305,10 @@ function stringifyTurn(turn: Turn): string {
     )} of them.`
   }
   return str
+}
+
+function formatTimeDuration(fromMs: number, toMs: number): string {
+  return `${Math.round((toMs - fromMs) / 1000)}s`
 }
 
 function parseBlueprints(input: string): Blueprint[] {
