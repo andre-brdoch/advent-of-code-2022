@@ -85,45 +85,92 @@ function getNextTurns(
     finalRobots: oldRobots,
     finalStock: oldStock,
   } = currentTurn
-  const possibleActions = [...MATERIALS_PRIORITIZED, null]
   const output = getOutput(oldRobots)
 
-  return (
-    possibleActions
-      // TODO: add pruning to remove senseless options
-      .map(action => {
-        const nextTurn: Turn = {
-          finalRobots: [...oldRobots],
-          finalStock: { ...oldStock },
-          number: oldNumber + 1,
-        }
-        if (action === null) {
-          // is waiting
-          nextTurn.finalStock = sumMaterialAmounts(oldStock, output)
-        }
-        else {
-          const material = action
-          // apply costs and add robot
-          const { costs } = blueprint.robots[material]
-          let tooExpensive = false
-          costs.forEach(([costMaterial, costAmount]) => {
-            nextTurn.finalStock[costMaterial] -= costAmount
-            if (nextTurn.finalStock[costMaterial] < 0) {
-              tooExpensive = true
-            }
-          })
-          if (tooExpensive) {
-            return null
+  const possibleTurns = [...MATERIALS_PRIORITIZED, null]
+    .map(action => {
+      const nextTurn: Turn = {
+        finalRobots: [...oldRobots],
+        finalStock: { ...oldStock },
+        number: oldNumber + 1,
+      }
+      if (action === null) {
+        // is waiting
+        nextTurn.finalStock = sumMaterialAmounts(oldStock, output)
+      }
+      else {
+        const material = action
+        // apply costs and add robot
+        const { costs } = blueprint.robots[material]
+        let tooExpensive = false
+        costs.forEach(([costMaterial, costAmount]) => {
+          nextTurn.finalStock[costMaterial] -= costAmount
+          if (nextTurn.finalStock[costMaterial] < 0) {
+            tooExpensive = true
           }
-          nextTurn.buy = blueprint.robots[material]
-          nextTurn.finalRobots = [...oldRobots, createRobot(material)]
-          nextTurn.finalStock = sumMaterialAmounts(nextTurn.finalStock, output)
+        })
+        if (tooExpensive) {
+          return null
         }
-        return nextTurn
-      })
-      // filter out null
-      .flatMap(turn => (turn !== null ? [turn] : []))
-  )
+        nextTurn.buy = blueprint.robots[material]
+        nextTurn.finalRobots = [...oldRobots, createRobot(material)]
+        nextTurn.finalStock = sumMaterialAmounts(nextTurn.finalStock, output)
+      }
+      return nextTurn
+    })
+    // filter out null
+    .flatMap(turn => (turn !== null ? [turn] : []))
+
+  // TODO: if waited last turn for a robot that was buyable, do not buy it this turn either
+
+  const prunedMaterials = []
+  const prunedTurns = possibleTurns.reduce((result, turn) => {
+    const isWaiting = turn?.buy === undefined
+
+    if (isWaiting) {
+      // TODO: unless it just started
+      // dont wait if no robot should be built anymore
+      if (
+        prunedMaterials.length > 0 &&
+        prunedMaterials.length >= possibleTurns.length - 1
+      ) {
+        return result
+      }
+      // dont wait if every robot can be built
+      if (result.length === MATERIALS_PRIORITIZED.length) {
+        return result
+      }
+    }
+    else {
+      const buyRobot = turn.buy as RobotBlueprint
+      const { material } = buyRobot
+      const existingRobotsOfType = turn.finalRobots.filter(
+        robot => robot.material === material
+      )
+      const blueprintRobots = (Object.keys(blueprint.robots) as Material[]).map(
+        key => blueprint.robots[key]
+      )
+      // dont buy if current robots already produce every turn enough
+      // to pay for the most expensive cost
+      if (
+        blueprintRobots.every(
+          bpRobot =>
+            existingRobotsOfType.length >=
+            (bpRobot.costs.find(
+              ([costMaterial]) => costMaterial === material
+            ) ?? [material, 0])[1]
+        )
+      ) {
+        console.log('too rich!')
+        prunedMaterials.push(buyRobot.material)
+        return result
+      }
+    }
+
+    return [...result, turn]
+  }, [] as Turn[])
+
+  return prunedTurns
 }
 
 function getQualityLevel(
