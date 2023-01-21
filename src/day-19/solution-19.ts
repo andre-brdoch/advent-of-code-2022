@@ -22,34 +22,14 @@ const MAX_TURNS = 24
 const MATERIALS_PRIORITIZED: Material[] = ['geode', 'obsidian', 'clay', 'ore']
 
 export default async function solution(input: string): Promise<Solution19> {
+  const timer1 = performance.now()
+
   const bps = parseBlueprints(input)
-  const robots = [...START_ROBOTS]
+  const sequence = findBestSequence(bps[0], START_ROBOTS)
 
-  const startingTurn: Turn = {
-    number: 1,
-    finalRobots: robots,
-    finalStock: getOutput(robots),
-  }
-  const turn2 = getNextTurns(bps[0], startingTurn, {})
-  console.log('next possible turns:')
-  console.log(turn2)
-  const turn3 = getNextTurns(bps[0], turn2[0], {})
-  console.log('next possible turns:')
-  console.log(turn3)
-  const turn4 = getNextTurns(bps[0], turn3[0], {})
-  console.log('next possible turns:')
-  console.log(turn4)
-  const turn5 = getNextTurns(bps[0], turn4[0], {})
-  console.log('next possible turns:')
-  console.log(turn5)
-
-  // const a = getQualityLevel(bps[0], robots)
-  // console.log(bps[1].robots.ore.costs)
-  // console.log(bps[1].robots.clay.costs)
-  // console.log(bps[1].robots.obsidian.costs)
-  // console.log(bps[1].robots.geode.costs)
-
-  // const b = getQualityLevel(bps[0], robots)
+  logger.log(stringifySequence(sequence))
+  const timer2 = performance.now()
+  console.log(`Done after ${formatTimeDuration(timer1, timer2)}`)
 
   logger.log('\n')
   return { answer1: 0 }
@@ -101,7 +81,7 @@ function findBestSequence(
   console.log('WINNER:')
   console.log(best.finalStock)
 
-  return []
+  return buildSequence(cameFrom, best)
 }
 function getNextTurns(
   blueprint: Blueprint,
@@ -114,7 +94,7 @@ function getNextTurns(
     finalRobots: oldRobots,
     finalStock: oldStock,
   } = currentTurn
-  if (oldNumber >= MAX_TURNS) return []
+  if (oldNumber > MAX_TURNS) return []
 
   const output = getOutput(oldRobots)
 
@@ -248,6 +228,19 @@ function pruneNextTurns(
   return prunedTurns
 }
 
+function buildSequence(cameFrom: CameFrom, lastTurn: Turn): Sequence {
+  const lastTurnId = turnToState(lastTurn)
+  const sequence: Sequence = [lastTurn]
+  let currentId: string | null = lastTurnId
+  while (true) {
+    const prevTurn = cameFrom[currentId]
+    if (prevTurn === null) break
+    currentId = turnToState(prevTurn)
+    sequence.push(prevTurn)
+  }
+  return sequence.reverse()
+}
+
 function getQualityLevel(
   blueprint: Blueprint,
   startingRobots: Robot[]
@@ -359,6 +352,10 @@ function stringifyTurn(turn: Turn): string {
     )} of them.`
   }
   return str
+}
+
+function stringifySequence(sequence: Sequence): string {
+  return sequence.map(stringifyTurn).join('\n')
 }
 
 function formatTimeDuration(fromMs: number, toMs: number): string {
