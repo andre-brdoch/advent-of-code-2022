@@ -10,6 +10,7 @@ import {
   Turn,
   Sequence,
   CameFrom,
+  NextOptionsCache,
   CostSoFar,
 } from './types'
 
@@ -67,16 +68,28 @@ function findBestSequence(
 
   const frontier = [startingTurn]
   const cameFrom: CameFrom = { [startTurnId]: null }
+  const nextOptionsCache: NextOptionsCache = {}
 
   while (frontier.length !== 0) {
     const currentTurn = frontier.shift() as Turn
+    const currentTurnId = turnToState(currentTurn)
+
     console.log(turnToState(currentTurn))
 
-    const nextTurns = getNextTurns(blueprint, currentTurn, cameFrom)
+    const nextTurns = getNextTurns(
+      blueprint,
+      currentTurn,
+      cameFrom,
+      nextOptionsCache
+    )
+    nextOptionsCache[currentTurnId] = nextTurns
+
     nextTurns.forEach(nextTurn => {
-      frontier.push(nextTurn)
       const nextTurnId = turnToState(nextTurn)
-      cameFrom[nextTurnId] = currentTurn
+      if (!(nextTurnId in nextOptionsCache)) {
+        cameFrom[nextTurnId] = currentTurn
+        frontier.push(nextTurn)
+      }
     })
   }
 
@@ -93,7 +106,8 @@ function findBestSequence(
 function getNextTurns(
   blueprint: Blueprint,
   currentTurn: Turn,
-  cameFrom: CameFrom
+  cameFrom: CameFrom,
+  nextOptionsCache: NextOptionsCache
 ): Turn[] {
   const {
     number: oldNumber,
@@ -138,11 +152,23 @@ function getNextTurns(
     // filter out null
     .flatMap(turn => (turn !== null ? [turn] : []))
 
-  return pruneNextTurns(blueprint, possibleTurns)
+  return pruneNextTurns(
+    blueprint,
+    possibleTurns,
+    currentTurn,
+    cameFrom,
+    nextOptionsCache
+  )
 }
 
 /** Reduces the set of next possible turns by removing nonsensical options */
-function pruneNextTurns(blueprint: Blueprint, nextTurns: Turn[]): Turn[] {
+function pruneNextTurns(
+  blueprint: Blueprint,
+  nextTurns: Turn[],
+  currentTurn: Turn,
+  cameFrom: CameFrom,
+  nextOptionsCache: NextOptionsCache
+): Turn[] {
   // TODO: if waited last turn for a robot that was buyable, do not buy it this turn either
 
   const prunedMaterials: Material[] = []
@@ -160,14 +186,9 @@ function pruneNextTurns(blueprint: Blueprint, nextTurns: Turn[]): Turn[] {
               turn?.buy?.material !== MATERIALS_PRIORITIZED[0]
           ).length
       ) {
-        console.log(nextTurns.length)
-        console.log(prunedMaterials)
-
         console.log('each had been pruned')
         return result
       }
-
-      console.log(nextTurns.length)
 
       // dont wait if every robot can be built:
       if (
@@ -188,6 +209,22 @@ function pruneNextTurns(blueprint: Blueprint, nextTurns: Turn[]): Turn[] {
       const blueprintRobots = (Object.keys(blueprint.robots) as Material[]).map(
         key => blueprint.robots[key]
       )
+
+      const currentTurnId = turnToState(currentTurn)
+      const prevTurn = cameFrom[currentTurnId]
+      const prevTurnId = prevTurn ? turnToState(prevTurn) : ''
+      const prevOptions = nextOptionsCache[prevTurnId] ?? []
+      // dont buy if it was possible last turn, but instead it waited:
+      if (
+        prevTurn !== null &&
+        prevTurn.buy === undefined &&
+        prevOptions.some(turn => turn.buy?.material === material)
+      ) {
+        console.log('useless wait')
+        prunedMaterials.push(buyRobot.material)
+        return result
+      }
+
       if (
         // dont buy if current robots already produce every turn enough
         // to pay for the most expensive cost:
@@ -199,6 +236,7 @@ function pruneNextTurns(blueprint: Blueprint, nextTurns: Turn[]): Turn[] {
             ) ?? [material, 0])[1]
         )
       ) {
+        console.log('rich bitch')
         prunedMaterials.push(buyRobot.material)
         return result
       }
@@ -283,7 +321,7 @@ function turnToState(turn: Turn): string {
     )
     .join(',')
   const buy = turn.buy?.material ?? 'null'
-  return [robots, stock, buy].join(';')
+  return [turn.number, robots, stock, buy].join(';')
 }
 
 function createRobot(material: Material): Robot {

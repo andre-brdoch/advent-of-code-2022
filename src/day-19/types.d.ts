@@ -24,6 +24,9 @@ export type Sequence = Turn[]
 export interface CameFrom {
   [turnId: string]: Turn | null
 }
+export interface NextOptionsCache {
+  [turnId: string]: Turn[]
+}
 export interface CostSoFar {
   [turnId: string]: number
 }
