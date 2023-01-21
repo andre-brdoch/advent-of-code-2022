@@ -29,7 +29,7 @@ export default async function solution(input: string): Promise<Solution19> {
 
   // const nextTurns = getNextTurns(bp[])
 
-  const sequence = findBestSequence(bps[1], START_ROBOTS)
+  const sequence = findBestSequence(bps[0], START_ROBOTS)
   logger.log(stringifySequence(sequence))
 
   // const answer1 = getTotalQuality(bps, START_ROBOTS)
@@ -175,19 +175,6 @@ function pruneNextTurns(
   currentTurn: Turn,
   bestTurnYet: Turn | undefined
 ): Turn[] {
-  const prunedMaterials: Material[] = []
-
-  // building a robot has no effect in last turn, just wait:
-  if (currentTurn.number >= MAX_TURNS) {
-    return [{ ...currentTurn, buy: undefined }]
-  }
-  // in 2nd last turn, only building best material and waiting makes sense:
-  if (currentTurn.number === MAX_TURNS - 1) {
-    return nextTurns.filter(
-      turn => turn.buy === undefined || turn.buy?.material === BEST_MATERIAL
-    )
-  }
-
   // dont continue if it is impossible catch up with best turn so far,
   // assuming we add another robot of the best material every turn
   const remainingTurns = MAX_TURNS - currentTurn.number
@@ -214,14 +201,12 @@ function pruneNextTurns(
         key => blueprint.robots[key]
       )
 
-      // in the last few turns, only build robots that can
-      // possibly still lead to best material:
-      if (
-        MAX_TURNS - currentTurn.number <= MATERIALS_PRIORITIZED.length &&
-        MATERIALS_PRIORITIZED.indexOf(material) >
-          MAX_TURNS - currentTurn.number - 1
-      ) {
-        prunedMaterials.push(material)
+      // dont build robots in last turn
+      if (turn.number === MAX_TURNS) {
+        return result
+      }
+      // only build best material robots in 2nd and 3rd last turn
+      if (turn.number >= MAX_TURNS - 2 && material !== BEST_MATERIAL) {
         return result
       }
 
@@ -236,7 +221,6 @@ function pruneNextTurns(
             ) ?? [material, 0])[1]
         )
       ) {
-        prunedMaterials.push(material)
         return result
       }
     }
