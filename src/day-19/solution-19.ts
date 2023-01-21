@@ -182,11 +182,10 @@ function pruneNextTurns(
   const currentStock = currentTurn?.finalStock[BEST_MATERIAL] ?? 0
   const hypotheticalBest =
     currentStock +
-    getOutput(currentTurn.finalRobots)[BEST_MATERIAL] +
+    getOutput(currentTurn.finalRobots, remainingTurns)[BEST_MATERIAL] +
     Array.from(Array(remainingTurns)).reduce((result, _, i) => result + i, 0)
-
   if (hypotheticalBest <= currentBest) {
-    return nextTurns.filter(turn => turn.buy === undefined)
+    return []
   }
 
   const prunedTurns = nextTurns.reduce((result, turn) => {
