@@ -149,8 +149,10 @@ function pruneNextTurns(
   cameFrom: CameFrom,
   nextOptionsCache: NextOptionsCache
 ): Turn[] {
-  // TODO: if waited last turn for a robot that was buyable, do not buy it this turn either
-
+  const currentTurnId = turnToState(currentTurn)
+  const prevTurn = cameFrom[currentTurnId]
+  const prevTurnId = prevTurn ? turnToState(prevTurn) : ''
+  const prevOptions = nextOptionsCache[prevTurnId] ?? []
   const prunedMaterials: Material[] = []
   const prunedTurns = nextTurns.reduce((result, turn) => {
     const isWaiting = turn?.buy === undefined
@@ -159,14 +161,8 @@ function pruneNextTurns(
       // dont wait if a robot of each material had been pruned (exep. highest prio):
       if (
         prunedMaterials.length > 0 &&
-        prunedMaterials.length >=
-          nextTurns.filter(
-            turn =>
-              turn?.buy !== undefined &&
-              turn?.buy?.material !== MATERIALS_PRIORITIZED[0]
-          ).length
+        prunedMaterials.length >= MATERIALS_PRIORITIZED.slice(1).length
       ) {
-        console.log('each had been pruned')
         return result
       }
 
@@ -175,7 +171,6 @@ function pruneNextTurns(
         nextTurns.filter(turn => turn.buy !== undefined).length ===
         MATERIALS_PRIORITIZED.length
       ) {
-        console.log('dont wait, can build every robot')
         return result
       }
     }
@@ -190,17 +185,12 @@ function pruneNextTurns(
         key => blueprint.robots[key]
       )
 
-      const currentTurnId = turnToState(currentTurn)
-      const prevTurn = cameFrom[currentTurnId]
-      const prevTurnId = prevTurn ? turnToState(prevTurn) : ''
-      const prevOptions = nextOptionsCache[prevTurnId] ?? []
       // dont buy if it was possible last turn, but instead it waited:
       if (
         prevTurn !== null &&
         prevTurn.buy === undefined &&
         prevOptions.some(turn => turn.buy?.material === material)
       ) {
-        console.log('useless wait')
         prunedMaterials.push(buyRobot.material)
         return result
       }
@@ -216,7 +206,6 @@ function pruneNextTurns(
             ) ?? [material, 0])[1]
         )
       ) {
-        console.log('rich bitch')
         prunedMaterials.push(buyRobot.material)
         return result
       }
