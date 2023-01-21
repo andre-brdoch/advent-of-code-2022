@@ -94,7 +94,7 @@ function getNextTurns(
     finalRobots: oldRobots,
     finalStock: oldStock,
   } = currentTurn
-  if (oldNumber > MAX_TURNS) return []
+  if (oldNumber >= MAX_TURNS) return []
 
   const output = getOutput(oldRobots)
 
