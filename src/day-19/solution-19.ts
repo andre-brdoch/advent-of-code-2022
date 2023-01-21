@@ -29,11 +29,18 @@ export default async function solution(input: string): Promise<Solution19> {
   const sequence = findBestSequence(bps[1], START_ROBOTS)
 
   logger.log(stringifySequence(sequence))
+
+  // const answer1 = getTotalQuality(bps, START_ROBOTS)
+  const answer1 = 0
+
+  // const q = getQualityLevel(bps[0], START_ROBOTS)
+  // console.log(q)
+
   const timer2 = performance.now()
   console.log(`Done after ${formatTimeDuration(timer1, timer2)}`)
 
   logger.log('\n')
-  return { answer1: 0 }
+  return { answer1 }
 }
 
 function findBestSequence(
@@ -56,7 +63,7 @@ function findBestSequence(
     const currentTurn = frontier.pop() as Turn
     const currentTurnId = turnToState(currentTurn)
 
-    console.log(turnToState(currentTurn))
+    // console.log(turnToState(currentTurn))
 
     if (
       bestTurn === undefined ||
@@ -278,6 +285,15 @@ function buildSequence(cameFrom: CameFrom, lastTurn: Turn): Sequence {
     sequence.push(prevTurn)
   }
   return sequence.reverse()
+}
+
+function getTotalQuality(
+  blueprints: Blueprint[],
+  startingRobots: Robot[]
+): number {
+  const qualities = blueprints.map(bp => getQualityLevel(bp, startingRobots))
+  console.log(qualities)
+  return qualities.reduce((result, num) => result + num, 0)
 }
 
 function getQualityLevel(
