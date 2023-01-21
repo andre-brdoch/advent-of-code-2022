@@ -26,22 +26,11 @@ export default async function solution(input: string): Promise<Solution19> {
   const timer1 = performance.now()
 
   const bps = parseBlueprints(input)
-
-  // const nextTurns = getNextTurns(bp[])
-
-  const sequence = findBestSequence(bps[0], START_ROBOTS)
-  logger.log(stringifySequence(sequence))
-
-  // const answer1 = getTotalQuality(bps, START_ROBOTS)
-  const answer1 = 0
-
-  // const q = getQualityLevel(bps[0], START_ROBOTS)
-  // console.log(q)
+  const answer1 = getTotalQuality(bps, START_ROBOTS)
 
   const timer2 = performance.now()
-  console.log(`Done after ${formatTimeDuration(timer1, timer2)}`)
+  console.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
 
-  logger.log('\n')
   return { answer1 }
 }
 
