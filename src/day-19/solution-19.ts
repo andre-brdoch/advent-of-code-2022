@@ -26,8 +26,10 @@ export default async function solution(input: string): Promise<Solution19> {
   const timer1 = performance.now()
 
   const bps = parseBlueprints(input)
-  const sequence = findBestSequence(bps[1], START_ROBOTS)
 
+  // const nextTurns = getNextTurns(bp[])
+
+  const sequence = findBestSequence(bps[1], START_ROBOTS)
   logger.log(stringifySequence(sequence))
 
   // const answer1 = getTotalQuality(bps, START_ROBOTS)
@@ -72,13 +74,7 @@ function findBestSequence(
       bestTurn = currentTurn
     }
 
-    const nextTurns = getNextTurns(
-      blueprint,
-      currentTurn,
-      bestTurn,
-      cameFrom,
-      nextOptionsCache
-    )
+    const nextTurns = getNextTurns(blueprint, currentTurn, bestTurn)
     nextOptionsCache[currentTurnId] = nextTurns
 
     nextTurns.forEach(nextTurn => {
@@ -101,61 +97,75 @@ function findBestSequence(
 function getNextTurns(
   blueprint: Blueprint,
   currentTurn: Turn,
-  bestTurnYet: Turn | undefined,
-  cameFrom: CameFrom,
-  nextOptionsCache: NextOptionsCache
+  bestTurnYet: Turn | undefined
 ): Turn[] {
-  const {
-    number: oldNumber,
-    finalRobots: oldRobots,
-    finalStock: oldStock,
-  } = currentTurn
+  const { number: oldNumber, finalRobots: oldRobots } = currentTurn
   if (oldNumber >= MAX_TURNS) return []
 
   const output = getOutput(oldRobots)
 
-  const possibleTurns = [...MATERIALS_PRIORITIZED, null]
-    .map(action => {
-      const nextTurn: Turn = {
-        finalRobots: [...oldRobots.map(robot => ({ ...robot }))],
-        finalStock: { ...oldStock },
-        number: oldNumber + 1,
+  const possibleTurns = (Object.keys(blueprint.robots) as Material[])
+    .map(material => blueprint.robots[material])
+    .map(robot => {
+      if (robot.costs.some(([costName]) => output[costName] === 0)) {
+        // not purchasable with current robots
+        return null
       }
-      if (action === null) {
-        // is waiting
-        nextTurn.finalStock = sumMaterialAmounts(oldStock, output)
-      }
-      else {
-        const material = action
-        // apply costs and add robot
-        const { costs } = blueprint.robots[material]
-        let tooExpensive = false
-        costs.forEach(([costMaterial, costAmount]) => {
-          nextTurn.finalStock[costMaterial] -= costAmount
-          if (nextTurn.finalStock[costMaterial] < 0) {
-            tooExpensive = true
-          }
-        })
-        if (tooExpensive) {
+
+      let turnsToWait = 0
+      let newStock: MaterialAmounts = { ...currentTurn.finalStock }
+      let costsAreCovered = false
+
+      while (!costsAreCovered) {
+        turnsToWait += 1
+
+        const isTooLate = turnsToWait + currentTurn.number > MAX_TURNS - 1
+        if (isTooLate) {
           return null
         }
-        nextTurn.buy = blueprint.robots[material]
-        nextTurn.finalRobots = [...nextTurn.finalRobots, createRobot(material)]
-        nextTurn.finalStock = sumMaterialAmounts(nextTurn.finalStock, output)
+
+        costsAreCovered = robot.costs.every(
+          ([costMaterial, costAmount]) =>
+            (newStock as MaterialAmounts)[costMaterial] >= costAmount
+        )
+
+        newStock = sumMaterialAmounts(newStock, output)
       }
-      return nextTurn
+      newStock = applyCostsToMaterialAmounts(newStock, robot.costs)
+
+      return {
+        finalRobots: [...oldRobots, createRobot(robot.material)],
+        finalStock: newStock,
+        buy: robot,
+        number: currentTurn.number + turnsToWait,
+      }
     })
     // filter out null
     .flatMap(turn => (turn !== null ? [turn] : []))
 
-  return pruneNextTurns(
+  const pruned = pruneNextTurns(
     blueprint,
     possibleTurns,
     currentTurn,
-    bestTurnYet,
-    cameFrom,
-    nextOptionsCache
+    bestTurnYet
   )
+
+  // add final wait turn
+  if (pruned.length === 0 && currentTurn.number < MAX_TURNS) {
+    const { finalRobots, finalStock, number } = currentTurn
+    const newStock = sumMaterialAmounts(
+      finalStock,
+      getOutput(finalRobots, MAX_TURNS - number)
+    )
+    const finalTurn: Turn = {
+      finalRobots: finalRobots,
+      finalStock: newStock,
+      number: MAX_TURNS,
+    }
+    pruned.push(finalTurn)
+  }
+
+  return pruned
 }
 
 /** Reduces the set of next possible turns by removing nonsensical options */
@@ -163,14 +173,8 @@ function pruneNextTurns(
   blueprint: Blueprint,
   nextTurns: Turn[],
   currentTurn: Turn,
-  bestTurnYet: Turn | undefined,
-  cameFrom: CameFrom,
-  nextOptionsCache: NextOptionsCache
+  bestTurnYet: Turn | undefined
 ): Turn[] {
-  const currentTurnId = turnToState(currentTurn)
-  const prevTurn = cameFrom[currentTurnId]
-  const prevTurnId = prevTurn ? turnToState(prevTurn) : ''
-  const prevOptions = nextOptionsCache[prevTurnId] ?? []
   const prunedMaterials: Material[] = []
 
   // building a robot has no effect in last turn, just wait:
@@ -199,27 +203,8 @@ function pruneNextTurns(
   }
 
   const prunedTurns = nextTurns.reduce((result, turn) => {
-    const isWaiting = turn?.buy === undefined
-
-    if (isWaiting) {
-      // dont wait if a robot of each material had been pruned (exep. highest prio):
-      if (
-        prunedMaterials.length > 0 &&
-        prunedMaterials.length >= MATERIALS_PRIORITIZED.slice(1).length
-      ) {
-        return result
-      }
-
-      // dont wait if every robot can be built:
-      if (
-        nextTurns.filter(turn => turn.buy !== undefined).length ===
-        MATERIALS_PRIORITIZED.length
-      ) {
-        return result
-      }
-    }
     // if buy turn for non-highest prio (we never prune highest prio material):
-    else if (!isWaiting && turn?.buy?.material !== BEST_MATERIAL) {
+    if (turn?.buy?.material !== BEST_MATERIAL) {
       const buyRobot = turn.buy as RobotBlueprint
       const { material } = buyRobot
       const existingRobotsOfType = turn.finalRobots.filter(
@@ -237,18 +222,6 @@ function pruneNextTurns(
           MAX_TURNS - currentTurn.number - 1
       ) {
         prunedMaterials.push(material)
-        return result
-      }
-
-      // dont buy if it was possible last turn, but instead it waited:
-      if (
-        prevTurn !== null &&
-        prevTurn.buy === undefined &&
-        prevOptions.some(turn => turn.buy?.material === material)
-      ) {
-        prunedMaterials.push(material)
-        // console.log('useless wait\n')
-
         return result
       }
 
