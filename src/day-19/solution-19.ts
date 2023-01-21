@@ -51,7 +51,7 @@ function findBestSequence(
   const nextOptionsCache: NextOptionsCache = {}
 
   while (frontier.length !== 0) {
-    const currentTurn = frontier.shift() as Turn
+    const currentTurn = frontier.pop() as Turn
     const currentTurnId = turnToState(currentTurn)
 
     console.log(turnToState(currentTurn))
