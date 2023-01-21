@@ -160,6 +160,22 @@ function pruneNextTurns(
   const prevTurnId = prevTurn ? turnToState(prevTurn) : ''
   const prevOptions = nextOptionsCache[prevTurnId] ?? []
   const prunedMaterials: Material[] = []
+
+  // TODO: dont continue if it is impossible catch up with best turn so far
+
+  // building a robot has no effect in last turn, just wait:
+  if (currentTurn.number >= MAX_TURNS) {
+    return [{ ...currentTurn, buy: undefined }]
+  }
+  // in 2nd last turn, only building best material and waiting makes sense:
+  if (currentTurn.number === MAX_TURNS - 1) {
+    return nextTurns.filter(
+      turn =>
+        turn.buy === undefined ||
+        turn.buy?.material === MATERIALS_PRIORITIZED[0]
+    )
+  }
+
   const prunedTurns = nextTurns.reduce((result, turn) => {
     const isWaiting = turn?.buy === undefined
 
@@ -191,13 +207,26 @@ function pruneNextTurns(
         key => blueprint.robots[key]
       )
 
+      // in the last few turns, only build robots that can
+      // possibly still lead to best material:
+      if (
+        MAX_TURNS - currentTurn.number <= MATERIALS_PRIORITIZED.length &&
+        MATERIALS_PRIORITIZED.indexOf(material) >
+          MAX_TURNS - currentTurn.number - 1
+      ) {
+        prunedMaterials.push(material)
+        return result
+      }
+
       // dont buy if it was possible last turn, but instead it waited:
       if (
         prevTurn !== null &&
         prevTurn.buy === undefined &&
         prevOptions.some(turn => turn.buy?.material === material)
       ) {
-        prunedMaterials.push(buyRobot.material)
+        prunedMaterials.push(material)
+        // console.log('useless wait\n')
+
         return result
       }
 
@@ -212,7 +241,7 @@ function pruneNextTurns(
             ) ?? [material, 0])[1]
         )
       ) {
-        prunedMaterials.push(buyRobot.material)
+        prunedMaterials.push(material)
         return result
       }
     }
