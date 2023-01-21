@@ -17,7 +17,6 @@ import {
 const logger = new Logger()
 
 const START_ROBOTS = [createRobot('ore')]
-const MAX_TURNS = 24
 
 const MATERIALS_PRIORITIZED: Material[] = ['geode', 'obsidian', 'clay', 'ore']
 const BEST_MATERIAL = MATERIALS_PRIORITIZED[0]
@@ -26,7 +25,13 @@ export default async function solution(input: string): Promise<Solution19> {
   const timer1 = performance.now()
 
   const bps = parseBlueprints(input)
-  const answer1 = getTotalQuality(bps, START_ROBOTS)
+
+  const maxTurns = 24
+  const s = findBestSequence(bps[0], START_ROBOTS, maxTurns)
+  console.log(stringifySequence(s))
+
+  // const answer1 = getTotalQuality(bps, START_ROBOTS)
+  const answer1 = 0
 
   const timer2 = performance.now()
   console.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
@@ -36,7 +41,8 @@ export default async function solution(input: string): Promise<Solution19> {
 
 function findBestSequence(
   blueprint: Blueprint,
-  startingRobots: Robot[]
+  startingRobots: Robot[],
+  maxTurns: number
 ): Sequence {
   const startingTurn: Turn = {
     number: 1,
@@ -63,7 +69,7 @@ function findBestSequence(
       bestTurn = currentTurn
     }
 
-    const nextTurns = getNextTurns(blueprint, currentTurn, bestTurn)
+    const nextTurns = getNextTurns(blueprint, currentTurn, bestTurn, maxTurns)
     nextOptionsCache[currentTurnId] = nextTurns
 
     nextTurns.forEach(nextTurn => {
@@ -86,10 +92,11 @@ function findBestSequence(
 function getNextTurns(
   blueprint: Blueprint,
   currentTurn: Turn,
-  bestTurnYet: Turn | undefined
+  bestTurnYet: Turn | undefined,
+  maxTurns: number
 ): Turn[] {
   const { number: oldNumber, finalRobots: oldRobots } = currentTurn
-  if (oldNumber >= MAX_TURNS) return []
+  if (oldNumber >= maxTurns) return []
 
   const output = getOutput(oldRobots)
 
@@ -108,7 +115,7 @@ function getNextTurns(
       while (!costsAreCovered) {
         turnsToWait += 1
 
-        const isTooLate = turnsToWait + currentTurn.number > MAX_TURNS - 1
+        const isTooLate = turnsToWait + currentTurn.number > maxTurns - 1
         if (isTooLate) {
           return null
         }
@@ -136,20 +143,21 @@ function getNextTurns(
     blueprint,
     possibleTurns,
     currentTurn,
-    bestTurnYet
+    bestTurnYet,
+    maxTurns
   )
 
   // add final wait turn
-  if (pruned.length === 0 && currentTurn.number < MAX_TURNS) {
+  if (pruned.length === 0 && currentTurn.number < maxTurns) {
     const { finalRobots, finalStock, number } = currentTurn
     const newStock = sumMaterialAmounts(
       finalStock,
-      getOutput(finalRobots, MAX_TURNS - number)
+      getOutput(finalRobots, maxTurns - number)
     )
     const finalTurn: Turn = {
       finalRobots: finalRobots,
       finalStock: newStock,
-      number: MAX_TURNS,
+      number: maxTurns,
     }
     pruned.push(finalTurn)
   }
@@ -162,11 +170,12 @@ function pruneNextTurns(
   blueprint: Blueprint,
   nextTurns: Turn[],
   currentTurn: Turn,
-  bestTurnYet: Turn | undefined
+  bestTurnYet: Turn | undefined,
+  maxTurns: number
 ): Turn[] {
   // dont continue if it is impossible catch up with best turn so far,
   // assuming we add another robot of the best material every turn
-  const remainingTurns = MAX_TURNS - currentTurn.number
+  const remainingTurns = maxTurns - currentTurn.number
   const currentBest = bestTurnYet?.finalStock[BEST_MATERIAL] ?? 0
   const currentStock = currentTurn?.finalStock[BEST_MATERIAL] ?? 0
   const hypotheticalBest =
@@ -190,11 +199,11 @@ function pruneNextTurns(
       )
 
       // dont build robots in last turn
-      if (turn.number === MAX_TURNS) {
+      if (turn.number === maxTurns) {
         return result
       }
       // only build best material robots in 2nd and 3rd last turn
-      if (turn.number >= MAX_TURNS - 2 && material !== BEST_MATERIAL) {
+      if (turn.number >= maxTurns - 2 && material !== BEST_MATERIAL) {
         return result
       }
 
@@ -234,18 +243,22 @@ function buildSequence(cameFrom: CameFrom, lastTurn: Turn): Sequence {
 
 function getTotalQuality(
   blueprints: Blueprint[],
-  startingRobots: Robot[]
+  startingRobots: Robot[],
+  maxTurns: number
 ): number {
-  const qualities = blueprints.map(bp => getQualityLevel(bp, startingRobots))
+  const qualities = blueprints.map(bp =>
+    getQualityLevel(bp, startingRobots, maxTurns)
+  )
   console.log(qualities)
   return qualities.reduce((result, num) => result + num, 0)
 }
 
 function getQualityLevel(
   blueprint: Blueprint,
-  startingRobots: Robot[]
+  startingRobots: Robot[],
+  maxTurns: number
 ): number {
-  const sequence = findBestSequence(blueprint, startingRobots)
+  const sequence = findBestSequence(blueprint, startingRobots, maxTurns)
   const amount = sequence[sequence.length - 1].finalStock[BEST_MATERIAL]
 
   const qualityLevel = amount * blueprint.id
