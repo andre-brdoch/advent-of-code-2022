@@ -49,6 +49,7 @@ function findBestSequence(
   const frontier = [startingTurn]
   const cameFrom: CameFrom = { [startTurnId]: null }
   const nextOptionsCache: NextOptionsCache = {}
+  let bestTurn: Turn | undefined = undefined
 
   while (frontier.length !== 0) {
     const currentTurn = frontier.pop() as Turn
@@ -56,6 +57,13 @@ function findBestSequence(
 
     console.log(turnToState(currentTurn))
 
+    if (
+      bestTurn === undefined ||
+      currentTurn.finalStock[MATERIALS_PRIORITIZED[0]] >
+        bestTurn.finalStock[MATERIALS_PRIORITIZED[0]]
+    ) {
+      bestTurn = currentTurn
+    }
     const nextTurns = getNextTurns(
       blueprint,
       currentTurn,
@@ -73,15 +81,13 @@ function findBestSequence(
     })
   }
 
-  const best = Object.keys(cameFrom)
-    .map(key => cameFrom[key])
-    .flatMap(turn => (turn !== null ? [turn] : []))
-    .sort((a, b) => b.finalStock.geode - a.finalStock.geode)[0]
+  if (!bestTurn) throw new Error('No best turn determined!')
 
   console.log('WINNER:')
-  console.log(best.finalStock)
+  console.log(bestTurn)
+  console.log(bestTurn?.finalStock)
 
-  return buildSequence(cameFrom, best)
+  return buildSequence(cameFrom, bestTurn)
 }
 function getNextTurns(
   blueprint: Blueprint,
