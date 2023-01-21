@@ -20,12 +20,13 @@ const START_ROBOTS = [createRobot('ore')]
 const MAX_TURNS = 24
 
 const MATERIALS_PRIORITIZED: Material[] = ['geode', 'obsidian', 'clay', 'ore']
+const BEST_MATERIAL = MATERIALS_PRIORITIZED[0]
 
 export default async function solution(input: string): Promise<Solution19> {
   const timer1 = performance.now()
 
   const bps = parseBlueprints(input)
-  const sequence = findBestSequence(bps[0], START_ROBOTS)
+  const sequence = findBestSequence(bps[1], START_ROBOTS)
 
   logger.log(stringifySequence(sequence))
   const timer2 = performance.now()
@@ -51,7 +52,7 @@ function findBestSequence(
   const nextOptionsCache: NextOptionsCache = {}
   let bestTurn: Turn | undefined = undefined
 
-  while (frontier.length !== 0) {
+  while (frontier.length > 0) {
     const currentTurn = frontier.pop() as Turn
     const currentTurnId = turnToState(currentTurn)
 
@@ -59,14 +60,15 @@ function findBestSequence(
 
     if (
       bestTurn === undefined ||
-      currentTurn.finalStock[MATERIALS_PRIORITIZED[0]] >
-        bestTurn.finalStock[MATERIALS_PRIORITIZED[0]]
+      currentTurn.finalStock[BEST_MATERIAL] > bestTurn.finalStock[BEST_MATERIAL]
     ) {
       bestTurn = currentTurn
     }
+
     const nextTurns = getNextTurns(
       blueprint,
       currentTurn,
+      bestTurn,
       cameFrom,
       nextOptionsCache
     )
@@ -92,6 +94,7 @@ function findBestSequence(
 function getNextTurns(
   blueprint: Blueprint,
   currentTurn: Turn,
+  bestTurnYet: Turn | undefined,
   cameFrom: CameFrom,
   nextOptionsCache: NextOptionsCache
 ): Turn[] {
@@ -142,6 +145,7 @@ function getNextTurns(
     blueprint,
     possibleTurns,
     currentTurn,
+    bestTurnYet,
     cameFrom,
     nextOptionsCache
   )
@@ -152,6 +156,7 @@ function pruneNextTurns(
   blueprint: Blueprint,
   nextTurns: Turn[],
   currentTurn: Turn,
+  bestTurnYet: Turn | undefined,
   cameFrom: CameFrom,
   nextOptionsCache: NextOptionsCache
 ): Turn[] {
@@ -161,8 +166,6 @@ function pruneNextTurns(
   const prevOptions = nextOptionsCache[prevTurnId] ?? []
   const prunedMaterials: Material[] = []
 
-  // TODO: dont continue if it is impossible catch up with best turn so far
-
   // building a robot has no effect in last turn, just wait:
   if (currentTurn.number >= MAX_TURNS) {
     return [{ ...currentTurn, buy: undefined }]
@@ -170,10 +173,22 @@ function pruneNextTurns(
   // in 2nd last turn, only building best material and waiting makes sense:
   if (currentTurn.number === MAX_TURNS - 1) {
     return nextTurns.filter(
-      turn =>
-        turn.buy === undefined ||
-        turn.buy?.material === MATERIALS_PRIORITIZED[0]
+      turn => turn.buy === undefined || turn.buy?.material === BEST_MATERIAL
     )
+  }
+
+  // dont continue if it is impossible catch up with best turn so far,
+  // assuming we add another robot of the best material every turn
+  const remainingTurns = MAX_TURNS - currentTurn.number
+  const currentBest = bestTurnYet?.finalStock[BEST_MATERIAL] ?? 0
+  const currentStock = currentTurn?.finalStock[BEST_MATERIAL] ?? 0
+  const hypotheticalBest =
+    currentStock +
+    getOutput(currentTurn.finalRobots)[BEST_MATERIAL] +
+    Array.from(Array(remainingTurns)).reduce((result, _, i) => result + i, 0)
+
+  if (hypotheticalBest <= currentBest) {
+    return nextTurns.filter(turn => turn.buy === undefined)
   }
 
   const prunedTurns = nextTurns.reduce((result, turn) => {
@@ -197,7 +212,7 @@ function pruneNextTurns(
       }
     }
     // if buy turn for non-highest prio (we never prune highest prio material):
-    else if (!isWaiting && turn?.buy?.material !== MATERIALS_PRIORITIZED[0]) {
+    else if (!isWaiting && turn?.buy?.material !== BEST_MATERIAL) {
       const buyRobot = turn.buy as RobotBlueprint
       const { material } = buyRobot
       const existingRobotsOfType = turn.finalRobots.filter(
@@ -270,8 +285,7 @@ function getQualityLevel(
   startingRobots: Robot[]
 ): number {
   const sequence = findBestSequence(blueprint, startingRobots)
-  const amount =
-    sequence[sequence.length - 1].finalStock[MATERIALS_PRIORITIZED[0]]
+  const amount = sequence[sequence.length - 1].finalStock[BEST_MATERIAL]
 
   const qualityLevel = amount * blueprint.id
 
