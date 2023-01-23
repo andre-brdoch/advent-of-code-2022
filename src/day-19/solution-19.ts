@@ -232,9 +232,9 @@ function pruneNextTurns(
       if (
         // dont buy if current robots already produce every turn enough
         // to pay for the most expensive cost:
-        blueprintRobots.every(
+        !blueprintRobots.some(
           bpRobot =>
-            existingRobotsOfType.length >
+            existingRobotsOfType.length <=
             (bpRobot.costs.find(
               ([costMaterial]) => costMaterial === material
             ) ?? [material, 0])[1]
