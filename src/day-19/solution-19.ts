@@ -203,7 +203,7 @@ function pruneNextTurns(
   const hypotheticalBest =
     currentStock +
     getOutput(currentTurn.finalRobots, remainingTurns)[BEST_MATERIAL] +
-    Array.from(Array(remainingTurns)).reduce((result, _, i) => result + i, 0)
+    hypotheticallyAddRobotsTillEnd(remainingTurns)
   if (hypotheticalBest <= currentBest) {
     return []
   }
@@ -334,6 +334,19 @@ function applyCostsToMaterialAmounts(
 function countRobotsByMaterial(robots: Robot[], material: Material): number {
   return robots.filter(robot => robot.material === material).length
 }
+
+const hypotheticallyAddRobotsTillEnd = (function closure() {
+  const cache: { [n: number]: number } = {}
+  return (remainingTurns: number): number => {
+    if (remainingTurns in cache) return cache[remainingTurns]
+    const result = Array.from(Array(remainingTurns)).reduce(
+      (result, _, i) => result + i,
+      0
+    )
+    cache[remainingTurns] = result
+    return result
+  }
+})()
 
 /** Creates unique ID from a given turn */
 function turnToState(turn: Turn): string {
