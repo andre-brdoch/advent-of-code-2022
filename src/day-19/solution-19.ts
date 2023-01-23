@@ -78,8 +78,10 @@ function findBestSequence(
   const cameFrom: CameFrom = { [startTurnId]: null }
   const nextOptionsCache: NextOptionsCache = {}
   let bestTurn: Turn | undefined = undefined
+  let pathsVisited = 0
 
   while (frontier.length > 0) {
+    pathsVisited += 1
     const currentTurn = frontier.pop() as Turn
     const currentTurnId = turnToState(currentTurn)
 
@@ -109,6 +111,7 @@ function findBestSequence(
   console.log('WINNER:')
   console.log(bestTurn)
   console.log(bestTurn?.finalStock)
+  console.log('\n==== Amount of paths visited:', pathsVisited, '====\n')
 
   return buildSequence(cameFrom, bestTurn)
 }
@@ -200,6 +203,7 @@ function pruneNextTurns(
   const remainingTurns = maxTurns - currentTurn.number
   const currentBest = bestTurnYet?.finalStock[BEST_MATERIAL] ?? 0
   const currentStock = currentTurn?.finalStock[BEST_MATERIAL] ?? 0
+
   const hypotheticalBest =
     currentStock +
     getOutput(currentTurn.finalRobots, remainingTurns)[BEST_MATERIAL] +
@@ -226,6 +230,18 @@ function pruneNextTurns(
       }
       // only build best material robots in 2nd and 3rd last turn
       if (turn.number >= maxTurns - 2 && material !== BEST_MATERIAL) {
+        return result
+      }
+      //  only build robots that fullfill costs for best material robot in 4th and 5th last turn
+      if (
+        turn.number >= maxTurns - 4 &&
+        ![
+          BEST_MATERIAL,
+          ...blueprint.robots[BEST_MATERIAL].costs.map(
+            ([costMaterial]) => costMaterial
+          ),
+        ].includes(material)
+      ) {
         return result
       }
 
