@@ -212,6 +212,17 @@ function pruneNextTurns(
     return []
   }
 
+  // Don't continue if we already have the material to make a best material robot every turn:
+  if (
+    blueprint.robots[BEST_MATERIAL].costs.every(
+      ([costMaterial, costAmount]) =>
+        currentTurn.finalRobots.filter(robot => robot.material === costMaterial)
+          .length >= costAmount
+    )
+  ) {
+    return []
+  }
+
   const prunedTurns = nextTurns.reduce((result, turn) => {
     // if buy turn for non-highest prio (we never prune highest prio material):
     if (turn?.buy?.material !== BEST_MATERIAL) {
