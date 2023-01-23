@@ -11,7 +11,6 @@ import {
   Sequence,
   CameFrom,
   NextOptionsCache,
-  CostSoFar,
 } from './types'
 
 const logger = new Logger()
@@ -24,13 +23,11 @@ const BEST_MATERIAL = MATERIALS_PRIORITIZED[0]
 export default async function solution(input: string): Promise<Solution19> {
   const timer1 = performance.now()
 
-  // const answer1 = 0
   const answer1 = getAnswer1(input)
-  const answer2 = 0
-  // const answer2 = getAnswer2(input)
+  const answer2 = getAnswer2(input)
 
   const timer2 = performance.now()
-  console.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
+  logger.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
 
   return { answer1, answer2 }
 }
@@ -38,28 +35,17 @@ export default async function solution(input: string): Promise<Solution19> {
 function getAnswer2(input: string): number {
   const bps = parseBlueprints(input)
   const maxTurns = 32
-
-  // const s = findBestSequence(bps[0], START_ROBOTS, maxTurns)
-  // console.log(stringifySequence(s))
-
   const bestAmounts = bps
     .slice(0, 3)
     .map(bp => findBestSequence(bp, START_ROBOTS, maxTurns))
     .map(sequence => sequence[sequence.length - 1].finalStock[BEST_MATERIAL])
-  console.log(bestAmounts)
-
   return bestAmounts.reduce((result, amount) => result * amount, 1)
 }
 
 function getAnswer1(input: string): number {
   const bps = parseBlueprints(input)
-  const maxTurns = 32
-
-  const s = findBestSequence(bps[0], START_ROBOTS, maxTurns)
-  console.log(stringifySequence(s))
-
-  return 0
-  // getTotalQuality(bps, START_ROBOTS, maxTurns)
+  const maxTurns = 24
+  return getTotalQuality(bps, START_ROBOTS, maxTurns)
 }
 
 function findBestSequence(
@@ -78,14 +64,10 @@ function findBestSequence(
   const cameFrom: CameFrom = { [startTurnId]: null }
   const nextOptionsCache: NextOptionsCache = {}
   let bestTurn: Turn | undefined = undefined
-  let pathsVisited = 0
 
   while (frontier.length > 0) {
-    pathsVisited += 1
     const currentTurn = frontier.pop() as Turn
     const currentTurnId = turnToState(currentTurn)
-
-    // console.log(turnToState(currentTurn))
 
     if (
       bestTurn === undefined ||
@@ -107,11 +89,6 @@ function findBestSequence(
   }
 
   if (!bestTurn) throw new Error('No best turn determined!')
-
-  console.log('WINNER:')
-  console.log(bestTurn)
-  console.log(bestTurn?.finalStock)
-  console.log('\n==== Amount of paths visited:', pathsVisited, '====\n')
 
   return buildSequence(cameFrom, bestTurn)
 }
@@ -311,7 +288,6 @@ function getTotalQuality(
   const qualities = blueprints.map(bp =>
     getQualityLevel(bp, startingRobots, maxTurns)
   )
-  console.log(qualities)
   return qualities.reduce((result, num) => result + num, 0)
 }
 
@@ -322,15 +298,7 @@ function getQualityLevel(
 ): number {
   const sequence = findBestSequence(blueprint, startingRobots, maxTurns)
   const amount = sequence[sequence.length - 1].finalStock[BEST_MATERIAL]
-
   const qualityLevel = amount * blueprint.id
-
-  logger.log(`The best sequence for blueprint ${blueprint.id} is:`)
-  logger.log(sequence.map(stringifyTurn).join('\n'))
-  logger.log(
-    `\nThe quality level of blueprint ${blueprint.id} is: ${qualityLevel}`
-  )
-
   return qualityLevel
 }
 

@@ -28,6 +28,3 @@ export interface CameFrom {
 export interface NextOptionsCache {
   [turnId: string]: Turn[]
 }
-export interface CostSoFar {
-  [turnId: string]: number
-}
