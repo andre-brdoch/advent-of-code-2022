@@ -123,42 +123,41 @@ function getNextTurns(
 
   const output = getOutput(oldRobots)
 
-  const possibleTurns = (Object.keys(blueprint.robots) as Material[])
-    .map(material => blueprint.robots[material])
-    .map(robot => {
-      if (robot.costs.some(([costName]) => output[costName] === 0)) {
-        // not purchasable with current robots
+  const possibleTurns = MATERIALS_PRIORITIZED.map(material => {
+    const robot = blueprint.robots[material]
+    if (robot.costs.some(([costName]) => output[costName] === 0)) {
+      // not purchasable with current robots
+      return null
+    }
+
+    let turnsToWait = 0
+    let newStock: MaterialAmounts = { ...currentTurn.finalStock }
+    let costsAreCovered = false
+
+    while (!costsAreCovered) {
+      turnsToWait += 1
+
+      const isTooLate = turnsToWait + currentTurn.number > maxTurns - 1
+      if (isTooLate) {
         return null
       }
 
-      let turnsToWait = 0
-      let newStock: MaterialAmounts = { ...currentTurn.finalStock }
-      let costsAreCovered = false
+      costsAreCovered = robot.costs.every(
+        ([costMaterial, costAmount]) =>
+          (newStock as MaterialAmounts)[costMaterial] >= costAmount
+      )
 
-      while (!costsAreCovered) {
-        turnsToWait += 1
+      newStock = sumMaterialAmounts(newStock, output)
+    }
+    newStock = applyCostsToMaterialAmounts(newStock, robot.costs)
 
-        const isTooLate = turnsToWait + currentTurn.number > maxTurns - 1
-        if (isTooLate) {
-          return null
-        }
-
-        costsAreCovered = robot.costs.every(
-          ([costMaterial, costAmount]) =>
-            (newStock as MaterialAmounts)[costMaterial] >= costAmount
-        )
-
-        newStock = sumMaterialAmounts(newStock, output)
-      }
-      newStock = applyCostsToMaterialAmounts(newStock, robot.costs)
-
-      return {
-        finalRobots: [...oldRobots, createRobot(robot.material)],
-        finalStock: newStock,
-        buy: robot,
-        number: currentTurn.number + turnsToWait,
-      }
-    })
+    return {
+      finalRobots: [...oldRobots, createRobot(robot.material)],
+      finalStock: newStock,
+      buy: robot,
+      number: currentTurn.number + turnsToWait,
+    }
+  })
     // filter out null
     .flatMap(turn => (turn !== null ? [turn] : []))
 
