@@ -24,10 +24,9 @@ const BEST_MATERIAL = MATERIALS_PRIORITIZED[0]
 export default async function solution(input: string): Promise<Solution19> {
   const timer1 = performance.now()
 
-  // const answer1 = 0
-  const answer1 = getAnswer1(input)
-  const answer2 = 0
-  // const answer2 = getAnswer2(input)
+  const answer1 = 0
+  // const answer1 = getAnswer1(input)
+  const answer2 = getAnswer2(input)
 
   const timer2 = performance.now()
   console.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
@@ -53,13 +52,12 @@ function getAnswer2(input: string): number {
 
 function getAnswer1(input: string): number {
   const bps = parseBlueprints(input)
-  const maxTurns = 32
+  const maxTurns = 24
 
-  const s = findBestSequence(bps[0], START_ROBOTS, maxTurns)
-  console.log(stringifySequence(s))
+  // const s = findBestSequence(bps[0], START_ROBOTS, maxTurns)
+  // console.log(stringifySequence(s))
 
-  return 0
-  // getTotalQuality(bps, START_ROBOTS, maxTurns)
+  return getTotalQuality(bps, START_ROBOTS, maxTurns)
 }
 
 function findBestSequence(
@@ -121,19 +119,6 @@ function getNextTurns(
   const { number: oldNumber, finalRobots: oldRobots } = currentTurn
   if (oldNumber >= maxTurns) return []
 
-  // dont continue if it is impossible catch up with best turn so far,
-  // assuming we add another robot of the best material every turn
-  const remainingTurns = maxTurns - oldNumber
-  const currentBest = bestTurnYet?.finalStock[BEST_MATERIAL] ?? 0
-  const currentStock = currentTurn?.finalStock[BEST_MATERIAL] ?? 0
-  const hypotheticalBest =
-    currentStock +
-    getOutput(currentTurn.finalRobots, remainingTurns)[BEST_MATERIAL] +
-    Array.from(Array(remainingTurns)).reduce((result, _, i) => result + i, 0)
-  if (hypotheticalBest <= currentBest) {
-    return []
-  }
-
   const output = getOutput(oldRobots)
 
   const possibleTurns = (Object.keys(blueprint.robots) as Material[])
@@ -151,12 +136,7 @@ function getNextTurns(
       while (!costsAreCovered) {
         turnsToWait += 1
 
-        const newTurnNumber = turnsToWait + currentTurn.number
-        const isTooLate =
-          // dont build robots in last turn
-          newTurnNumber >= maxTurns ||
-          // only build best material robots in 2nd and 3rd last turn
-          (newTurnNumber - 2 >= maxTurns && robot.material !== BEST_MATERIAL)
+        const isTooLate = turnsToWait + currentTurn.number > maxTurns - 1
         if (isTooLate) {
           return null
         }
@@ -170,19 +150,26 @@ function getNextTurns(
       }
       newStock = applyCostsToMaterialAmounts(newStock, robot.costs)
 
-      const turn: Turn = {
+      return {
         finalRobots: [...oldRobots, createRobot(robot.material)],
         finalStock: newStock,
         buy: robot,
         number: currentTurn.number + turnsToWait,
       }
-      return turn
     })
     // filter out null
     .flatMap(turn => (turn !== null ? [turn] : []))
 
+  const pruned = pruneNextTurns(
+    blueprint,
+    possibleTurns,
+    currentTurn,
+    bestTurnYet,
+    maxTurns
+  )
+
   // add final wait turn
-  if (possibleTurns.length === 0 && currentTurn.number < maxTurns) {
+  if (pruned.length === 0 && currentTurn.number < maxTurns) {
     const { finalRobots, finalStock, number } = currentTurn
     const newStock = sumMaterialAmounts(
       finalStock,
@@ -193,10 +180,10 @@ function getNextTurns(
       finalStock: newStock,
       number: maxTurns,
     }
-    possibleTurns.push(finalTurn)
+    pruned.push(finalTurn)
   }
 
-  return possibleTurns
+  return pruned
 }
 
 /** Reduces the set of next possible turns by removing nonsensical options */
@@ -233,13 +220,13 @@ function pruneNextTurns(
       )
 
       // dont build robots in last turn
-      // if (turn.number === maxTurns) {
-      //   return result
-      // }
+      if (turn.number === maxTurns) {
+        return result
+      }
       // only build best material robots in 2nd and 3rd last turn
-      // if (turn.number >= maxTurns - 2 && material !== BEST_MATERIAL) {
-      //   return result
-      // }
+      if (turn.number >= maxTurns - 2 && material !== BEST_MATERIAL) {
+        return result
+      }
 
       if (
         // dont buy if current robots already produce every turn enough
