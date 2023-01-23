@@ -203,10 +203,11 @@ function pruneNextTurns(
   const remainingTurns = maxTurns - currentTurn.number
   const currentBest = bestTurnYet?.finalStock[BEST_MATERIAL] ?? 0
   const currentStock = currentTurn?.finalStock[BEST_MATERIAL] ?? 0
+  const outputTillEnd = getOutput(currentTurn.finalRobots, remainingTurns)
 
   const hypotheticalBest =
     currentStock +
-    getOutput(currentTurn.finalRobots, remainingTurns)[BEST_MATERIAL] +
+    outputTillEnd[BEST_MATERIAL] +
     hypotheticallyAddRobotsTillEnd(remainingTurns)
   if (hypotheticalBest <= currentBest) {
     return []
@@ -267,6 +268,18 @@ function pruneNextTurns(
             ) ?? [material, 0])[1]
         )
       ) {
+        return result
+      }
+
+      // dont buy if the material could never be spent, even if we bought the most expensive robot every remaining turn:
+      const highestCost = blueprintRobots.reduce((result, robot) => {
+        const newHighest = robot.costs.find(
+          ([costMaterial, costAmount]) =>
+            costMaterial === material && costAmount > result
+        )
+        return newHighest?.[1] ?? result
+      }, 0)
+      if (currentTurn.finalStock[material] >= highestCost * remainingTurns) {
         return result
       }
     }
