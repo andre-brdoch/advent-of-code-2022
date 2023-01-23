@@ -24,9 +24,10 @@ const BEST_MATERIAL = MATERIALS_PRIORITIZED[0]
 export default async function solution(input: string): Promise<Solution19> {
   const timer1 = performance.now()
 
-  const answer1 = 0
-  // const answer1 = getAnswer1(input)
-  const answer2 = getAnswer2(input)
+  // const answer1 = 0
+  const answer1 = getAnswer1(input)
+  const answer2 = 0
+  // const answer2 = getAnswer2(input)
 
   const timer2 = performance.now()
   console.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
@@ -52,12 +53,13 @@ function getAnswer2(input: string): number {
 
 function getAnswer1(input: string): number {
   const bps = parseBlueprints(input)
-  const maxTurns = 24
+  const maxTurns = 32
 
-  // const s = findBestSequence(bps[0], START_ROBOTS, maxTurns)
-  // console.log(stringifySequence(s))
+  const s = findBestSequence(bps[0], START_ROBOTS, maxTurns)
+  console.log(stringifySequence(s))
 
-  return getTotalQuality(bps, START_ROBOTS, maxTurns)
+  return 0
+  // getTotalQuality(bps, START_ROBOTS, maxTurns)
 }
 
 function findBestSequence(
