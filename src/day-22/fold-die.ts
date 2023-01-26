@@ -1,10 +1,6 @@
-import { parseArgs } from '../utils/env-helpers.js'
 import { isOnGrid } from './utils.js'
+import { PLANE_SIZE } from './constants.js'
 import { Coordinate, Axis, Facing, Grid, Plane, PlaneEdge } from './types'
-
-const { isTest } = parseArgs()
-
-const PLANE_SIZE = isTest ? 4 : 50
 
 export function getPlanes(grid: Grid): Plane[] {
   const planes: Plane[] = []
