@@ -1,45 +1,20 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
-
-interface Solution22 {
-  answer1: number
-}
-interface Coordinate {
-  x: number
-  y: number
-}
-type Axis = keyof Coordinate
-type Facing = '^' | '>' | 'v' | '<'
-interface PlayerLocation extends Coordinate {
-  facing: Facing
-}
-type Path = PlayerLocation[]
-interface Cell {
-  type: '.' | '#' | ' ' | Facing
-}
-type Grid = Cell[][]
-type RotateInstruction = 'L' | 'R'
-type MoveInstruction = number
-type Instruction = MoveInstruction | RotateInstruction
-type EdgeName = Facing
-interface PlaneEdge {
-  name: EdgeName
-  from: Coordinate
-  to: Coordinate
-  planes: Plane[]
-  folded?: boolean
-}
-interface Plane {
-  name: string
-  x: number
-  y: number
-  z: number
-  edges: Record<Facing, PlaneEdge>
-}
-interface PlaneRotated extends Plane {
-  xRotate: number
-  yRotate: number
-}
+import {
+  Solution22,
+  Coordinate,
+  Axis,
+  Facing,
+  PlayerLocation,
+  Path,
+  Cell,
+  Grid,
+  RotateInstruction,
+  MoveInstruction,
+  Instruction,
+  Plane,
+  PlaneEdge,
+} from './types'
 
 const { isTest, file } = parseArgs()
 
@@ -113,25 +88,21 @@ function getPlanesAndEdges(grid: Grid): {
 
         const newEdges: PlaneEdge[] = [
           {
-            name: '^' as EdgeName,
             from: { x: 0, y: 0 },
             to: { x: 1, y: 0 },
             plane,
           },
           {
-            name: '>' as EdgeName,
             from: { x: 1, y: 0 },
             to: { x: 1, y: 1 },
             plane,
           },
           {
-            name: 'v' as EdgeName,
             from: { x: 0, y: 1 },
             to: { x: 1, y: 1 },
             plane,
           },
           {
-            name: '<' as EdgeName,
             from: { x: 0, y: 0 },
             to: { x: 0, y: 1 },
             plane,
