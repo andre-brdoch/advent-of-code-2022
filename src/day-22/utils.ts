@@ -9,10 +9,26 @@ import {
   Instruction,
   MoveInstruction,
   RotateInstruction,
+  Coordinate3D,
 } from './types'
 
-export function coordinatesOverlap(a: Coordinate, b: Coordinate) {
-  return a.x === b.x && a.y === b.y
+export function coordinatesOverlap(
+  a: Coordinate | Coordinate3D,
+  b: Coordinate | Coordinate3D
+) {
+  const are3D = coordinateIs3D(a) && coordinateIs3D(b)
+  return (
+    a.x === b.x &&
+    a.y === b.y &&
+    // if 3D, check also z-axis
+    (are3D ? a.z === b.z : true)
+  )
+}
+
+export function coordinateIs3D(
+  coordinate: Coordinate | Coordinate3D
+): coordinate is Coordinate3D {
+  return 'z' in coordinate
 }
 
 export function isOnGrid<T>(grid: T[][], coordinate: Coordinate) {

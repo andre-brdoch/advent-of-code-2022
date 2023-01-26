@@ -24,23 +24,23 @@ export function getPlanes(grid: Grid): Plane[] {
         plane.z = 0
         plane.edges = {
           '^': {
-            from: { x: 0 + x, y: 0 + y },
-            to: { x: 1 + x, y: 0 + y },
+            from: { x: 0 + x, y: 0 + y, z: 0 },
+            to: { x: 1 + x, y: 0 + y, z: 0 },
             planes: [plane],
           },
           '>': {
-            from: { x: 1 + x, y: 0 + y },
-            to: { x: 1 + x, y: 1 + y },
+            from: { x: 1 + x, y: 0 + y, z: 0 },
+            to: { x: 1 + x, y: 1 + y, z: 0 },
             planes: [plane],
           },
           "v": {
-            from: { x: 0 + x, y: 1 + y },
-            to: { x: 1 + x, y: 1 + y },
+            from: { x: 0 + x, y: 1 + y, z: 0 },
+            to: { x: 1 + x, y: 1 + y, z: 0 },
             planes: [plane],
           },
           '<': {
-            from: { x: 0 + x, y: 0 + y },
-            to: { x: 0 + x, y: 1 + y },
+            from: { x: 0 + x, y: 0 + y, z: 0 },
+            to: { x: 0 + x, y: 1 + y, z: 0 },
             planes: [plane],
           },
         }

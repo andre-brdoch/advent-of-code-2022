@@ -5,6 +5,9 @@ export interface Coordinate {
   x: number
   y: number
 }
+export interface Coordinate3D extends Coordinate {
+  z: number
+}
 export type Axis = keyof Coordinate
 export type Facing = '^' | '>' | 'v' | '<'
 export interface PlayerLocation extends Coordinate {
@@ -27,8 +30,8 @@ export interface Plane {
   edges: Record<Facing, PlaneEdge>
 }
 export interface PlaneEdge {
-  from: Coordinate
-  to: Coordinate
+  from: Coordinate3D
+  to: Coordinate3D
   planes: Plane[]
   folded?: boolean
 }
