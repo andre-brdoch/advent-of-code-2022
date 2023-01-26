@@ -1,5 +1,7 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
+import { getPlanes } from './fold-die.js'
+import { isOnGrid } from './utils.js'
 import {
   Solution22,
   Coordinate,
@@ -27,8 +29,6 @@ const VECTORS: { [facing: string]: Coordinate } = {
   '<': { x: -1, y: 0 },
 }
 
-const PLANE_SIZE = isTest ? 4 : 50
-
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution22> {
@@ -53,62 +53,6 @@ export default async function solution(input: string): Promise<Solution22> {
     answer1,
     ...logger.getVisual(file?.replace('input', 'output') ?? 'output.txt'),
   }
-}
-
-function connectEdges(planes: Plane[], edges: PlaneEdge[]): any {
-  //
-}
-
-function getPlanes(grid: Grid): Plane[] {
-  const planes: Plane[] = []
-  let name = 1
-
-  // unfolded die must fit into a 4x4 grid
-  for (let y = 0; y < 4; y++) {
-    for (let x = 0; x < 4; x++) {
-      // is plane if not empty
-      if (
-        isOnGrid(grid, {
-          x: x * PLANE_SIZE,
-          y: y * PLANE_SIZE,
-        }) &&
-        grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
-      ) {
-        const plane = {} as Plane
-        plane.name = name.toString()
-        plane.x = x
-        plane.y = y
-        plane.z = 0
-        plane.edges = {
-          '^': {
-            from: { x: 0 + x, y: 0 + y },
-            to: { x: 1 + x, y: 0 + y },
-            planes: [plane],
-          },
-          '>': {
-            from: { x: 1 + x, y: 0 + y },
-            to: { x: 1 + x, y: 1 + y },
-            planes: [plane],
-          },
-          "v": {
-            from: { x: 0 + x, y: 1 + y },
-            to: { x: 1 + x, y: 1 + y },
-            planes: [plane],
-          },
-          '<': {
-            from: { x: 0 + x, y: 0 + y },
-            to: { x: 0 + x, y: 1 + y },
-            planes: [plane],
-          },
-        }
-        planes.push(plane)
-
-        name += 1
-      }
-    }
-  }
-
-  return planes
 }
 
 function getPassword(location: PlayerLocation): number {
@@ -203,15 +147,6 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
     next[axis] = newVal as number
   }
   return next
-}
-
-function isOnGrid<T>(grid: T[][], coordinate: Coordinate) {
-  try {
-    return !!grid[coordinate.y][coordinate.x]
-  }
-  catch (err) {
-    return false
-  }
 }
 
 function getStartLocation(grid: Grid): PlayerLocation {
