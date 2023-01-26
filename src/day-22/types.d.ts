@@ -19,13 +19,6 @@ export type RotateInstruction = 'L' | 'R'
 export type MoveInstruction = number
 export type Instruction = MoveInstruction | RotateInstruction
 export type EdgeName = Facing
-export interface PlaneEdge {
-  name: EdgeName
-  from: Coordinate
-  to: Coordinate
-  planes: Plane[]
-  folded?: boolean
-}
 export interface Plane {
   name: string
   x: number
@@ -33,7 +26,9 @@ export interface Plane {
   z: number
   edges: Record<Facing, PlaneEdge>
 }
-export interface PlaneRotated extends Plane {
-  xRotate: number
-  yRotate: number
+export interface PlaneEdge {
+  from: Coordinate
+  to: Coordinate
+  planes: Plane[]
+  folded?: boolean
 }

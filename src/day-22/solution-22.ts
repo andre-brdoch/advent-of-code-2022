@@ -36,16 +36,16 @@ export default async function solution(input: string): Promise<Solution22> {
   const path = getPathFromInstructions(grid, instructions)
   const answer1 = getPassword(path[path.length - 1])
 
-  const { planes, edges } = getPlanesAndEdges(grid)
+  const planes = getPlanes(grid)
   console.log('planes')
   console.log(planes)
-  console.log('edges')
-  console.log(edges)
+  // console.log('edges')
+  // console.log(edges)
   const planesGrid = planesToGrid(planes)
   console.log('planesGrid')
   console.log(planesGrid)
 
-  connectEdges(planes, edges)
+  // connectEdges(planes, edges)
 
   console.log(stringifyPlanes(planes))
 
@@ -56,22 +56,13 @@ export default async function solution(input: string): Promise<Solution22> {
 }
 
 function connectEdges(planes: Plane[], edges: PlaneEdge[]): any {
-  const rotatedPlanes = planes.map(plane => ({
-    ...plane,
-    yRotate: plane.x * 90,
-    // x: x - plane.x,
-  }))
-  console.log('rotatedPlanes')
-  console.log(rotatedPlanes)
+  //
 }
 
-function getPlanesAndEdges(grid: Grid): {
-  planes: Plane[]
-  edges: PlaneEdge[]
-} {
+function getPlanes(grid: Grid): Plane[] {
   const planes: Plane[] = []
-  const edges: PlaneEdge[] = []
   let name = 1
+
   // unfolded die must fit into a 4x4 grid
   for (let y = 0; y < 4; y++) {
     for (let x = 0; x < 4; x++) {
@@ -83,48 +74,41 @@ function getPlanesAndEdges(grid: Grid): {
         }) &&
         grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
       ) {
-        const plane: Plane = { name: name.toString(), x, y, z: 0 }
+        const plane = {} as Plane
+        plane.name = name.toString()
+        plane.x = x
+        plane.y = y
+        plane.z = 0
+        plane.edges = {
+          '^': {
+            from: { x: 0 + x, y: 0 + y },
+            to: { x: 1 + x, y: 0 + y },
+            planes: [plane],
+          },
+          '>': {
+            from: { x: 1 + x, y: 0 + y },
+            to: { x: 1 + x, y: 1 + y },
+            planes: [plane],
+          },
+          "v": {
+            from: { x: 0 + x, y: 1 + y },
+            to: { x: 1 + x, y: 1 + y },
+            planes: [plane],
+          },
+          '<': {
+            from: { x: 0 + x, y: 0 + y },
+            to: { x: 0 + x, y: 1 + y },
+            planes: [plane],
+          },
+        }
         planes.push(plane)
 
-        const newEdges: PlaneEdge[] = [
-          {
-            from: { x: 0, y: 0 },
-            to: { x: 1, y: 0 },
-            plane,
-          },
-          {
-            from: { x: 1, y: 0 },
-            to: { x: 1, y: 1 },
-            plane,
-          },
-          {
-            from: { x: 0, y: 1 },
-            to: { x: 1, y: 1 },
-            plane,
-          },
-          {
-            from: { x: 0, y: 0 },
-            to: { x: 0, y: 1 },
-            plane,
-          },
-        ].map(edge => ({
-          ...edge,
-          from: {
-            x: edge.from.x + edge.plane.x,
-            y: edge.from.y + edge.plane.y,
-          },
-          to: {
-            x: edge.to.x + edge.plane.x,
-            y: edge.to.y + edge.plane.y,
-          },
-        }))
-        edges.push(...newEdges)
         name += 1
       }
     }
   }
 
-  return { planes, edges }
+  return planes
 }
 
 function getPassword(location: PlayerLocation): number {
