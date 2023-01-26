@@ -21,19 +21,24 @@ type Grid = Cell[][]
 type RotateInstruction = 'L' | 'R'
 type MoveInstruction = number
 type Instruction = MoveInstruction | RotateInstruction
+type EdgeName = Facing
 interface PlaneEdge {
-  // todo: switch to Plane
-  toPlane: string
-  toEdge: 'a' | 'b' | 'c' | 'd'
+  name: EdgeName
+  from: Coordinate
+  to: Coordinate
+  planes: Plane[]
+  folded?: boolean
 }
 interface Plane {
   name: string
-  edgeA: PlaneEdge | undefined
-  edgeB: PlaneEdge | undefined
-  edgeC: PlaneEdge | undefined
-  edgeD: PlaneEdge | undefined
   x: number
   y: number
+  z: number
+  edges: Record<Facing, PlaneEdge>
+}
+interface PlaneRotated extends Plane {
+  xRotate: number
+  yRotate: number
 }
 
 const { isTest, file } = parseArgs()
@@ -56,8 +61,17 @@ export default async function solution(input: string): Promise<Solution22> {
   const path = getPathFromInstructions(grid, instructions)
   const answer1 = getPassword(path[path.length - 1])
 
-  const planes = getPlanes(grid)
+  const { planes, edges } = getPlanesAndEdges(grid)
+  console.log('planes')
   console.log(planes)
+  console.log('edges')
+  console.log(edges)
+  const planesGrid = planesToGrid(planes)
+  console.log('planesGrid')
+  console.log(planesGrid)
+
+  connectEdges(planes, edges)
+
   console.log(stringifyPlanes(planes))
 
   return {
@@ -66,8 +80,22 @@ export default async function solution(input: string): Promise<Solution22> {
   }
 }
 
-function getPlanes(grid: Grid): Plane[] {
+function connectEdges(planes: Plane[], edges: PlaneEdge[]): any {
+  const rotatedPlanes = planes.map(plane => ({
+    ...plane,
+    yRotate: plane.x * 90,
+    // x: x - plane.x,
+  }))
+  console.log('rotatedPlanes')
+  console.log(rotatedPlanes)
+}
+
+function getPlanesAndEdges(grid: Grid): {
+  planes: Plane[]
+  edges: PlaneEdge[]
+} {
   const planes: Plane[] = []
+  const edges: PlaneEdge[] = []
   let name = 1
   // unfolded die must fit into a 4x4 grid
   for (let y = 0; y < 4; y++) {
@@ -80,54 +108,52 @@ function getPlanes(grid: Grid): Plane[] {
         }) &&
         grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
       ) {
-        const plane: Plane = {
-          name: name.toString(),
-          x,
-          y,
-          edgeA: undefined,
-          edgeB: undefined,
-          edgeC: undefined,
-          edgeD: undefined,
-        }
+        const plane: Plane = { name: name.toString(), x, y, z: 0 }
         planes.push(plane)
 
+        const newEdges: PlaneEdge[] = [
+          {
+            name: '^' as EdgeName,
+            from: { x: 0, y: 0 },
+            to: { x: 1, y: 0 },
+            plane,
+          },
+          {
+            name: '>' as EdgeName,
+            from: { x: 1, y: 0 },
+            to: { x: 1, y: 1 },
+            plane,
+          },
+          {
+            name: 'v' as EdgeName,
+            from: { x: 0, y: 1 },
+            to: { x: 1, y: 1 },
+            plane,
+          },
+          {
+            name: '<' as EdgeName,
+            from: { x: 0, y: 0 },
+            to: { x: 0, y: 1 },
+            plane,
+          },
+        ].map(edge => ({
+          ...edge,
+          from: {
+            x: edge.from.x + edge.plane.x,
+            y: edge.from.y + edge.plane.y,
+          },
+          to: {
+            x: edge.to.x + edge.plane.x,
+            y: edge.to.y + edge.plane.y,
+          },
+        }))
+        edges.push(...newEdges)
         name += 1
       }
     }
   }
 
-  const planeGrid = planesToGrid(planes)
-  planes.forEach(plane => {
-    const rightCoordinate = { y: plane.y, x: plane.x + 1 }
-    const topCoordinate = { y: plane.y + 1, x: plane.x }
-    const rightNeighbor = isOnGrid(planeGrid, rightCoordinate)
-      ? planeGrid[rightCoordinate.y][rightCoordinate.x]
-      : null
-    const topNeighbor = isOnGrid(planeGrid, topCoordinate)
-      ? planeGrid[topCoordinate.y][topCoordinate.x]
-      : null
-    if (plane.edgeB === undefined && rightNeighbor) {
-      plane.edgeB = {
-        toPlane: rightNeighbor.name,
-        toEdge: 'd',
-      }
-      rightNeighbor.edgeD = {
-        toPlane: plane.name,
-        toEdge: 'b',
-      }
-    }
-    if (plane.edgeA === undefined && topNeighbor) {
-      plane.edgeB = {
-        toPlane: topNeighbor.name,
-        toEdge: 'c',
-      }
-      topNeighbor.edgeC = {
-        toPlane: plane.name,
-        toEdge: 'a',
-      }
-    }
-  })
-  return planes
+  return { planes, edges }
 }
 
 function getPassword(location: PlayerLocation): number {
