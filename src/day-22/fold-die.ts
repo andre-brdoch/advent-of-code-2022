@@ -52,11 +52,36 @@ export function getPlanes(grid: Grid): Plane[] {
   }
 
   mergeOverlappingEdges(planes)
+  fold(planes)
 
   return planes
 }
 
-function mergeOverlappingEdges(planes: Plane[]): Plane[] {
+function fold(planes: Plane[]): void {
+  const foldableEdges = getAllEdges(planes).filter(edgeIsFoldable)
+  console.log('foldable:')
+  console.log(foldableEdges)
+
+  foldEdge(foldableEdges[0])
+}
+
+function foldEdge(edge: PlaneEdge): void {
+  const [, plane] = edge.planes
+  const otherEdges = (Object.keys(plane.edges) as Facing[])
+    .map(key => plane.edges[key])
+    .filter(otherEdge => otherEdge !== edge)
+  console.log('\ncurrent')
+  console.log(edge)
+  console.log('nextEdges')
+  console.log(otherEdges)
+
+  // todo: rotate other edges
+  const nextEdges = otherEdges.filter(edgeIsFoldable)
+  // todo: fold next edges
+  // nextEdges.forEach(foldEdge)
+}
+
+function mergeOverlappingEdges(planes: Plane[]): void {
   const edges = getAllEdges(planes)
   console.log('EDGES')
   console.log(edges)
@@ -85,8 +110,6 @@ function mergeOverlappingEdges(planes: Plane[]): Plane[] {
 
   const x = getAllEdges(planes)
   console.log(x.length)
-
-  return planes
 }
 
 function getAllEdges(planes: Plane[]): PlaneEdge[] {
@@ -108,4 +131,8 @@ function edgesOverlap(a: PlaneEdge, b: PlaneEdge) {
     // reversed arrow
     (coordinatesOverlap(a.from, b.to) && coordinatesOverlap(a.to, b.from))
   )
+}
+
+function edgeIsFoldable(edge: PlaneEdge): boolean {
+  return edge.planes.length === 2
 }
