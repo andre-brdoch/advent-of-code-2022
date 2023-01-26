@@ -11,6 +11,10 @@ import {
   RotateInstruction,
 } from './types'
 
+export function coordinatesOverlap(a: Coordinate, b: Coordinate) {
+  return a.x === b.x && a.y === b.y
+}
+
 export function isOnGrid<T>(grid: T[][], coordinate: Coordinate) {
   try {
     return !!grid[coordinate.y][coordinate.x]

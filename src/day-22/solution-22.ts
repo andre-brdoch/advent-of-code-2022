@@ -37,13 +37,13 @@ export default async function solution(input: string): Promise<Solution22> {
   const answer1 = getPassword(path[path.length - 1])
 
   const planes = getPlanes(grid)
-  console.log('planes')
-  console.log(planes)
+  // console.log('planes')
+  // console.log(planes)
   // console.log('edges')
   // console.log(edges)
-  const planesGrid = planesToGrid(planes)
-  console.log('planesGrid')
-  console.log(planesGrid)
+  // const planesGrid = planesToGrid(planes)
+  // console.log('planesGrid')
+  // console.log(planesGrid)
 
   // connectEdges(planes, edges)
 
