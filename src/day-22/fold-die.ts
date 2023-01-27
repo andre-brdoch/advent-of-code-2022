@@ -1,6 +1,14 @@
 import { isOnGrid, coordinatesOverlap } from './utils.js'
 import { PLANE_SIZE } from './constants.js'
-import { Coordinate, Axis, Facing, Grid, Plane, PlaneEdge } from './types'
+import {
+  Coordinate,
+  Coordinate3D,
+  Axis,
+  Facing,
+  Grid,
+  Plane,
+  PlaneEdge,
+} from './types'
 
 export function getPlanes(grid: Grid): Plane[] {
   const planes: Plane[] = []
@@ -135,4 +143,67 @@ function edgesOverlap(a: PlaneEdge, b: PlaneEdge) {
 
 function edgeIsFoldable(edge: PlaneEdge): boolean {
   return edge.planes.length === 2
+}
+
+export function rotateX(coordinate: Coordinate3D, angle: number): Coordinate3D {
+  const radianAngle = angleToRadian(angle)
+  const rotationMatrix = [
+    [1, 0, 0],
+    [0, cos(radianAngle), -sin(radianAngle)],
+    [0, sin(radianAngle), cos(radianAngle)],
+  ]
+  return rotate(coordinate, rotationMatrix)
+}
+
+export function rotateY(coordinate: Coordinate3D, angle: number): Coordinate3D {
+  const radianAngle = angleToRadian(angle)
+  const rotationMatrix = [
+    [cos(radianAngle), 0, -sin(radianAngle)],
+    [0, 1, 0],
+    [sin(radianAngle), 0, cos(radianAngle)],
+  ]
+  return rotate(coordinate, rotationMatrix)
+}
+
+export function rotateZ(coordinate: Coordinate3D, angle: number): Coordinate3D {
+  const radianAngle = angleToRadian(angle)
+  const rotationMatrix = [
+    [cos(radianAngle), sin(radianAngle), 0],
+    [-sin(radianAngle), cos(radianAngle), 0],
+    [0, 0, 1],
+  ]
+  return rotate(coordinate, rotationMatrix)
+}
+
+function rotate(
+  coordinate: Coordinate3D,
+  rotationMatrix: number[][]
+): Coordinate3D {
+  const { x, y, z } = coordinate
+  return {
+    x:
+      x * rotationMatrix[0][0] +
+      y * rotationMatrix[0][1] +
+      z * rotationMatrix[0][2],
+    y:
+      x * rotationMatrix[1][0] +
+      y * rotationMatrix[1][1] +
+      z * rotationMatrix[1][2],
+    z:
+      x * rotationMatrix[2][0] +
+      y * rotationMatrix[2][1] +
+      z * rotationMatrix[2][2],
+  }
+}
+
+function angleToRadian(angle: number): number {
+  return (angle * Math.PI) / 180
+}
+
+function sin(radianAngle: number): number {
+  return Math.round(Math.sin(radianAngle))
+}
+
+function cos(radianAngle: number): number {
+  return Math.round(Math.cos(radianAngle))
 }
