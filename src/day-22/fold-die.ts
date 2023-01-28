@@ -67,34 +67,64 @@ export function getPlanes(grid: Grid): Plane[] {
 
 function fold(planes: Plane[]): void {
   const foldableEdges = getAllEdges(planes).filter(edgeIsFoldable)
-  console.log('foldable:')
-  console.log(foldableEdges)
-
-  foldEdge(foldableEdges[0])
+  foldEdge(foldableEdges[0], 90)
 }
 
-function foldEdge(edge: PlaneEdge): void {
-  const [, plane] = edge.planes
-  const otherEdges = (Object.keys(plane.edges) as Facing[])
-    .map(key => plane.edges[key])
-    .filter(otherEdge => otherEdge !== edge)
-  console.log('\ncurrent')
-  console.log(edge)
-  console.log('nextEdges')
-  console.log(otherEdges)
+function foldEdge(edge: PlaneEdge, angle: number): void {
+  // determine if x/y/z rotation
+  const rotatationAxis = parallelAxisOfEdge(edge)
+  if (rotatationAxis === null) throw new Error('Not parallel to any axis')
 
-  // todo: rotate other edges
-  const nextEdges = otherEdges.filter(edgeIsFoldable)
-  // todo: fold next edges
-  // nextEdges.forEach(foldEdge)
+  // pick one side to be folded
+  const [, plane] = edge.planes
+
+  // find all edges affected by the fold
+  const otherEdges = findEdgesToFold(plane, edge)
+
+  console.log('rotate around', rotatationAxis, edge)
+
+  console.log('\nROTATE THEM:')
+
+  // update coordinates of each affected edge
+  otherEdges.forEach(otherEdge => {
+    ;[otherEdge.from, otherEdge.to].forEach(point => {
+      // move to origin
+      const pointInOrigin = substractVectors(point, edge.from)
+      // rotate
+      const pointInOriginRotated = rotateAroundAxis(
+        pointInOrigin,
+        angle,
+        rotatationAxis
+      )
+      // move back
+      const pointRotated = addVectors(pointInOriginRotated, edge.from)
+      point.x = pointRotated.x
+      point.y = pointRotated.y
+      point.z = pointRotated.z
+    })
+  })
+
+  console.log('nextEdges ROTATED:')
+  console.log(otherEdges)
+}
+
+function findEdgesToFold(
+  cameFromPlane: Plane,
+  cameFromEdge: PlaneEdge
+): PlaneEdge[] {
+  const startingVal: PlaneEdge[] = []
+  return (Object.keys(cameFromPlane.edges) as Facing[])
+    .map(key => cameFromPlane.edges[key])
+    .filter(otherEdge => otherEdge !== cameFromEdge)
+    .reduce((result, otherEdge) => {
+      const newPlane = otherEdge.planes.find(plane => plane !== cameFromPlane)
+      if (newPlane === undefined) return [...result, otherEdge]
+      return [...result, otherEdge, ...findEdgesToFold(newPlane, otherEdge)]
+    }, startingVal)
 }
 
 function mergeOverlappingEdges(planes: Plane[]): void {
   const edges = getAllEdges(planes)
-  console.log('EDGES')
-  console.log(edges)
-  console.log(edges.length)
-
   const remaining = [...edges]
   remaining.forEach(edge => {
     const otherEdge = remaining.find(
@@ -105,7 +135,6 @@ function mergeOverlappingEdges(planes: Plane[]): void {
       const otherFacing = (Object.keys(otherPlane.edges) as Facing[]).find(
         key => otherPlane.edges[key] === otherEdge
       ) as Facing
-      console.log('found other!!')
 
       edge.planes.push(otherPlane)
       otherPlane.edges[otherFacing] = edge
@@ -115,9 +144,6 @@ function mergeOverlappingEdges(planes: Plane[]): void {
       remaining.splice(i, 1)
     }
   })
-
-  const x = getAllEdges(planes)
-  console.log(x.length)
 }
 
 function getAllEdges(planes: Plane[]): PlaneEdge[] {
@@ -128,6 +154,7 @@ function getAllEdges(planes: Plane[]): PlaneEdge[] {
         result.add(edge)
       })
     return result
+    // remove duplicates
   }, new Set<PlaneEdge>())
   return [...edges]
 }
@@ -145,33 +172,46 @@ function edgeIsFoldable(edge: PlaneEdge): boolean {
   return edge.planes.length === 2
 }
 
-export function rotateX(coordinate: Coordinate3D, angle: number): Coordinate3D {
-  const radianAngle = angleToRadian(angle)
-  const rotationMatrix = [
-    [1, 0, 0],
-    [0, cos(radianAngle), -sin(radianAngle)],
-    [0, sin(radianAngle), cos(radianAngle)],
-  ]
-  return rotate(coordinate, rotationMatrix)
+/** Returns the name of the axis an edge is parallel to, or null */
+function parallelAxisOfEdge(edge: PlaneEdge): keyof Coordinate3D | null {
+  const diffVector = substractVectors(edge.from, edge.to)
+  const changedAxes =
+    (Object.keys(diffVector) as Array<keyof Coordinate3D>).filter(
+      axis => diffVector[axis] !== 0
+    ) ?? null
+  return changedAxes.length === 1 ? changedAxes[0] : null
 }
 
-export function rotateY(coordinate: Coordinate3D, angle: number): Coordinate3D {
+function rotateAroundAxis(
+  coordinate: Coordinate3D,
+  angle: number,
+  axis: keyof Coordinate3D
+) {
+  let rotationMatrix
   const radianAngle = angleToRadian(angle)
-  const rotationMatrix = [
-    [cos(radianAngle), 0, -sin(radianAngle)],
-    [0, 1, 0],
-    [sin(radianAngle), 0, cos(radianAngle)],
-  ]
-  return rotate(coordinate, rotationMatrix)
-}
-
-export function rotateZ(coordinate: Coordinate3D, angle: number): Coordinate3D {
-  const radianAngle = angleToRadian(angle)
-  const rotationMatrix = [
-    [cos(radianAngle), sin(radianAngle), 0],
-    [-sin(radianAngle), cos(radianAngle), 0],
-    [0, 0, 1],
-  ]
+  switch (axis) {
+  case 'y':
+    rotationMatrix = [
+      [cos(radianAngle), 0, -sin(radianAngle)],
+      [0, 1, 0],
+      [sin(radianAngle), 0, cos(radianAngle)],
+    ]
+    break
+  case 'z':
+    rotationMatrix = [
+      [cos(radianAngle), sin(radianAngle), 0],
+      [-sin(radianAngle), cos(radianAngle), 0],
+      [0, 0, 1],
+    ]
+    break
+  case 'x':
+  default:
+    rotationMatrix = [
+      [1, 0, 0],
+      [0, cos(radianAngle), -sin(radianAngle)],
+      [0, sin(radianAngle), cos(radianAngle)],
+    ]
+  }
   return rotate(coordinate, rotationMatrix)
 }
 
@@ -193,6 +233,22 @@ function rotate(
       x * rotationMatrix[2][0] +
       y * rotationMatrix[2][1] +
       z * rotationMatrix[2][2],
+  }
+}
+
+function addVectors(a: Coordinate3D, b: Coordinate3D): Coordinate3D {
+  return {
+    x: a.x + b.x,
+    y: a.y + b.y,
+    z: a.z + b.z,
+  }
+}
+
+function substractVectors(a: Coordinate3D, b: Coordinate3D): Coordinate3D {
+  return {
+    x: a.x - b.x,
+    y: a.y - b.y,
+    z: a.z - b.z,
   }
 }
 
