@@ -1,5 +1,5 @@
-import { isOnGrid, coordinatesOverlap } from './utils.js'
 import { PLANE_SIZE } from './constants.js'
+import { isOnGrid, coordinatesOverlap } from './utils.js'
 import {
   Coordinate,
   Coordinate3D,
@@ -12,7 +12,7 @@ import {
 
 export function getPlanes(grid: Grid): Plane[] {
   const planes: Plane[] = []
-  let name = 1
+  let number = 1
 
   // unfolded die must fit into a 4x4 grid
   for (let y = 0; y < 4; y++) {
@@ -26,14 +26,14 @@ export function getPlanes(grid: Grid): Plane[] {
         grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
       ) {
         const plane = {} as Plane
-        plane.name = name.toString()
+        plane.name = number.toString()
         plane.x = x
         plane.y = y
         plane.z = 0
         plane.edges = {
           '^': {
-            from: { x: 0 + x, y: 0 + y, z: 0 },
-            to: { x: 1 + x, y: 0 + y, z: 0 },
+            from: { x: 0 + x, y: 1 + y, z: 0 },
+            to: { x: 1 + x, y: 1 + y, z: 0 },
             planes: [plane],
           },
           '>': {
@@ -42,8 +42,8 @@ export function getPlanes(grid: Grid): Plane[] {
             planes: [plane],
           },
           "v": {
-            from: { x: 0 + x, y: 1 + y, z: 0 },
-            to: { x: 1 + x, y: 1 + y, z: 0 },
+            from: { x: 0 + x, y: 0 + y, z: 0 },
+            to: { x: 1 + x, y: 0 + y, z: 0 },
             planes: [plane],
           },
           '<': {
@@ -54,10 +54,14 @@ export function getPlanes(grid: Grid): Plane[] {
         }
         planes.push(plane)
 
-        name += 1
+        number += 1
       }
     }
   }
+
+  planes.forEach(plane => {
+    console.log(plane)
+  })
 
   mergeOverlappingEdges(planes)
   fold(planes)
@@ -66,30 +70,64 @@ export function getPlanes(grid: Grid): Plane[] {
 }
 
 function fold(planes: Plane[]): void {
+  // const from = { x: 1, y: 2, z: 0 }
+  // const axis = 'z'
+  // const angle = 90
+  // const result = rotateAroundAxis(from, angle, axis)
+  // console.log('from:', from)
+  // console.log(`rotated ${angle} degrees around ${axis} axis:`, result)
+
+  // return
   const foldableEdges = getAllEdges(planes).filter(edgeIsFoldable)
-  foldEdge(foldableEdges[0], 90)
+  console.log(foldableEdges)
+
+  // // foldableEdges.forEach(edge => foldEdge(edge, 90))
+
+  // console.log('before')
+  // console.log(foldableEdges[3])
+  // foldEdge(foldableEdges[0], 90)
+  // console.log('1 fold')
+  // console.log(foldableEdges[3])
+  // foldEdge(foldableEdges[1], 90)
+  // console.log('2 fold')
+  // console.log(foldableEdges[3])
+  // foldEdge(foldableEdges[2], 90)
+  // console.log('3 fold')
+  // console.log(foldableEdges[3])
+  // foldEdge(foldableEdges[3], 90)
+  // console.log('4 fold')
+  // console.log(foldableEdges[3])
+  // foldEdge(foldableEdges[4], -90)
+  // console.log('after')
+  // console.log(foldableEdges[3])
+  // mergeOverlappingEdges(planes)
+  // console.log(getAllEdges(planes))
+  // console.log(getAllEdges(planes).length)
+
+  foldableEdges.forEach(edge => {
+    console.log(edge.planes)
+    foldEdge(edge, 90)
+    mergeOverlappingEdges(planes)
+  })
+  console.log(getAllEdges(planes).length)
 }
 
 function foldEdge(edge: PlaneEdge, angle: number): void {
   // determine if x/y/z rotation
   const rotatationAxis = parallelAxisOfEdge(edge)
   if (rotatationAxis === null) throw new Error('Not parallel to any axis')
-
   // pick one side to be folded
   const [, plane] = edge.planes
-
   // find all edges affected by the fold
   const otherEdges = findEdgesToFold(plane, edge)
-
-  console.log('rotate around', rotatationAxis, edge)
-
-  console.log('\nROTATE THEM:')
+  // reference point from rotation axis used for moving to origin and back
+  const referencePoint = { ...edge.from }
 
   // update coordinates of each affected edge
   otherEdges.forEach(otherEdge => {
     ;[otherEdge.from, otherEdge.to].forEach(point => {
       // move to origin
-      const pointInOrigin = substractVectors(point, edge.from)
+      const pointInOrigin = substractVectors(point, referencePoint)
       // rotate
       const pointInOriginRotated = rotateAroundAxis(
         pointInOrigin,
@@ -97,15 +135,12 @@ function foldEdge(edge: PlaneEdge, angle: number): void {
         rotatationAxis
       )
       // move back
-      const pointRotated = addVectors(pointInOriginRotated, edge.from)
+      const pointRotated = addVectors(pointInOriginRotated, referencePoint)
       point.x = pointRotated.x
       point.y = pointRotated.y
       point.z = pointRotated.z
     })
   })
-
-  console.log('nextEdges ROTATED:')
-  console.log(otherEdges)
 }
 
 function findEdgesToFold(
