@@ -207,6 +207,42 @@ function edgeIsFoldable(edge: PlaneEdge): boolean {
   return edge.planes.length === 2
 }
 
+/** Returns the center point between 2 planes, created by the folding of an edge */
+function getCenterPoint(edge: PlaneEdge): Coordinate3D {
+  const edges = edge.planes.reduce(
+    (result, plane) => [...result, ...getAllEdges([plane])],
+    [] as PlaneEdge[]
+  )
+  const points = edges.reduce(
+    (result, edge) => [...result, ...[edge.from, edge.to]],
+    [] as Coordinate3D[]
+  )
+  const minMaxPoints = points.reduce((result, point) => {
+    ;(Object.keys(point) as (keyof Coordinate3D)[]).forEach(axis => {
+      if (result[axis] === undefined) {
+        result[axis] = {
+          min: point[axis],
+          max: point[axis],
+        }
+      }
+      else if (point[axis] < result[axis].min) {
+        result[axis].min = point[axis]
+      }
+      else if (point[axis] > result[axis].max) {
+        result[axis].max = point[axis]
+      }
+    })
+    return result
+  }, {} as Record<keyof Coordinate3D, { min: number; max: number }>)
+  return (Object.keys(minMaxPoints) as (keyof Coordinate3D)[]).reduce(
+    (result, axis) => ({
+      ...result,
+      [axis]: (minMaxPoints[axis].min + minMaxPoints[axis].max) / 2,
+    }),
+    {} as Coordinate3D
+  )
+}
+
 /** Returns the name of the axis an edge is parallel to, or null */
 function parallelAxisOfEdge(edge: PlaneEdge): keyof Coordinate3D | null {
   const diffVector = substractVectors(edge.from, edge.to)
