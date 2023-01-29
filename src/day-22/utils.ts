@@ -42,8 +42,8 @@ export function isOnGrid<T>(grid: T[][], coordinate: Coordinate) {
 
 export function getStartLocation(grid: Grid): PlayerLocation {
   let x = 0
-  let y = 0
-  outer: for (; y < grid.length; y++) {
+  let y = grid.length - 1
+  outer: for (; y >= 0; y--) {
     for (; x < grid[y].length; x++) {
       const cell = grid[y][x]
       if (cell.type === '.') break outer
@@ -80,7 +80,11 @@ export function stringifyGrid(grid: Grid, path: Path): string {
   })
   return (
     '\n\n' +
-    gridCopy.map(column => column.map(cell => cell.type).join('')).join('\n')
+    gridCopy
+      .map(column => column.map(cell => cell.type).join(''))
+      .slice()
+      .reverse()
+      .join('\n')
   )
 }
 
@@ -103,6 +107,7 @@ export function parseInput(input: string): {
   const grid: Grid = mapString
     .split('\n')
     .map(line => line.split('').map(sign => ({ type: sign })) as Cell[])
+    .reverse()
   let instructions: Instruction[] = []
   for (let i = 0; i < instructionString.length; i++) {
     const char = instructionString.charAt(i)

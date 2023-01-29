@@ -25,6 +25,7 @@ import {
   Instruction,
   Plane,
   PlaneEdge,
+  Coordinate3D,
 } from './types'
 
 const { file } = parseArgs()
@@ -34,9 +35,9 @@ const logger = new Logger()
 export default async function solution(input: string): Promise<Solution22> {
   const { grid, instructions } = parseInput(input)
   const path = getPathFromInstructions(grid, instructions)
-  const answer1 = getPassword(path[path.length - 1])
+  const answer1 = getPassword(grid, path[path.length - 1])
 
-  const planes = getPlanes(grid)
+  // const planes = getPlanes(grid)
   // console.log('planes')
   // console.log(planes)
   // console.log('edges')
@@ -47,7 +48,7 @@ export default async function solution(input: string): Promise<Solution22> {
 
   // connectEdges(planes, edges)
 
-  console.log(stringifyPlanes(planes))
+  // console.log(stringifyPlanes(planes))
 
   return {
     answer1,
@@ -55,7 +56,7 @@ export default async function solution(input: string): Promise<Solution22> {
   }
 }
 
-function getPassword(location: PlayerLocation): number {
+function getPassword(grid: Grid, location: PlayerLocation): number {
   const { x, y, facing } = location
   const faceValue = {
     '>': 0,
@@ -63,7 +64,7 @@ function getPassword(location: PlayerLocation): number {
     '<': 2,
     '^': 3,
   }
-  return 1000 * (y + 1) + 4 * (x + 1) + faceValue[facing]
+  return 1000 * (grid.length - y) + 4 * (x + 1) + faceValue[facing]
 }
 
 function getPathFromInstructions(
@@ -103,11 +104,12 @@ function getPathFromInstructions(
 function move(grid: Grid, path: Path, amount: number): Path {
   const newPath = [...path]
   for (let i = 0; i < amount; i++) {
-    const next = getNextCoordinate(grid, newPath[newPath.length - 1])
+    const last = newPath[newPath.length - 1]
+    const next = getNextCoordinate(grid, last)
     const cell = grid[next.y][next.x]
     // wall, stop
     if (cell.type === '#') break
-    else if (cell.type === '.') newPath.push(next)
+    else newPath.push(next)
   }
   return newPath
 }
@@ -133,7 +135,7 @@ function getNextCoordinate(grid: Grid, location: PlayerLocation) {
   // warp through empty space
   if (!isOnGrid(grid, next) || grid[next.y][next.x].type === ' ') {
     const axis: Axis = ['<', '>'].includes(facing) ? 'x' : 'y'
-    const forwards = ['>', 'v'].includes(facing)
+    const forwards = ['>', '^'].includes(facing)
     let newVal = location[axis]
     // follow the axis back until the first field before empty space
     while (true) {
