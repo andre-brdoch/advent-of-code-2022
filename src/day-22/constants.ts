@@ -13,3 +13,5 @@ export const VECTORS: { [facing: string]: Coordinate } = {
   "v": { x: 0, y: -1 },
   '<': { x: -1, y: 0 },
 }
+
+export const UPPER_A_ASCII_CODE = 65

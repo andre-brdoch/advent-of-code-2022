@@ -25,7 +25,7 @@
  * 7. The die is now correctly folded!
  */
 
-import { PLANE_SIZE } from './constants.js'
+import { PLANE_SIZE, UPPER_A_ASCII_CODE } from './constants.js'
 import { isOnGrid, coordinatesOverlap, stringifyPlanes } from './utils.js'
 import { Coordinate3D, Facing, Grid, Plane, PlaneEdge } from './types'
 import { Logger } from '../utils/Logger.js'
@@ -388,7 +388,7 @@ function getPlanes(grid: Grid): Plane[] {
         grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
       ) {
         const plane = {} as Plane
-        plane.name = number.toString()
+        plane.name = String.fromCharCode(number + UPPER_A_ASCII_CODE - 1)
         plane.x = x
         plane.y = y
         plane.z = 0
