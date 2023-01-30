@@ -36,6 +36,8 @@ export function getFoldedDie(grid: Grid): Plane[] {
   const planes = getPlanes(grid)
   mergeOverlappingEdges(planes)
   fold(planes)
+  console.log(getAllEdges(planes).length)
+
   return planes
 }
 
@@ -392,7 +394,7 @@ function getPlanes(grid: Grid): Plane[] {
         plane.z = 0
         // lines marking the edges on all 4 sides:
         plane.edges = {
-          '^': {
+          "v": {
             from: { x: x, y: 1 + y, z: 0 },
             to: { x: 1 + x, y: 1 + y, z: 0 },
             planes: [plane],
@@ -402,7 +404,7 @@ function getPlanes(grid: Grid): Plane[] {
             to: { x: 1 + x, y: 1 + y, z: 0 },
             planes: [plane],
           },
-          "v": {
+          '^': {
             from: { x: x, y: y, z: 0 },
             to: { x: 1 + x, y: y, z: 0 },
             planes: [plane],
