@@ -207,8 +207,33 @@ function edgeIsFoldable(edge: PlaneEdge): boolean {
   return edge.planes.length === 2
 }
 
+function getEdgeClosestToPoint(
+  point: Coordinate3D,
+  edges: PlaneEdge[]
+): PlaneEdge {
+  return edges
+    .map(edge => {
+      const edgeCenter = getCenterOfEdge(edge)
+      const distance = getDistanceBetweenPoints(point, edgeCenter)
+      return {
+        edge,
+        distance,
+      }
+    })
+    .sort((a, b) => a.distance - b.distance)[0].edge
+}
+
+function getDistanceBetweenPoints(a: Coordinate3D, b: Coordinate3D): number {
+  const sumVector = addVectors(a, b)
+  return Math.sqrt(
+    Math.pow(sumVector.x, 2) +
+      Math.pow(sumVector.y, 2) +
+      Math.pow(sumVector.z, 2)
+  )
+}
+
 /** Returns the center point between 2 planes, created by the folding of an edge */
-function getCenterPoint(edge: PlaneEdge): Coordinate3D {
+function getCenterOf2FoldedPlanes(edge: PlaneEdge): Coordinate3D {
   const edges = edge.planes.reduce(
     (result, plane) => [...result, ...getAllEdges([plane])],
     [] as PlaneEdge[]
@@ -238,6 +263,18 @@ function getCenterPoint(edge: PlaneEdge): Coordinate3D {
     (result, axis) => ({
       ...result,
       [axis]: (minMaxPoints[axis].min + minMaxPoints[axis].max) / 2,
+    }),
+    {} as Coordinate3D
+  )
+}
+
+/** Returns the center on an edge */
+function getCenterOfEdge(edge: PlaneEdge): Coordinate3D {
+  const sumVector = addVectors(edge.from, edge.to)
+  return (Object.keys(sumVector) as (keyof Coordinate3D)[]).reduce(
+    (result, axis) => ({
+      ...result,
+      [axis]: sumVector[axis] / 2,
     }),
     {} as Coordinate3D
   )
