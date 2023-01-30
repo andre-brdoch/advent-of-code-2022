@@ -59,10 +59,6 @@ export function getPlanes(grid: Grid): Plane[] {
     }
   }
 
-  planes.forEach(plane => {
-    console.log(plane)
-  })
-
   mergeOverlappingEdges(planes)
   fold(planes)
 
@@ -70,45 +66,32 @@ export function getPlanes(grid: Grid): Plane[] {
 }
 
 function fold(planes: Plane[]): void {
-  // const from = { x: 1, y: 2, z: 0 }
-  // const axis = 'z'
-  // const angle = 90
-  // const result = rotateAroundAxis(from, angle, axis)
-  // console.log('from:', from)
-  // console.log(`rotated ${angle} degrees around ${axis} axis:`, result)
-
-  // return
   const foldableEdges = getAllEdges(planes).filter(edgeIsFoldable)
-  console.log(foldableEdges)
 
-  // // foldableEdges.forEach(edge => foldEdge(edge, 90))
+  const firstEdge = foldableEdges.shift() as PlaneEdge
+  foldEdge(firstEdge, 90)
+  // place the center between the 2 foldes planes, to help
+  // determine fold direction for all following folds
+  const pointBetween = getCenterOf2FoldedPlanes(firstEdge)
 
-  // console.log('before')
-  // console.log(foldableEdges[3])
-  // foldEdge(foldableEdges[0], 90)
-  // console.log('1 fold')
-  // console.log(foldableEdges[3])
-  // foldEdge(foldableEdges[1], 90)
-  // console.log('2 fold')
-  // console.log(foldableEdges[3])
-  // foldEdge(foldableEdges[2], 90)
-  // console.log('3 fold')
-  // console.log(foldableEdges[3])
-  // foldEdge(foldableEdges[3], 90)
-  // console.log('4 fold')
-  // console.log(foldableEdges[3])
-  // foldEdge(foldableEdges[4], -90)
-  // console.log('after')
-  // console.log(foldableEdges[3])
-  // mergeOverlappingEdges(planes)
-  // console.log(getAllEdges(planes))
-  // console.log(getAllEdges(planes).length)
-
-  foldableEdges.forEach(edge => {
-    console.log(edge.planes)
+  // for each remaining edge, find the edge currently closest to the center
+  // of the die, and fold. If after folding the distance has increased,
+  // it means that we folded into the wrong direction, so we now have
+  // to fold 2x into the opposite direction.
+  while (foldableEdges.length !== 0) {
+    const edge = getEdgeClosestToPoint(pointBetween, foldableEdges)
+    foldableEdges.splice(foldableEdges.indexOf(edge), 1)
+    const edgeCenter = getCenterOfEdge(edge)
+    const distanceBefore = getDistanceBetweenPoints(edgeCenter, pointBetween)
     foldEdge(edge, 90)
-    mergeOverlappingEdges(planes)
-  })
+    const distanceAfter = getDistanceBetweenPoints(edgeCenter, pointBetween)
+    if (distanceAfter > distanceBefore) {
+      // was folded in wrong direction, reverse and fold into other direction
+      foldEdge(edge, -90)
+      foldEdge(edge, -90)
+    }
+  }
+  mergeOverlappingEdges(planes)
   console.log(getAllEdges(planes).length)
 }
 
