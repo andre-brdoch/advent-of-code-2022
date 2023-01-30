@@ -1,13 +1,7 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
-import { getFoldedDie } from './fold-die.js'
-import {
-  isOnGrid,
-  getStartLocation,
-  stringifyGrid,
-  stringifyInstructions,
-  parseInput,
-} from './utils.js'
+import { Die } from './fold-die.js'
+import { isOnGrid, getStartLocation, parseInput } from './utils.js'
 import { VECTORS } from './constants.js'
 import {
   Solution22,
@@ -17,7 +11,6 @@ import {
   Path,
   Grid,
   RotateInstruction,
-  MoveInstruction,
   Instruction,
 } from './types'
 
@@ -30,7 +23,12 @@ export default async function solution(input: string): Promise<Solution22> {
   const path = getPathFromInstructions(grid, instructions)
   const answer1 = getPassword(grid, path[path.length - 1])
 
-  getFoldedDie(grid)
+  // const die = getFoldedDie(grid)
+  const die = new Die(grid)
+  logger.log(`\nFold die with the following unfolded shape:\n`)
+  logger.log(die.stringify2D())
+  die.getNextCoordinate(path[0])
+
   // console.log('planes')
   // console.log(planes)
   // console.log('edges')
@@ -121,7 +119,10 @@ function rotate(
   playerLocation.facing = newFacing
 }
 
-function getNextCoordinate(grid: Grid, location: PlayerLocation) {
+function getNextCoordinate(
+  grid: Grid,
+  location: PlayerLocation
+): PlayerLocation {
   const { facing } = location
   const vector = VECTORS[facing]
   const next = { facing, x: location.x + vector.x, y: location.y + vector.y }

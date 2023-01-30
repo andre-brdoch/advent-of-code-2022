@@ -10,6 +10,7 @@ import {
   MoveInstruction,
   RotateInstruction,
   Coordinate3D,
+  Facing,
 } from './types'
 
 export function coordinatesOverlap(
@@ -52,6 +53,16 @@ export function getStartLocation(grid: Grid): PlayerLocation {
   return { x, y, facing: INITIAL_FACING }
 }
 
+export function flipFacing(facing: Facing): Facing {
+  const map: Record<Facing, Facing> = {
+    '^': 'v',
+    "v": '^',
+    '>': '<',
+    '<': '>',
+  }
+  return map[facing]
+}
+
 export function planesToGrid(planes: Plane[]): (Plane | null)[][] {
   const planeGrid = []
   for (let y = 0; y < 4; y++) {
@@ -70,6 +81,8 @@ export function stringifyPlanes(planes: Plane[]): string {
   const planeGrid = planesToGrid(planes)
   return planeGrid
     .map(row => row.map(plane => plane?.name ?? ' ').join(' '))
+    .slice()
+    .reverse()
     .join('\n')
 }
 

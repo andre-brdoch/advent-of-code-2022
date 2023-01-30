@@ -26,26 +26,76 @@
  */
 
 import { PLANE_SIZE, UPPER_A_ASCII_CODE } from './constants.js'
-import { isOnGrid, coordinatesOverlap, stringifyPlanes } from './utils.js'
-import { Coordinate3D, Facing, Grid, Plane, PlaneEdge } from './types'
-import { Logger } from '../utils/Logger.js'
+import {
+  isOnGrid,
+  coordinatesOverlap,
+  stringifyPlanes,
+  flipFacing,
+} from './utils.js'
+import {
+  Coordinate3D,
+  Facing,
+  Grid,
+  Plane,
+  PlaneEdge,
+  PlayerLocation,
+} from './types'
 
-const logger = new Logger()
+export class Die {
+  private grid: Grid
+  private planes: Plane[]
 
-export function getFoldedDie(grid: Grid): Plane[] {
-  const planes = getPlanes(grid)
-  mergeOverlappingEdges(planes)
-  fold(planes)
-  console.log(getAllEdges(planes).length)
+  constructor(grid: Grid) {
+    this.grid = grid
+    const planes = getPlanes(grid)
+    mergeOverlappingEdges(planes)
+    fold(planes)
+    console.log(getAllEdges(planes).length)
+    this.planes = planes
+  }
 
-  return planes
+  public getNextCoordinate(location: PlayerLocation): PlayerLocation {
+    return getNextCoordinate(this.planes, this.grid, location)
+  }
+
+  public stringify2D(): string {
+    return stringifyPlanes(this.planes)
+  }
+}
+
+function getNextCoordinate(
+  foldedPlanes: Plane[],
+  grid: Grid,
+  location: PlayerLocation
+): PlayerLocation {
+  const x = Math.floor(location.x / PLANE_SIZE)
+  const y = Math.floor(location.y / PLANE_SIZE)
+  const currentPlane = foldedPlanes.find(
+    plane => plane.x === x && plane.y === y
+  )
+  console.log('currentPlane')
+  console.log(currentPlane)
+  console.log('location.facing')
+  console.log(location.facing)
+  if (currentPlane === undefined) throw new Error('Could not map to die face')
+  const nextPlane = currentPlane.edges[location.facing].planes.filter(
+    p => p !== currentPlane
+  )[0]
+  console.log('nextPlane')
+  console.log(nextPlane)
+  const nextEdgeFacing = (Object.keys(nextPlane.edges) as Facing[]).filter(
+    facing => nextPlane.edges[facing] === currentPlane.edges[location.facing]
+  )[0]
+  console.log('nextEdgeFacing')
+  console.log(nextEdgeFacing)
+  const nextPlayerFacing = flipFacing(nextEdgeFacing)
+  console.log('nextPlayerFacing')
+  console.log(nextPlayerFacing)
+  return { x, y, facing: location.facing }
 }
 
 /** Folds an unfolded die, updating its coordinates. */
 function fold(planes: Plane[]): void {
-  logger.log(`\nFold die with the following unfolded shape:\n`)
-  logger.log(stringifyPlanes(planes))
-
   const foldableEdges = getAllEdges(planes).filter(edgeIsFoldable)
 
   // fold any first edge
