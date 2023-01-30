@@ -28,6 +28,7 @@ export interface Plane {
   y: number
   z: number
   edges: Record<Facing, PlaneEdge>
+  finalPosition?: boolean
 }
 export interface PlaneEdge {
   from: Coordinate3D
