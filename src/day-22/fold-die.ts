@@ -32,67 +32,21 @@ import { Logger } from '../utils/Logger.js'
 
 const logger = new Logger()
 
-export function getPlanes(grid: Grid): Plane[] {
-  const planes: Plane[] = []
-  let number = 1
-
-  // unfolded die must fit into a 4x4 grid
-  for (let y = 0; y < 4; y++) {
-    for (let x = 0; x < 4; x++) {
-      // is plane if not empty
-      if (
-        isOnGrid(grid, {
-          x: x * PLANE_SIZE,
-          y: y * PLANE_SIZE,
-        }) &&
-        grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
-      ) {
-        const plane = {} as Plane
-        plane.name = number.toString()
-        plane.x = x
-        plane.y = y
-        plane.z = 0
-        plane.edges = {
-          '^': {
-            from: { x: 0 + x, y: 1 + y, z: 0 },
-            to: { x: 1 + x, y: 1 + y, z: 0 },
-            planes: [plane],
-          },
-          '>': {
-            from: { x: 1 + x, y: 0 + y, z: 0 },
-            to: { x: 1 + x, y: 1 + y, z: 0 },
-            planes: [plane],
-          },
-          "v": {
-            from: { x: 0 + x, y: 0 + y, z: 0 },
-            to: { x: 1 + x, y: 0 + y, z: 0 },
-            planes: [plane],
-          },
-          '<': {
-            from: { x: 0 + x, y: 0 + y, z: 0 },
-            to: { x: 0 + x, y: 1 + y, z: 0 },
-            planes: [plane],
-          },
-        }
-        planes.push(plane)
-
-        number += 1
-      }
-    }
-  }
-
+export function getFoldedDie(grid: Grid): Plane[] {
+  const planes = getPlanes(grid)
   mergeOverlappingEdges(planes)
   fold(planes)
-
   return planes
 }
 
+/** Folds an unfolded die, updating its coordinates. */
 function fold(planes: Plane[]): void {
   logger.log(`\nFold die with the following unfolded shape:\n`)
   logger.log(stringifyPlanes(planes))
 
   const foldableEdges = getAllEdges(planes).filter(edgeIsFoldable)
 
+  // fold any first edge
   const firstEdge = foldableEdges.shift() as PlaneEdge
   foldEdge(firstEdge, 90)
   firstEdge.planes.forEach(plane => {
@@ -101,22 +55,20 @@ function fold(planes: Plane[]): void {
 
   // place the center between the 2 folded planes, to help
   // determine fold direction for all following edges
-  const pointBetween = getCenterOf2FoldedPlanes(firstEdge)
+  const dieCenter = getCenterOf2FoldedPlanes(firstEdge)
 
   // for each remaining edge, find the one currently closest to the center
   // of the die, and fold. If after folding the distance the plane is not
-  // 0.5, then we folded into the wrong direction, and instead have to do
-  // it into the other direction:
+  // 0.5, then we folded into the wrong direction
   while (foldableEdges.length !== 0) {
-    const edge = getEdgeClosestToPoint(pointBetween, foldableEdges)
+    const edge = getEdgeClosestToPoint(dieCenter, foldableEdges)
     foldableEdges.splice(foldableEdges.indexOf(edge), 1)
     foldEdge(edge, 90)
     if (
       edge.planes.some(
         plane =>
           // planes that are in their final position will have a distance of 0.5 to the die center
-          getDistanceBetweenPoints(getCenterOfPlane(plane), pointBetween) !==
-          0.5
+          getDistanceBetweenPoints(getCenterOfPlane(plane), dieCenter) !== 0.5
       )
     ) {
       // was folded in wrong direction, reverse and fold into other direction
@@ -130,14 +82,15 @@ function fold(planes: Plane[]): void {
 }
 
 /**
- * Folds edge by an angle.
- * Can provide `centerPoint` for determining which side of the edge should not be moved
+ * Folds an edge. 1 of the planes connected to it is being
+ * hold static, whilch the other one (and planes connected to it)
+ * are being updated in their coordinates.
  */
 function foldEdge(edge: PlaneEdge, angle: number): void {
   // determine if x/y/z rotation
   const rotatationAxis = parallelAxisOfEdge(edge)
   if (rotatationAxis === null) throw new Error('Not parallel to any axis')
-  // pick side that is not yet in final position
+  // pick plane that is not yet in final position
   const plane = edge.planes.filter(plane => !plane.finalPosition)[0]
   // find all edges affected by the fold
   const otherEdges = findEdgesToFold(plane, edge)
@@ -164,6 +117,10 @@ function foldEdge(edge: PlaneEdge, angle: number): void {
   })
 }
 
+/**
+ * Recurisvely finds all edges affected by a fold,
+ * ignoring the plane that was hold static during the fold.
+ */
 function findEdgesToFold(
   cameFromPlane: Plane,
   cameFromEdge: PlaneEdge
@@ -179,6 +136,7 @@ function findEdgesToFold(
     }, startingVal)
 }
 
+/** Updates planes to reference the same edges, if they overlap */
 function mergeOverlappingEdges(planes: Plane[]): void {
   const edges = getAllEdges(planes)
   const remaining = [...edges]
@@ -202,6 +160,7 @@ function mergeOverlappingEdges(planes: Plane[]): void {
   })
 }
 
+/** Finds all edges connected to the planes */
 function getAllEdges(planes: Plane[]): PlaneEdge[] {
   const edges = planes.reduce((result, plane) => {
     ;(Object.keys(plane.edges) as Facing[])
@@ -215,6 +174,7 @@ function getAllEdges(planes: Plane[]): PlaneEdge[] {
   return [...edges]
 }
 
+/** Checks if 2 edges overlap each other */
 function edgesOverlap(a: PlaneEdge, b: PlaneEdge) {
   return (
     // same arrow
@@ -228,6 +188,7 @@ function edgeIsFoldable(edge: PlaneEdge): boolean {
   return edge.planes.length === 2
 }
 
+/** Finds the edge whichs center is the closest to a given point */
 function getEdgeClosestToPoint(
   point: Coordinate3D,
   edges: PlaneEdge[]
@@ -243,6 +204,7 @@ function getEdgeClosestToPoint(
   return withDistances.sort((a, b) => a.distance - b.distance)[0].edge
 }
 
+/** Gets the distance between 2 points */
 function getDistanceBetweenPoints(a: Coordinate3D, b: Coordinate3D): number {
   const sumVector = substractVectors(a, b)
   return Math.sqrt(
@@ -406,4 +368,55 @@ function sin(radianAngle: number): number {
 
 function cos(radianAngle: number): number {
   return Math.round(Math.cos(radianAngle))
+}
+
+function getPlanes(grid: Grid): Plane[] {
+  const planes: Plane[] = []
+  let number = 1
+
+  // unfolded die must fit into a 4x4 grid
+  for (let y = 0; y < 4; y++) {
+    for (let x = 0; x < 4; x++) {
+      // is plane if not empty
+      if (
+        isOnGrid(grid, {
+          x: x * PLANE_SIZE,
+          y: y * PLANE_SIZE,
+        }) &&
+        grid[y * PLANE_SIZE][x * PLANE_SIZE].type !== ' '
+      ) {
+        const plane = {} as Plane
+        plane.name = number.toString()
+        plane.x = x
+        plane.y = y
+        plane.z = 0
+        // lines marking the edges on all 4 sides:
+        plane.edges = {
+          '^': {
+            from: { x: x, y: 1 + y, z: 0 },
+            to: { x: 1 + x, y: 1 + y, z: 0 },
+            planes: [plane],
+          },
+          '>': {
+            from: { x: 1 + x, y: y, z: 0 },
+            to: { x: 1 + x, y: 1 + y, z: 0 },
+            planes: [plane],
+          },
+          "v": {
+            from: { x: x, y: y, z: 0 },
+            to: { x: 1 + x, y: y, z: 0 },
+            planes: [plane],
+          },
+          '<': {
+            from: { x: x, y: y, z: 0 },
+            to: { x: x, y: 1 + y, z: 0 },
+            planes: [plane],
+          },
+        }
+        planes.push(plane)
+        number += 1
+      }
+    }
+  }
+  return planes
 }

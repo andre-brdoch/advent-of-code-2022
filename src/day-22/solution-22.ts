@@ -1,6 +1,6 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
-import { getPlanes } from './fold-die.js'
+import { getFoldedDie } from './fold-die.js'
 import {
   isOnGrid,
   getStartLocation,
@@ -30,7 +30,7 @@ export default async function solution(input: string): Promise<Solution22> {
   const path = getPathFromInstructions(grid, instructions)
   const answer1 = getPassword(grid, path[path.length - 1])
 
-  getPlanes(grid)
+  getFoldedDie(grid)
   // console.log('planes')
   // console.log(planes)
   // console.log('edges')
@@ -66,7 +66,7 @@ function getPathFromInstructions(
 ): Path {
   let path = [getStartLocation(grid)]
   logger.log('===== Start position =====')
-  logger.log(stringifyGrid(grid, path))
+  // logger.log(stringifyGrid(grid, path))
 
   instructions.forEach((instruction, i) => {
     if (typeof instruction === 'number') {
@@ -74,21 +74,21 @@ function getPathFromInstructions(
       path = move(grid, path, instruction)
 
       if (i === instructions.length - 1) {
-        logger.log(stringifyInstructions(instruction))
-        logger.log(stringifyGrid(grid, path))
+        // logger.log(stringifyInstructions(instruction))
+        // logger.log(stringifyGrid(grid, path))
       }
     }
     else {
       // rotate last
       rotate(path[path.length - 1], instruction)
 
-      logger.log(
-        stringifyInstructions(
-          instructions[i - 1] as MoveInstruction,
-          instruction
-        )
-      )
-      logger.log(stringifyGrid(grid, path))
+      // logger.log(
+      //   stringifyInstructions(
+      //     instructions[i - 1] as MoveInstruction,
+      //     instruction
+      //   )
+      // )
+      // logger.log(stringifyGrid(grid, path))
     }
   })
   return path
