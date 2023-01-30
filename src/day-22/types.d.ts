@@ -34,5 +34,4 @@ export interface PlaneEdge {
   from: Coordinate3D
   to: Coordinate3D
   planes: Plane[]
-  folded?: boolean
 }

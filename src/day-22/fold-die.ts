@@ -1,6 +1,36 @@
+/**
+ * FOLDING ALGORITHM:
+ *
+ * Generically folds any unfolded die together, by following these steps:
+ *
+ * 1. Determine all die planes end edges. Every edge will eventually be connecting
+ *    two different planes, however, at this steps only 5 edges will know both of their planes.
+ * 2. Fold 1 arbitrary edge of the 5 foldable edges. 1 of its 2 planes (and all planes
+ *    connected to that one) will move and update their coordinates
+ * 3. Remember the center point of the die, whichs early shape is now established by the
+ *    two planes directly connected to the folded edge.
+ * 4. Mark both planes directly connected to the folded edge as in their final position.
+ *    They should not update coordinates anymore moving forward.
+ * 5. Repeat until there is no more unfolded edges:
+ *       5.1. Find the unfolded edge whichs center is the closest to the center of the die.
+ *       5.2. Fold it by 90 degrees. Use the plane that is not yet in its final position
+ *            as the one that is being moved (the other ones stays as it was).
+ *       5.3. Measure the folded planes distance to the center of the die.
+ *            If it is larger than 0.5, then we folded into the wrong direction,
+ *            and we correct by folding by -180 degrees.
+ *       5.4. Mark this plane as also in its final position.
+ *            It should not move anymore in the future.
+ * 6. Merge all edges that are overlapping. Now all six planes should be connected to 4 edges each,
+ *    and all 12 edges connected to 2 planes each.
+ * 7. The die is now correctly folded!
+ */
+
 import { PLANE_SIZE } from './constants.js'
 import { isOnGrid, coordinatesOverlap, stringifyPlanes } from './utils.js'
 import { Coordinate3D, Facing, Grid, Plane, PlaneEdge } from './types'
+import { Logger } from '../utils/Logger.js'
+
+const logger = new Logger()
 
 export function getPlanes(grid: Grid): Plane[] {
   const planes: Plane[] = []
@@ -51,12 +81,6 @@ export function getPlanes(grid: Grid): Plane[] {
     }
   }
 
-  console.log(stringifyPlanes(planes))
-
-  console.log(planes[0])
-
-  console.log(getCenterOfPlane(planes[0]))
-
   mergeOverlappingEdges(planes)
   fold(planes)
 
@@ -64,6 +88,9 @@ export function getPlanes(grid: Grid): Plane[] {
 }
 
 function fold(planes: Plane[]): void {
+  logger.log(`\nFold die with the following unfolded shape:\n`)
+  logger.log(stringifyPlanes(planes))
+
   const foldableEdges = getAllEdges(planes).filter(edgeIsFoldable)
 
   const firstEdge = foldableEdges.shift() as PlaneEdge
@@ -71,105 +98,47 @@ function fold(planes: Plane[]): void {
   firstEdge.planes.forEach(plane => {
     plane.finalPosition = true
   })
-  console.log('first edge:')
-  console.log(firstEdge)
 
-  // place the center between the 2 foldes planes, to help
-  // determine fold direction for all following folds
+  // place the center between the 2 folded planes, to help
+  // determine fold direction for all following edges
   const pointBetween = getCenterOf2FoldedPlanes(firstEdge)
 
   // for each remaining edge, find the one currently closest to the center
-  // of the die, and fold. If after folding the distance of both planes
-  // connected to that edge has increased, it means that we folded
-  // into the wrong direction, so we now have to fold 2x into the opposite direction.
+  // of the die, and fold. If after folding the distance the plane is not
+  // 0.5, then we folded into the wrong direction, and instead have to do
+  // it into the other direction:
   while (foldableEdges.length !== 0) {
     const edge = getEdgeClosestToPoint(pointBetween, foldableEdges)
     foldableEdges.splice(foldableEdges.indexOf(edge), 1)
-    // const distanceBefore = getSummedDistanceOfPlanesToPoint(
-    //   pointBetween,
-    //   edge.planes
-    // )
-    foldEdge(edge, 90, pointBetween)
+    foldEdge(edge, 90)
     if (
       edge.planes.some(
         plane =>
+          // planes that are in their final position will have a distance of 0.5 to the die center
           getDistanceBetweenPoints(getCenterOfPlane(plane), pointBetween) !==
           0.5
       )
     ) {
-      console.log('OTHER WAY plzzz')
       // was folded in wrong direction, reverse and fold into other direction
-      foldEdge(edge, -180, pointBetween)
+      foldEdge(edge, -180)
     }
-    // const distanceAfter = getSummedDistanceOfPlanesToPoint(
-    //   pointBetween,
-    //   edge.planes
-    // )
-    // if (distanceAfter > distanceBefore) {
-    //   console.log('OTHER WAY')
-
-    //   // was folded in wrong direction, reverse and fold into other direction
-    //   foldEdge(edge, -180, pointBetween)
-    //   // foldEdge(edge, -90)
-    //   const xxx = getSummedDistanceOfPlanesToPoint(pointBetween, edge.planes)
-    //   console.log(xxx)
-    // }
     edge.planes.forEach(plane => {
       plane.finalPosition = true
     })
   }
   mergeOverlappingEdges(planes)
-  console.log(getAllEdges(planes).length)
 }
 
 /**
  * Folds edge by an angle.
  * Can provide `centerPoint` for determining which side of the edge should not be moved
  */
-function foldEdge(
-  edge: PlaneEdge,
-  angle: number,
-  centerPoint: Coordinate3D | undefined = undefined
-): void {
-  console.log(
-    `fold edge between ${edge.planes[0].name} and ${edge.planes[1].name}`
-  )
-
+function foldEdge(edge: PlaneEdge, angle: number): void {
   // determine if x/y/z rotation
   const rotatationAxis = parallelAxisOfEdge(edge)
   if (rotatationAxis === null) throw new Error('Not parallel to any axis')
-  // pick one side to be folded
+  // pick side that is not yet in final position
   const plane = edge.planes.filter(plane => !plane.finalPosition)[0]
-  // if (centerPoint) {
-  //   // keep side closest to die center static
-  //   console.log(
-  //     getDistanceBetweenPoints(centerPoint, getCenterOfPlane(edge.planes[0]))
-  //   )
-  //   console.log(
-  //     getDistanceBetweenPoints(centerPoint, getCenterOfPlane(edge.planes[1]))
-  //   )
-  //   console.log('---')
-
-  //   // One of the 2 planes should not be in its final position yet.
-  //   // It will have a distance larger than 0.5 to the die center.
-  //   plane = edge.planes.filter(plane => {
-  //     const planeCenter = getCenterOfPlane(plane)
-  //     const distance = getDistanceBetweenPoints(centerPoint, planeCenter)
-  //     return distance !== 0.5
-  //   })[0]
-  //   console.log(plane.name)
-
-  //   // plane = edge.planes
-  //   //   .map(p => ({
-  //   //     plane: p,
-  //   //     distance: getDistanceBetweenPoints(centerPoint, getCenterOfPlane(p)),
-  //   //   }))
-  //   //   .sort((a, b) => b.distance - a.distance)[0].plane
-  // }
-  // else {
-  //   // pick any side
-  //   plane = edge.planes[1]
-  // }
   // find all edges affected by the fold
   const otherEdges = findEdgesToFold(plane, edge)
   // reference point from rotation axis used for moving to origin and back
@@ -257,15 +226,6 @@ function edgesOverlap(a: PlaneEdge, b: PlaneEdge) {
 
 function edgeIsFoldable(edge: PlaneEdge): boolean {
   return edge.planes.length === 2
-}
-
-function getSummedDistanceOfPlanesToPoint(
-  point: Coordinate3D,
-  planes: Plane[]
-): number {
-  return planes
-    .map(plane => getDistanceBetweenPoints(getCenterOfPlane(plane), point))
-    .reduce((result, distance) => result + distance, 0)
 }
 
 function getEdgeClosestToPoint(
