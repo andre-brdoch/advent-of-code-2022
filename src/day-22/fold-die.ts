@@ -1,7 +1,7 @@
 /**
  * FOLDING ALGORITHM:
  *
- * Generically folds any unfolded die together, by following these steps:
+ * Generically folds any unfolded 6-sided die together, by following these steps:
  *
  * 1. Determine all die planes end edges. Every edge will eventually be connecting
  *    two different planes, however, at this steps only 5 edges will know both of their planes.
