@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "noImplicitAny": true,
+    "outDir": "out",
+    "rootDir": "./src",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ESNext"
+  },
+  "ts-node": {
+    "esm": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}
