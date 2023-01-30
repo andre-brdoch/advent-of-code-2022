@@ -4,28 +4,21 @@ import { getPlanes } from './fold-die.js'
 import {
   isOnGrid,
   getStartLocation,
-  planesToGrid,
   stringifyGrid,
   stringifyInstructions,
-  stringifyPlanes,
   parseInput,
 } from './utils.js'
 import { VECTORS } from './constants.js'
 import {
   Solution22,
-  Coordinate,
   Axis,
   Facing,
   PlayerLocation,
   Path,
-  Cell,
   Grid,
   RotateInstruction,
   MoveInstruction,
   Instruction,
-  Plane,
-  PlaneEdge,
-  Coordinate3D,
 } from './types'
 
 const { file } = parseArgs()
@@ -37,7 +30,7 @@ export default async function solution(input: string): Promise<Solution22> {
   const path = getPathFromInstructions(grid, instructions)
   const answer1 = getPassword(grid, path[path.length - 1])
 
-  // const planes = getPlanes(grid)
+  getPlanes(grid)
   // console.log('planes')
   // console.log(planes)
   // console.log('edges')

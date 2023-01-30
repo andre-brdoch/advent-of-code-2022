@@ -1,14 +1,6 @@
 import { PLANE_SIZE } from './constants.js'
 import { isOnGrid, coordinatesOverlap } from './utils.js'
-import {
-  Coordinate,
-  Coordinate3D,
-  Axis,
-  Facing,
-  Grid,
-  Plane,
-  PlaneEdge,
-} from './types'
+import { Coordinate3D, Facing, Grid, Plane, PlaneEdge } from './types'
 
 export function getPlanes(grid: Grid): Plane[] {
   const planes: Plane[] = []
