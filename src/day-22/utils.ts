@@ -63,6 +63,14 @@ export function flipFacing(facing: Facing): Facing {
   return map[facing]
 }
 
+export function isForward(facing: Facing): boolean {
+  return ['>', '^'].includes(facing)
+}
+
+export function getAxis(facing: Facing): keyof Coordinate {
+  return ['<', '>'].includes(facing) ? 'x' : 'y'
+}
+
 export function planesToGrid(planes: Plane[]): (Plane | null)[][] {
   const planeGrid = []
   for (let y = 0; y < 4; y++) {

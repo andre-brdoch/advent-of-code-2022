@@ -1,7 +1,13 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
 import { Die } from './fold-die.js'
-import { isOnGrid, getStartLocation, parseInput } from './utils.js'
+import {
+  isOnGrid,
+  getStartLocation,
+  parseInput,
+  getAxis,
+  isForward,
+} from './utils.js'
 import { VECTORS } from './constants.js'
 import {
   Solution22,
@@ -128,8 +134,8 @@ function getNextCoordinate(
   const next = { facing, x: location.x + vector.x, y: location.y + vector.y }
   // warp through empty space
   if (!isOnGrid(grid, next) || grid[next.y][next.x].type === ' ') {
-    const axis: Axis = ['<', '>'].includes(facing) ? 'x' : 'y'
-    const forwards = ['>', '^'].includes(facing)
+    const axis = getAxis(facing)
+    const forwards = isForward(facing)
     let newVal = location[axis]
     // follow the axis back until the first field before empty space
     while (true) {
