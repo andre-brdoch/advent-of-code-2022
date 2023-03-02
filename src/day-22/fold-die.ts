@@ -31,8 +31,12 @@ import {
   coordinatesOverlap,
   stringifyPlanes,
   flipFacing,
+  isForward,
+  getAxis,
+  otherAxis,
 } from './utils.js'
 import {
+  Coordinate,
   Coordinate3D,
   Facing,
   Grid,
@@ -68,10 +72,9 @@ function getNextCoordinate(
   grid: Grid,
   location: PlayerLocation
 ): PlayerLocation {
-  const x = Math.floor(location.x / PLANE_SIZE)
-  const y = Math.floor(location.y / PLANE_SIZE)
+  const fromPlaneLocation = gridLocationToPlaneLocation(location)
   const currentPlane = foldedPlanes.find(
-    plane => plane.x === x && plane.y === y
+    plane => plane.x === fromPlaneLocation.x && plane.y === fromPlaneLocation.y
   )
   console.log('currentPlane')
   console.log(currentPlane)
@@ -88,10 +91,39 @@ function getNextCoordinate(
   )[0]
   console.log('nextEdgeFacing')
   console.log(nextEdgeFacing)
-  const nextPlayerFacing = flipFacing(nextEdgeFacing)
-  console.log('nextPlayerFacing')
-  console.log(nextPlayerFacing)
-  return { x, y, facing: location.facing }
+  // next player facing is opposite of next edge facing:
+  const next: PlayerLocation = {
+    ...fromPlaneLocation,
+    facing: flipFacing(nextEdgeFacing),
+  }
+  console.log('nextFacing')
+  console.log(next.facing)
+
+  const nextIsForward = isForward(next.facing)
+  const nextAxis = getAxis(next.facing)
+
+  next[nextAxis] = nextIsForward ? 0 : PLANE_SIZE - 1
+  // next[otherAxis(nextAxis)] = 0
+
+  if (location.facing === '>' && next.facing === 'v') {
+    next.x = fromPlaneLocation.y
+  }
+
+  console.log('NEXT')
+  console.log(next)
+
+  const nextGridLocation = planeLocationToGridLocation(nextPlane, next)
+
+  console.log('plane')
+  console.log(nextPlane)
+
+  console.log('PLANE SIZE')
+  console.log(PLANE_SIZE)
+
+  console.log('next FINAL')
+  console.log(nextGridLocation)
+
+  return nextGridLocation
 }
 
 /** Folds an unfolded die, updating its coordinates. */
@@ -330,6 +362,25 @@ function getCenterOfEdge(edge: PlaneEdge): Coordinate3D {
   )
 }
 
+function gridLocationToPlaneLocation(
+  gridCoordinate: PlayerLocation
+): PlayerLocation {
+  const planeCoordinate = { ...gridCoordinate }
+  planeCoordinate.x = Math.floor(gridCoordinate.x / PLANE_SIZE)
+  planeCoordinate.y = Math.floor(gridCoordinate.y / PLANE_SIZE)
+  return planeCoordinate
+}
+
+function planeLocationToGridLocation(
+  plane: Plane,
+  planeCoordinate: PlayerLocation
+): PlayerLocation {
+  const gridCoordinate = { ...planeCoordinate }
+  gridCoordinate.x = PLANE_SIZE * plane.x + planeCoordinate.x
+  gridCoordinate.y = PLANE_SIZE * plane.y + planeCoordinate.y
+  return gridCoordinate
+}
+
 /** Returns the name of the axis an edge is parallel to, or null */
 function parallelAxisOfEdge(edge: PlaneEdge): keyof Coordinate3D | null {
   const diffVector = substractVectors(edge.from, edge.to)
@@ -445,8 +496,8 @@ function getPlanes(grid: Grid): Plane[] {
         // lines marking the edges on all 4 sides:
         plane.edges = {
           "v": {
-            from: { x: x, y: 1 + y, z: 0 },
-            to: { x: 1 + x, y: 1 + y, z: 0 },
+            from: { x: x, y: y, z: 0 },
+            to: { x: 1 + x, y: y, z: 0 },
             planes: [plane],
           },
           '>': {
@@ -455,8 +506,8 @@ function getPlanes(grid: Grid): Plane[] {
             planes: [plane],
           },
           '^': {
-            from: { x: x, y: y, z: 0 },
-            to: { x: 1 + x, y: y, z: 0 },
+            from: { x: x, y: 1 + y, z: 0 },
+            to: { x: 1 + x, y: 1 + y, z: 0 },
             planes: [plane],
           },
           '<': {
