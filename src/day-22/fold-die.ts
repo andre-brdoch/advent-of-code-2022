@@ -72,25 +72,31 @@ function getNextCoordinate(
   grid: Grid,
   location: PlayerLocation
 ): PlayerLocation {
-  const fromPlaneLocation = gridLocationToPlaneLocation(location)
   const currentPlane = foldedPlanes.find(
-    plane => plane.x === fromPlaneLocation.x && plane.y === fromPlaneLocation.y
+    plane =>
+      plane.x === Math.floor(location.x / PLANE_SIZE) &&
+      plane.y === Math.floor(location.y / PLANE_SIZE)
   )
-  console.log('currentPlane')
-  console.log(currentPlane)
+
   console.log('location.facing')
   console.log(location.facing)
   if (currentPlane === undefined) throw new Error('Could not map to die face')
+
+  console.log('currentPlane')
+  console.log(currentPlane)
+
+  const fromPlaneLocation = gridLocationToPlaneLocation(location)
+  console.log('fromPlaneLocation')
+  console.log(fromPlaneLocation)
   const nextPlane = currentPlane.edges[location.facing].planes.filter(
     p => p !== currentPlane
   )[0]
   console.log('nextPlane')
   console.log(nextPlane)
+
   const nextEdgeFacing = (Object.keys(nextPlane.edges) as Facing[]).filter(
     facing => nextPlane.edges[facing] === currentPlane.edges[location.facing]
   )[0]
-  console.log('nextEdgeFacing')
-  console.log(nextEdgeFacing)
   // next player facing is opposite of next edge facing:
   const next: PlayerLocation = {
     ...fromPlaneLocation,
@@ -107,6 +113,12 @@ function getNextCoordinate(
 
   if (location.facing === '>' && next.facing === 'v') {
     next.x = fromPlaneLocation.y
+  }
+  else if (location.facing === 'v' && next.facing === '^') {
+    next.x = PLANE_SIZE - 1 - fromPlaneLocation.x
+  }
+  else if (location.facing === '^' && next.facing === '>') {
+    next.y = PLANE_SIZE - 1 - fromPlaneLocation.x
   }
 
   console.log('NEXT')
@@ -366,8 +378,8 @@ function gridLocationToPlaneLocation(
   gridCoordinate: PlayerLocation
 ): PlayerLocation {
   const planeCoordinate = { ...gridCoordinate }
-  planeCoordinate.x = Math.floor(gridCoordinate.x / PLANE_SIZE)
-  planeCoordinate.y = Math.floor(gridCoordinate.y / PLANE_SIZE)
+  planeCoordinate.x = gridCoordinate.x % PLANE_SIZE
+  planeCoordinate.y = gridCoordinate.y % PLANE_SIZE
   return planeCoordinate
 }
 
