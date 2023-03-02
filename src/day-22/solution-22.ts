@@ -7,6 +7,8 @@ import {
   parseInput,
   getAxis,
   isForward,
+  stringifyInstructions,
+  stringifyGrid,
 } from './utils.js'
 import { VECTORS } from './constants.js'
 import {
@@ -18,6 +20,7 @@ import {
   Grid,
   RotateInstruction,
   Instruction,
+  MoveInstruction,
 } from './types'
 
 const { file } = parseArgs()
@@ -25,15 +28,15 @@ const { file } = parseArgs()
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution22> {
-  const { grid, instructions } = parseInput(input)
-  const path = getPathFromInstructions(grid, instructions)
-  const answer1 = getPassword(grid, path[path.length - 1])
+  const answer1 = 0
+  // const answer1 = getAnswer1(input)
+  const answer2 = getAnswer2(input)
 
   // const die = getFoldedDie(grid)
-  const die = new Die(grid)
-  logger.log(`\nFold die with the following unfolded shape:\n`)
-  logger.log(die.stringify2D())
-  die.getNextCoordinate(path[0])
+  // const die = new Die(grid)
+  // logger.log(`\nFold die with the following unfolded shape:\n`)
+  // logger.log(die.stringify2D())
+  // die.getNextCoordinate(path[0])
 
   // console.log('planes')
   // console.log(planes)
@@ -49,8 +52,22 @@ export default async function solution(input: string): Promise<Solution22> {
 
   return {
     answer1,
+    answer2,
     ...logger.getVisual(file?.replace('input', 'output') ?? 'output.txt'),
   }
+}
+
+function getAnswer1(input: string): number {
+  const { grid, instructions } = parseInput(input)
+  const path = getPathFromInstructions(grid, instructions)
+  return getPassword(grid, path[path.length - 1])
+}
+
+function getAnswer2(input: string): number {
+  const { grid, instructions } = parseInput(input)
+  const die = new Die(grid)
+  const path = getPathFromInstructions(grid, instructions, die)
+  return getPassword(grid, path[path.length - 1])
 }
 
 function getPassword(grid: Grid, location: PlayerLocation): number {
@@ -66,43 +83,44 @@ function getPassword(grid: Grid, location: PlayerLocation): number {
 
 function getPathFromInstructions(
   grid: Grid,
-  instructions: Instruction[]
+  instructions: Instruction[],
+  die?: Die
 ): Path {
   let path = [getStartLocation(grid)]
   logger.log('===== Start position =====')
-  // logger.log(stringifyGrid(grid, path))
+  logger.log(stringifyGrid(grid, path))
 
   instructions.forEach((instruction, i) => {
     if (typeof instruction === 'number') {
       // movement
-      path = move(grid, path, instruction)
+      path = move(grid, path, instruction, die)
 
       if (i === instructions.length - 1) {
-        // logger.log(stringifyInstructions(instruction))
-        // logger.log(stringifyGrid(grid, path))
+        logger.log(stringifyInstructions(instruction))
+        logger.log(stringifyGrid(grid, path))
       }
     }
     else {
       // rotate last
       rotate(path[path.length - 1], instruction)
 
-      // logger.log(
-      //   stringifyInstructions(
-      //     instructions[i - 1] as MoveInstruction,
-      //     instruction
-      //   )
-      // )
-      // logger.log(stringifyGrid(grid, path))
+      logger.log(
+        stringifyInstructions(
+          instructions[i - 1] as MoveInstruction,
+          instruction
+        )
+      )
+      logger.log(stringifyGrid(grid, path))
     }
   })
   return path
 }
 
-function move(grid: Grid, path: Path, amount: number): Path {
+function move(grid: Grid, path: Path, amount: number, die?: Die): Path {
   const newPath = [...path]
   for (let i = 0; i < amount; i++) {
     const last = newPath[newPath.length - 1]
-    const next = getNextCoordinate(grid, last)
+    const next = getNextCoordinate(grid, last, die)
     const cell = grid[next.y][next.x]
     // wall, stop
     if (cell.type === '#') break
@@ -127,26 +145,38 @@ function rotate(
 
 function getNextCoordinate(
   grid: Grid,
-  location: PlayerLocation
+  location: PlayerLocation,
+  die?: Die
 ): PlayerLocation {
   const { facing } = location
   const vector = VECTORS[facing]
   const next = { facing, x: location.x + vector.x, y: location.y + vector.y }
   // warp through empty space
   if (!isOnGrid(grid, next) || grid[next.y][next.x].type === ' ') {
-    const axis = getAxis(facing)
-    const forwards = isForward(facing)
-    let newVal = location[axis]
-    // follow the axis back until the first field before empty space
-    while (true) {
-      const nextVal = newVal + (forwards ? -1 : 1)
-      const newNext = { ...location, [axis]: nextVal }
-      if (!isOnGrid(grid, newNext) || grid[newNext.y][newNext.x].type === ' ') {
-        break
+    // warp to opposite side
+    if (!die) {
+      const axis = getAxis(facing)
+      const forwards = isForward(facing)
+      let newVal = location[axis]
+      // follow the axis back until the first field before empty space
+      while (true) {
+        const nextVal = newVal + (forwards ? -1 : 1)
+        const newNext = { ...location, [axis]: nextVal }
+        if (
+          !isOnGrid(grid, newNext) ||
+          grid[newNext.y][newNext.x].type === ' '
+        ) {
+          break
+        }
+        newVal = nextVal
       }
-      newVal = nextVal
+      next[axis] = newVal as number
     }
-    next[axis] = newVal as number
+
+    // warp around die edge
+    else {
+      return die.getNextCoordinate(location)
+    }
   }
   return next
 }

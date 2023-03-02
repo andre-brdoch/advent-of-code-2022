@@ -71,6 +71,10 @@ export function getAxis(facing: Facing): keyof Coordinate {
   return ['<', '>'].includes(facing) ? 'x' : 'y'
 }
 
+export function otherAxis(axis: keyof Coordinate): keyof Coordinate {
+  return axis === 'x' ? 'y' : 'x'
+}
+
 export function planesToGrid(planes: Plane[]): (Plane | null)[][] {
   const planeGrid = []
   for (let y = 0; y < 4; y++) {

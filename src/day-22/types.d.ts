@@ -1,5 +1,6 @@
 export interface Solution22 {
   answer1: number
+  answer2: number
 }
 export interface Coordinate {
   x: number
