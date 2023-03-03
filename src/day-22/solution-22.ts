@@ -13,7 +13,6 @@ import {
 import { VECTORS } from './constants.js'
 import {
   Solution22,
-  Axis,
   Facing,
   PlayerLocation,
   Path,
@@ -28,27 +27,8 @@ const { file } = parseArgs()
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution22> {
-  const answer1 = 0
-  // const answer1 = getAnswer1(input)
+  const answer1 = getAnswer1(input)
   const answer2 = getAnswer2(input)
-
-  // const die = getFoldedDie(grid)
-  // const die = new Die(grid)
-  // logger.log(`\nFold die with the following unfolded shape:\n`)
-  // logger.log(die.stringify2D())
-  // die.getNextCoordinate(path[0])
-
-  // console.log('planes')
-  // console.log(planes)
-  // console.log('edges')
-  // console.log(edges)
-  // const planesGrid = planesToGrid(planes)
-  // console.log('planesGrid')
-  // console.log(planesGrid)
-
-  // connectEdges(planes, edges)
-
-  // console.log(stringifyPlanes(planes))
 
   return {
     answer1,
@@ -175,7 +155,7 @@ function getNextCoordinate(
 
     // warp around die edge
     else {
-      return die.getNextCoordinate(location)
+      return die.moveOverEdge(location)
     }
   }
   return next

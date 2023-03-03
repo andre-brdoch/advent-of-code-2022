@@ -14,7 +14,7 @@
  * 5. Repeat until there is no more unfolded edges:
  *       5.1. Find the unfolded edge whichs center is the closest to the center of the die.
  *       5.2. Fold it by 90 degrees. Use the plane that is not yet in its final position
- *            as the one that is being moved (the other ones stays as it was).
+ *            as the one that is being moved (the other one stays as it was).
  *       5.3. Measure the folded planes distance to the center of the die.
  *            If it is larger than 0.5, then we folded into the wrong direction,
  *            and we correct by folding by -180 degrees.
@@ -45,19 +45,17 @@ import {
 } from './types'
 
 export class Die {
-  private grid: Grid
   private planes: Plane[]
 
   constructor(grid: Grid) {
-    this.grid = grid
     const planes = getPlanes(grid)
     mergeOverlappingEdges(planes)
     fold(planes)
     this.planes = planes
   }
 
-  public getNextCoordinate(location: PlayerLocation): PlayerLocation {
-    return getNextCoordinate(this.planes, this.grid, location)
+  public moveOverEdge(location: PlayerLocation): PlayerLocation {
+    return moveOverEdge(this.planes, location)
   }
 
   public stringify2D(): string {
@@ -65,9 +63,9 @@ export class Die {
   }
 }
 
-function getNextCoordinate(
+/** Returns the new PlayerLocation when moving over the edge of the die. */
+function moveOverEdge(
   foldedPlanes: Plane[],
-  grid: Grid,
   location: PlayerLocation
 ): PlayerLocation {
   const currentPlane = foldedPlanes.find(
