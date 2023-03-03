@@ -1,13 +1,4 @@
-interface Solution5 {
-  answer1: string
-  answer2: string
-}
-type Stack = string[]
-interface Instruction {
-  from: number
-  to: number
-  amount: number
-}
+import { Solution5, Stack, Instruction } from './types'
 
 export default async function solution(input: string): Promise<Solution5> {
   const { stacks, instructions } = parseFile(input)

@@ -1,57 +1,21 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
 
-interface Solution17 {
-  answer1: number
-  answer2: number
-}
-type JetPattern = '<' | '>'
-type Direction = JetPattern | 'v'
-type Axis = 'x' | 'y'
-type Coordinate = Record<Axis, number>
-type StoneShape = 'plus' | 'minus' | 'l' | 'i' | 'square'
-interface Stone {
-  shape: StoneShape
-  name: string
-  pieces: StonePiece[]
-  resting?: boolean
-  type: 'stone'
-  height: number
-  width: number
-}
-interface StonePiece extends Coordinate {
-  stone: Stone
-  type: 'piece'
-}
-interface StoneBluePrint extends Omit<Stone, 'pieces' | 'x' | 'y'> {
-  pieceCoordinates: Coordinate[]
-}
-interface Empty {
-  type: 'empty'
-}
-interface Floor {
-  type: 'floor'
-}
-type Cell = StonePiece | Empty | Floor
-type Grid = Cell[][]
-type ShapeCoordinates = Record<StoneShape, Coordinate[]>
-type StoneBluePrintsByShape = Record<StoneShape, StoneBluePrint>
-interface Segment {
-  stoneAmount: number
-  height: number
-  repeats?: number
-}
-type CycleDetector = Record<
+import {
+  Solution17,
+  JetPattern,
+  Direction,
+  Axis,
+  Coordinate,
   StoneShape,
-  {
-    [jetPatternIndex: string]: {
-      [surface: string]: {
-        lastIndex: number
-        height: number
-      }
-    }
-  }
->
+  Stone,
+  Cell,
+  Grid,
+  ShapeCoordinates,
+  StoneBluePrintsByShape,
+  Segment,
+  CycleDetector,
+} from './types'
 
 // piece coordinates, width and height will never change per stone shape,
 // therefore save in constant to avoid unnecessary computations
@@ -60,7 +24,7 @@ const STONE_BLUEPRINTS = getStoneBluePrints()
 const VECTOR_BY_DIRECTION: Record<Direction, Coordinate> = {
   '<': { x: -1, y: 0 },
   '>': { x: 1, y: 0 },
-  v: { x: 0, y: -1 },
+  'v': { x: 0, y: -1 },
 }
 
 const STONE_X_OFFSET = 2

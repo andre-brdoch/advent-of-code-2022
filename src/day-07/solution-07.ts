@@ -1,43 +1,16 @@
-interface Solution7 {
-  answer1: number
-  answer2: number
-}
-type LineType = 'command' | 'dir' | 'file'
-type Command = 'cd' | 'ls'
-interface Line {
-  type: LineType
-  line: string
-}
-interface LineDir extends Line {
-  name: string
-}
-interface LineFile extends Line {
-  name: string
-  size: number
-}
-interface LineCommand extends Line {
-  command: Command
-}
-interface LineCdCommand extends LineCommand {
-  targetDir: string
-}
-type Data = File | Dir
-interface File {
-  name: string
-  size: number
-  parent: Dir
-}
-interface Dir {
-  name: string
-  children: Data[]
-  parent?: Dir
-  size?: number
-}
-interface AnalyzedDir extends Dir {
-  size: number
-  children: AnalyzedData[]
-}
-type AnalyzedData = File | AnalyzedDir
+import {
+  Solution7,
+  Command,
+  Line,
+  LineDir,
+  LineFile,
+  LineCommand,
+  LineCdCommand,
+  Data,
+  Dir,
+  AnalyzedDir,
+  AnalyzedData,
+} from './types'
 
 const DISK_SIZE = 70000000
 const UPDATE_SIZE = 30000000

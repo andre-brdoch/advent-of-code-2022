@@ -1,25 +1,4 @@
-interface Solution18 {
-  answer1: number
-  answer2: number
-}
-interface Coordinate {
-  x: number
-  y: number
-  z: number
-}
-interface Cube extends Coordinate {
-  type: 'lava' | 'air' | 'water' | 'unknown'
-}
-type Axis = keyof Coordinate
-type Grid = Cube[][][]
-interface Boundaries {
-  maxX: number
-  maxY: number
-  maxZ: number
-  minX: number
-  minY: number
-  minZ: number
-}
+import { Solution18, Coordinate, Cube, Axis, Grid, Boundaries } from './types'
 
 const ALL_AXES: Axis[] = ['x', 'y', 'z']
 

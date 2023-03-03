@@ -1,23 +1,4 @@
-interface Solution11 {
-  answer1: number
-  answer2: number
-}
-interface MonkeyParsed {
-  name: string
-  items: number[]
-  divisableBy: number
-  activity: number
-  inspect: (item: number) => number
-  targetAName?: string
-  targetBName?: string
-  targetA?: Monkey | MonkeyParsed
-  targetB?: Monkey | MonkeyParsed
-}
-interface Monkey extends MonkeyParsed {
-  targetA: Monkey
-  targetB: Monkey
-}
-type ManageFrustrationFn = (item: number) => number
+import { Solution11, MonkeyParsed, Monkey, ManageFrustrationFn } from './types'
 
 export default async function solution(input: string): Promise<Solution11> {
   const answer1 = getAnswer1(input)

@@ -1,30 +1,15 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
 
-interface Solution24 {
-  answer1: number
-  answer2: number
-  visualFile?: string
-  visualData?: string
-}
-interface Coordinate {
-  x: number
-  y: number
-}
-interface TimedCoordinate extends Coordinate {
-  turn: number
-}
-type Blizzard = '^' | '>' | 'v' | '<'
-type Wall = '#'
-type Player = 'E'
-type Empty = '.'
-type Cell = Blizzard | Blizzard[] | Wall | Player | Empty
-type Grid = Cell[][]
-interface CameFromByTurn {
-  [turn: string]: {
-    [id: string]: Coordinate | null
-  }
-}
+import {
+  Solution24,
+  Coordinate,
+  TimedCoordinate,
+  Blizzard,
+  Cell,
+  Grid,
+  CameFromByTurn,
+} from './types'
 
 const logger = new Logger()
 

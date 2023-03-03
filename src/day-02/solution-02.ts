@@ -1,13 +1,4 @@
-interface Solution2 {
-  answer1: number
-  answer2: number
-}
-type Sign = 'A' | 'B' | 'C' | 'X' | 'Y' | 'Z'
-type Option = 'Rock' | 'Paper' | 'Scissors'
-type Outcome = 'win' | 'draw' | 'loss'
-interface Map<T> {
-  [key: string]: T
-}
+import { Solution2, Sign, Option, Outcome, Map } from './types'
 
 const enemyOptionsMap: Map<Option> = {
   A: 'Rock',
@@ -46,7 +37,6 @@ const pointsMap: Map<number> = {
 }
 
 export default async function (input: string): Promise<Solution2> {
-
   const signPairs = parseFile(input)
   const answer1 = getAnswer1(signPairs)
   const answer2 = getAnswer2(signPairs)

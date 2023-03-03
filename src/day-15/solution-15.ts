@@ -1,34 +1,15 @@
 import { isTest } from '../utils/env-helpers.js'
 
-interface Solution15 {
-  answer1: number
-  answer2: number
-}
-interface Coordinate {
-  x: number
-  y: number
-  stringified?: string
-}
-type Axis = keyof Coordinate
-interface Beacon extends Coordinate {
-  type: 'beacon'
-}
-interface Sensor extends Coordinate {
-  closestBeacon: Beacon
-  range: number
-  type: 'sensor'
-}
-interface Boundaries {
-  min: number
-  max: number
-}
-interface xMinMax {
-  fromX: number
-  toX: number
-}
-interface CombinedSensorOutlinesMap {
-  [key: string]: xMinMax[]
-}
+import {
+  Solution15,
+  Coordinate,
+  Axis,
+  Sensor,
+  Beacon,
+  Boundaries,
+  xMinMax,
+  CombinedSensorOutlinesMap,
+} from './types'
 
 const TARGET_Y = isTest() ? 10 : 2000000
 const TUNING_FREQUENCY_MODIFIER = 4000000

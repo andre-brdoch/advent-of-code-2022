@@ -1,19 +1,4 @@
-interface Solution14 {
-  answer1: number
-  answer2: number
-}
-type Air = '.'
-type Rock = '#'
-type Sand = 'o'
-type SandStart = '+'
-type Cell = Air | Rock | Sand | SandStart
-type CaveGrid = Cell[][]
-interface Coordinates {
-  x: number
-  y: number
-}
-type Axis = keyof Coordinates
-type Path = Coordinates[]
+import { Solution14, Cell, CaveGrid, Coordinates, Axis, Path } from './types'
 
 const SAND_START: Coordinates = { x: 500, y: 0 }
 

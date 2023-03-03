@@ -1,17 +1,4 @@
-interface Solution8 {
-  answer1: number
-  answer2: number
-}
-interface Tree {
-  size: number
-  hidden?: boolean
-  topViewDistance?: number
-  leftViewDistance?: number
-  rightViewDistance?: number
-  bottomViewDistance?: number
-  scenicScore?: number
-}
-type AnalyzedTree = Required<Tree>
+import { Solution8, Tree, AnalyzedTree } from './types'
 
 export default async function solution(input: string): Promise<Solution8> {
   const rows = parseFile(input)
