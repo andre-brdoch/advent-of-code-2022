@@ -1,4 +1,4 @@
-import { isTest } from '../utils/env-helpers.js'
+import { parseArgs } from '../utils/env-helpers.js'
 
 import {
   Solution15,
@@ -11,9 +11,11 @@ import {
   CombinedSensorOutlinesMap,
 } from './types'
 
-const TARGET_Y = isTest() ? 10 : 2000000
+const { isTest } = parseArgs()
+
+const TARGET_Y = isTest ? 10 : 2000000
 const TUNING_FREQUENCY_MODIFIER = 4000000
-const BOUNDARIES: Boundaries = isTest()
+const BOUNDARIES: Boundaries = isTest
   ? { min: 0, max: 20 }
   : { min: 0, max: 4000000 }
 
