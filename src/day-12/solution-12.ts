@@ -4,29 +4,15 @@
  * less options for the final fields, narrowing down options.
  */
 
-interface Solution12 {
-  answer1: number
-  answer2: number
-}
-interface Square {
-  elevation: string
-  elevationNum: number
-  start?: boolean
-  end?: boolean
-  name: string
-}
-interface Coordinates {
-  x: number
-  y: number
-}
-type Map = Square[][]
-type Path = Square[]
-interface CameFromMap {
-  [key: string]: Square | null
-}
-interface CostSoFarMap {
-  [key: string]: number
-}
+import {
+  Solution12,
+  Square,
+  Coordinates,
+  Map,
+  Path,
+  CameFromMap,
+  CostSoFarMap,
+} from './types'
 
 const ASCII_OFFSET_A = 96
 

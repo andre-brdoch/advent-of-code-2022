@@ -1,7 +1,4 @@
-interface Solution6 {
-  answer1: number
-  answer2: number
-}
+import { Solution6 } from './types'
 
 export default async function solution(code: string): Promise<Solution6> {
   return {

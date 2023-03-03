@@ -1,18 +1,11 @@
-interface Solution9 {
-  answer1: number
-  answer2: number
-}
-type Direction = 'U' | 'R' | 'D' | 'L'
-interface Motion {
-  direction: Direction
-  amount: number
-}
-interface Position {
-  x: number
-  y: number
-}
-type Axis = keyof Position
-type RopeMovement = Position[][]
+import {
+  Solution9,
+  Direction,
+  Motion,
+  Position,
+  Axis,
+  RopeMovement,
+} from './types'
 
 export default async function solution(input: string): Promise<Solution9> {
   const motions = parseHeadMotions(input)

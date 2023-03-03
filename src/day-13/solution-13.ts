@@ -1,13 +1,11 @@
-interface Solution13 {
-  answer1: number
-  answer2: number
-}
-type ValueOrArray<T> = T | ValueOrArray<T>[]
-type Value = ValueOrArray<number>
-type ValueList = Value[]
-type Packet = Value[]
-type Group = [Packet, Packet]
-type CompareResult = 1 | -1 | 0
+import {
+  Solution13,
+  Value,
+  ValueList,
+  Packet,
+  Group,
+  CompareResult,
+} from './types'
 
 const DIVIDER_1 = [[2]]
 const DIVIDER_2 = [[6]]

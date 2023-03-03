@@ -1,16 +1,8 @@
-interface Solution4 {
-  answer1: number
-  answer2: number
-}
-interface Range {
-  from: number
-  to: number
-}
-type Pair = [Range, Range]
+import { Solution4, Range, Pair } from './types'
 
 export default async function solution(input: string): Promise<Solution4> {
   const pairs = parsePairs(input)
-  
+
   const answer1 = countFullyOverlappingPairs(pairs)
   const answer2 = countOverlappingPairs(pairs)
 

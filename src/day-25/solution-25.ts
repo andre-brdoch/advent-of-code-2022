@@ -1,7 +1,4 @@
-interface Solution25 {
-  answer1: string
-}
-type Snafu = string
+import { Solution25, Snafu } from './types'
 
 export default async function solution(input: string): Promise<Solution25> {
   const snafus = parseSnafus(input)

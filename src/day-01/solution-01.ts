@@ -1,7 +1,4 @@
-interface Solution1 {
-  answer1: number
-  answer2: number
-}
+import { Solution1 } from './types'
 
 export default async function solution(inputsFile: string): Promise<Solution1> {
   const bags = parseFile(inputsFile)

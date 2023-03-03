@@ -1,36 +1,16 @@
-interface Solution23 {
-  answer1: number
-  answer2: number
-}
-interface Coordinate {
-  x: number
-  y: number
-}
-type MainDirections = 'N' | 'S' | 'E' | 'W'
-type Direction = 'N' | 'S' | 'E' | 'W' | 'NW' | 'NE' | 'SW' | 'SE'
-interface Elf {
-  moveTo?: Coordinate
-  name: string
-}
-interface ElfLocation extends Coordinate {
-  elf: Elf
-  type: 'elf'
-}
-interface EmptyLocation extends Coordinate {
-  type: 'empty'
-}
-interface Movement {
-  from: ElfLocation
-  to: ElfLocation
-}
-// map to look up elfs via y/x coordinates
-interface Grid {
-  [key: string]: {
-    [key: string]: Elf
-  }
-}
-type GridArray = (ElfLocation | EmptyLocation)[][]
-type Axis = keyof Coordinate
+import {
+  Solution23,
+  Coordinate,
+  MainDirections,
+  Direction,
+  Elf,
+  ElfLocation,
+  EmptyLocation,
+  Movement,
+  Grid,
+  GridArray,
+  Axis,
+} from './types'
 
 const CHECK_AFTER = 10
 

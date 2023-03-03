@@ -1,14 +1,7 @@
 import { Logger } from '../utils/Logger.js'
 import { parseArgs } from '../utils/env-helpers.js'
 
-interface Solution20 {
-  answer1: number
-  answer2: number
-}
-interface Item {
-  value: number
-}
-type Sequence = Item[]
+import { Solution20, Item, Sequence } from './types'
 
 const DECRYPTION_KEY = 811589153
 

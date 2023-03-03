@@ -1,21 +1,4 @@
-interface Solution10 {
-  answer1: number
-}
-type Command = 'addx' | 'noop'
-interface Line {
-  command: Command
-}
-interface LineAdd extends Line {
-  value: number
-}
-interface Cycle {
-  number: number
-  x: number
-  signalStrength: number
-  line: Line
-}
-type Pixel = '#' | '.'
-type Screen = Pixel[][]
+import { Solution10, Line, LineAdd, Cycle, Pixel, Screen } from './types'
 
 const GROUP_SIZE = 40
 

@@ -1,20 +1,4 @@
-interface Solution21 {
-  answer1: number
-  answer2: number
-}
-interface Humanoid {
-  name: Name
-  number?: number
-  formula?: Formula
-  cameFrom?: Humanoid
-}
-type Name = string
-type Operator = '+' | '-' | '/' | '*'
-interface Formula {
-  operator: Operator
-  leftOperand: Name
-  rightOperand: Name
-}
+import { Solution21, Humanoid, Name, Operator, Formula } from './types'
 
 const MONKEY_BOSS = 'root'
 const POOR_HUMAN = 'humn'

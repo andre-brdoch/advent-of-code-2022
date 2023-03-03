@@ -1,9 +1,4 @@
-type Answer1 = number
-type Answer2 = number
-interface Solution3 {
-  answer1: Answer1
-  answer2: Answer2
-}
+import { Answer1, Answer2, Solution3 } from './types'
 
 const LOWER_A_ASCII_CODE = 97
 const UPPER_A_ASCII_CODE = 65

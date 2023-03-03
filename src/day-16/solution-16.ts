@@ -1,42 +1,17 @@
 import { Logger } from '../utils/Logger.js'
 
-interface Solution16 {
-  answer1: number
-  answer2: number
-}
-interface DistanceMap {
-  [key: string]: number
-}
-interface PotentialMap {
-  [key: string]: number
-}
-interface ValveParsed {
-  name: string
-  flowRate: number
-  neighborNames?: string[]
-  neighbors?: (ValveParsed | Valve)[]
-}
-interface Valve extends Omit<ValveParsed, 'neighborNames'> {
-  neighbors: Valve[]
-}
-interface ValveAnalyzed extends Valve {
-  distances: DistanceMap
-  potentialByRound: PotentialMap
-}
-type CameFromMap = Record<string, QueueState | null>
-interface QueueState {
-  valveName: string
-  currentTotalFlow: number
-  timeLeft: number
-}
-interface SimpleActionPath {
-  valveNames: string[]
-  totalFlow: number
-}
-interface Pairing {
-  actions: [SimpleActionPath, SimpleActionPath]
-  totalFlow: number
-}
+import {
+  Solution16,
+  DistanceMap,
+  PotentialMap,
+  ValveParsed,
+  Valve,
+  ValveAnalyzed,
+  CameFromMap,
+  QueueState,
+  SimpleActionPath,
+  Pairing,
+} from './types'
 
 const START_NAME = 'AA'
 
