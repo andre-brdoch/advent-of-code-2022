@@ -106,20 +106,49 @@ function getNextCoordinate(
   console.log(next.facing)
 
   const nextIsForward = isForward(next.facing)
+  const fromAxis = getAxis(location.facing)
   const nextAxis = getAxis(next.facing)
 
   next[nextAxis] = nextIsForward ? 0 : PLANE_SIZE - 1
   // next[otherAxis(nextAxis)] = 0
 
-  if (location.facing === '>' && next.facing === 'v') {
-    next.x = fromPlaneLocation.y
+  console.log(`from ${fromAxis}, to ${nextAxis}`)
+
+  console.log('from is next:', fromAxis === nextAxis)
+  console.log('other axis', otherAxis(fromAxis))
+
+  const detminatorAxis = otherAxis(fromAxis)
+  // const detminatorAxis = fromAxis === nextAxis ? fromAxis : otherAxis(fromAxis)
+
+  console.log('detminatorAxis')
+  console.log(detminatorAxis)
+
+  if (
+    (fromAxis !== nextAxis &&
+      isForward(location.facing) === isForward(nextEdgeFacing)) ||
+    location.facing === next.facing
+  ) {
+    next[otherAxis(nextAxis)] = fromPlaneLocation[detminatorAxis]
   }
-  else if (location.facing === 'v' && next.facing === '^') {
-    next.x = PLANE_SIZE - 1 - fromPlaneLocation.x
+  else {
+    next[otherAxis(nextAxis)] =
+      PLANE_SIZE - 1 - fromPlaneLocation[detminatorAxis]
   }
-  else if (location.facing === '^' && next.facing === '>') {
-    next.y = PLANE_SIZE - 1 - fromPlaneLocation.x
-  }
+
+  // // TODO diff. axis, diff directions
+  // if (location.facing === '>' && next.facing === 'v') {
+  //   next[otherAxis(nextAxis)] = fromPlaneLocation[detminatorAxis]
+  // }
+  // // TODO: same axis, diff. directions
+  // else if (location.facing === 'v' && next.facing === '^') {
+  //   next[otherAxis(nextAxis)] =
+  //     PLANE_SIZE - 1 - fromPlaneLocation[detminatorAxis]
+  // }
+  // // TODO: diff. axis, same directions
+  // else if (location.facing === '^' && next.facing === '>') {
+  //   next[otherAxis(nextAxis)] =
+  //     PLANE_SIZE - 1 - fromPlaneLocation[detminatorAxis]
+  // }
 
   console.log('NEXT')
   console.log(next)
