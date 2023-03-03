@@ -3,7 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from './utils/env-helpers.js'
 
-const { day, file, cliInput, isTest, visualize } = parseArgs()
+const { day, env, cliInput, isTest, visualize } = parseArgs()
 
 if (!day) {
   throw new Error('No day selected')
@@ -16,7 +16,10 @@ const dayFormatted = String(day).padStart(2, '0')
 
 async function getInputFile(): Promise<string | undefined> {
   try {
-    const filePath = path.join(__dirname, `./day-${dayFormatted}/${file}`)
+    const filePath = path.join(
+      __dirname,
+      `./day-${dayFormatted}/${env}/input.txt`
+    )
     const input = await fs.readFile(filePath, 'utf8')
     return input
   }
@@ -26,11 +29,11 @@ async function getInputFile(): Promise<string | undefined> {
 }
 
 function printAnswers(answer1: unknown, answer2: unknown): void {
-  console.log(`Solution 1 for day ${day} is:`)
+  console.log(`\nSolution 1 for day ${day} is:`)
   console.log(answer1, isTest ? '(TEST)' : '')
 
   if (answer2 !== undefined) {
-    console.log('...and solution 2 is:')
+    console.log('\n...and solution 2 is:')
     console.log(answer2, isTest ? '(TEST)' : '')
   }
 }

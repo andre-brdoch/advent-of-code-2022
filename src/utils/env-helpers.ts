@@ -1,7 +1,7 @@
 interface Flags {
   isTest?: boolean
-  // test file name
-  file?: string
+  // environment folder name
+  env: string
   // input passed directly via CLI
   cliInput?: string
   visualize?: boolean
@@ -16,20 +16,25 @@ export function parseArgs(): Args {
   const flagMap: Flags = args
     .map(str => str.match(/^--(\w+)=(.+)$/))
     .filter(match => match !== null)
-    .reduce((result, match) => {
-      const [, name, value] = match as RegExpMatchArray
-      const convertedValue =
-        value === 'true' ? true : value === 'false' ? false : value
-      return {
-        ...result,
-        [name]: convertedValue,
+    .reduce(
+      (result, match) => {
+        const [, name, value] = match as RegExpMatchArray
+        const convertedValue =
+          value === 'true' ? true : value === 'false' ? false : value
+        return {
+          ...result,
+          [name]: convertedValue,
+        }
+      },
+      {
+        env: 'test',
       }
-    }, {})
+    )
   const result = {
     day: Number(args[2]),
     ...flagMap,
   }
-  if (flagMap.file?.includes('test')) {
+  if (flagMap.env?.includes('test')) {
     result.isTest = true
   }
   return result
