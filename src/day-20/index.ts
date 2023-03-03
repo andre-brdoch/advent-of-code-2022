@@ -1,5 +1,4 @@
 import { Logger } from '../utils/Logger.js'
-import { parseArgs } from '../utils/env-helpers.js'
 
 import { Solution20, Item, Sequence } from './types'
 
@@ -8,7 +7,7 @@ const DECRYPTION_KEY = 811589153
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution20> {
-  console.log('before:')
+  logger.log('START')
   const items = parseItems(input)
   printItems(items)
 
@@ -18,9 +17,7 @@ export default async function solution(input: string): Promise<Solution20> {
   return {
     answer1,
     answer2,
-    ...logger.getVisual(
-      parseArgs().file?.replace('input', 'output') ?? 'output.txt'
-    ),
+    ...logger.getVisual(),
   }
 }
 
@@ -37,7 +34,6 @@ function getAnswer1(items: Sequence): number {
 
 function getAnswer2(items: Sequence): number {
   const decrypted = items.map(item => ({ value: item.value * DECRYPTION_KEY }))
-  console.log(decrypted)
   const mixed = mixItems(decrypted, 10)
   printItems(mixed)
 

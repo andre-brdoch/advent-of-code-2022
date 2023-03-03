@@ -1,5 +1,4 @@
 import { Logger } from '../utils/Logger.js'
-import { parseArgs } from '../utils/env-helpers.js'
 import { Die } from './fold-die.js'
 import {
   isOnGrid,
@@ -22,8 +21,6 @@ import {
   MoveInstruction,
 } from './types'
 
-const { file } = parseArgs()
-
 const logger = new Logger()
 
 export default async function solution(input: string): Promise<Solution22> {
@@ -33,7 +30,7 @@ export default async function solution(input: string): Promise<Solution22> {
   return {
     answer1,
     answer2,
-    ...logger.getVisual(file?.replace('input', 'output') ?? 'output.txt'),
+    ...logger.getVisual(),
   }
 }
 

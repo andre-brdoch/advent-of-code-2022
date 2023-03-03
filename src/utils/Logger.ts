@@ -19,7 +19,7 @@ export class Logger {
     this.fullLog += inputs
       .map(input => {
         if (typeof input === 'string') return input
-        else return input?.toString?.()
+        else return input?.toString?.() ?? ''
       })
       .join(' ')
   }
@@ -28,7 +28,7 @@ export class Logger {
     return this.fullLog
   }
 
-  public getVisual(fileName: string):
+  public getVisual(fileName = 'output.txt'):
     | {
         visualFile: string
         visualData: string

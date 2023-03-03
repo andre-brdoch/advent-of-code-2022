@@ -1,5 +1,4 @@
 import { Logger } from '../utils/Logger.js'
-import { parseArgs } from '../utils/env-helpers.js'
 
 import {
   Solution17,
@@ -40,9 +39,7 @@ export default async function solution(input: string): Promise<Solution17> {
   return {
     answer1,
     answer2,
-    ...logger.getVisual(
-      parseArgs().file?.replace('input', 'output') ?? 'output.txt'
-    ),
+    ...logger.getVisual(),
   }
 }
 

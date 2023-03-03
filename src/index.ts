@@ -44,7 +44,7 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 async function toFile(fileName: string, data: string): Promise<void> {
-  const dir = path.join(__dirname, `./day-${dayFormatted}/output`)
+  const dir = path.join(__dirname, `./day-${dayFormatted}/${env}`)
   if (!(await fileExists(dir))) {
     await fs.mkdir(dir)
   }
@@ -56,10 +56,7 @@ const solutionModule = await import(`./day-${dayFormatted}/index.js`)
 const inputs = await getInputFile()
 
 const { answer1, answer2, visualFile, visualData } =
-  await solutionModule.default(inputs, {
-    isTest,
-    visualize,
-  })
+  await solutionModule.default(inputs, args)
 
 printAnswers(answer1, answer2)
 
