@@ -54,7 +54,7 @@ function getPassword(grid: Grid, location: PlayerLocation): number {
   const { x, y, facing } = location
   const faceValue = {
     '>': 0,
-    "v": 1,
+    'v': 1,
     '<': 2,
     '^': 3,
   }

@@ -479,7 +479,7 @@ function getPlanes(grid: Grid): Plane[] {
         plane.y = y
         // lines marking the edges on all 4 sides:
         plane.edges = {
-          "v": {
+          'v': {
             from: { x: x, y: y, z: 0 },
             to: { x: 1 + x, y: y, z: 0 },
             planes: [plane],

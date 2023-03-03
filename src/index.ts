@@ -30,7 +30,7 @@ function printAnswers(answer1: unknown, answer2: unknown): void {
   console.log(answer1, isTest ? '(TEST)' : '')
 
   if (answer2 !== undefined) {
-    console.log(`...and solution 2 is:`)
+    console.log('...and solution 2 is:')
     console.log(answer2, isTest ? '(TEST)' : '')
   }
 }

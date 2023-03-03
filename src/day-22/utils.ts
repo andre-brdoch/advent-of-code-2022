@@ -56,7 +56,7 @@ export function getStartLocation(grid: Grid): PlayerLocation {
 export function flipFacing(facing: Facing): Facing {
   const map: Record<Facing, Facing> = {
     '^': 'v',
-    "v": '^',
+    'v': '^',
     '>': '<',
     '<': '>',
   }
