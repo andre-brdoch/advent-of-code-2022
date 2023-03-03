@@ -2,8 +2,6 @@ interface Flags {
   isTest?: boolean
   // environment folder name
   env: string
-  // input passed directly via CLI
-  cliInput?: string
   visualize?: boolean
   noLog?: boolean
 }

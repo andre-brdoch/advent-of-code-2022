@@ -3,7 +3,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from './utils/env-helpers.js'
 
-const { day, env, cliInput, isTest, visualize } = parseArgs()
+const args = parseArgs()
+const { day, env, isTest, visualize } = args
 
 if (!day) {
   throw new Error('No day selected')
@@ -52,7 +53,7 @@ async function toFile(fileName: string, data: string): Promise<void> {
 }
 
 const solutionModule = await import(`./day-${dayFormatted}/index.js`)
-const inputs = cliInput ?? (await getInputFile())
+const inputs = await getInputFile()
 
 const { answer1, answer2, visualFile, visualData } =
   await solutionModule.default(inputs, {
