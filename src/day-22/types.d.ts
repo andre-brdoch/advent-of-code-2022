@@ -9,7 +9,6 @@ export interface Coordinate {
 export interface Coordinate3D extends Coordinate {
   z: number
 }
-export type Axis = keyof Coordinate
 export type Facing = '^' | '>' | 'v' | '<'
 export interface PlayerLocation extends Coordinate {
   facing: Facing
@@ -27,7 +26,6 @@ export interface Plane {
   name: string
   x: number
   y: number
-  z: number
   edges: Record<Facing, PlaneEdge>
   finalPosition?: boolean
 }

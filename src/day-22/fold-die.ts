@@ -477,7 +477,6 @@ function getPlanes(grid: Grid): Plane[] {
         plane.name = String.fromCharCode(number + UPPER_A_ASCII_CODE - 1)
         plane.x = x
         plane.y = y
-        plane.z = 0
         // lines marking the edges on all 4 sides:
         plane.edges = {
           "v": {
