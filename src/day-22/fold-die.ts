@@ -36,7 +36,6 @@ import {
   otherAxis,
 } from './utils.js'
 import {
-  Coordinate,
   Coordinate3D,
   Facing,
   Grid,
@@ -54,7 +53,6 @@ export class Die {
     const planes = getPlanes(grid)
     mergeOverlappingEdges(planes)
     fold(planes)
-    console.log(getAllEdges(planes).length)
     this.planes = planes
   }
 
@@ -77,23 +75,12 @@ function getNextCoordinate(
       plane.x === Math.floor(location.x / PLANE_SIZE) &&
       plane.y === Math.floor(location.y / PLANE_SIZE)
   )
-
-  console.log('location.facing')
-  console.log(location.facing)
   if (currentPlane === undefined) throw new Error('Could not map to die face')
 
-  console.log('currentPlane')
-  console.log(currentPlane)
-
   const fromPlaneLocation = gridLocationToPlaneLocation(location)
-  console.log('fromPlaneLocation')
-  console.log(fromPlaneLocation)
   const nextPlane = currentPlane.edges[location.facing].planes.filter(
     p => p !== currentPlane
   )[0]
-  console.log('nextPlane')
-  console.log(nextPlane)
-
   const nextEdgeFacing = (Object.keys(nextPlane.edges) as Facing[]).filter(
     facing => nextPlane.edges[facing] === currentPlane.edges[location.facing]
   )[0]
@@ -102,26 +89,13 @@ function getNextCoordinate(
     ...fromPlaneLocation,
     facing: flipFacing(nextEdgeFacing),
   }
-  console.log('nextFacing')
-  console.log(next.facing)
 
   const nextIsForward = isForward(next.facing)
   const fromAxis = getAxis(location.facing)
   const nextAxis = getAxis(next.facing)
+  const detminatorAxis = otherAxis(fromAxis)
 
   next[nextAxis] = nextIsForward ? 0 : PLANE_SIZE - 1
-  // next[otherAxis(nextAxis)] = 0
-
-  console.log(`from ${fromAxis}, to ${nextAxis}`)
-
-  console.log('from is next:', fromAxis === nextAxis)
-  console.log('other axis', otherAxis(fromAxis))
-
-  const detminatorAxis = otherAxis(fromAxis)
-  // const detminatorAxis = fromAxis === nextAxis ? fromAxis : otherAxis(fromAxis)
-
-  console.log('detminatorAxis')
-  console.log(detminatorAxis)
 
   if (
     (fromAxis !== nextAxis &&
@@ -135,35 +109,7 @@ function getNextCoordinate(
       PLANE_SIZE - 1 - fromPlaneLocation[detminatorAxis]
   }
 
-  // // TODO diff. axis, diff directions
-  // if (location.facing === '>' && next.facing === 'v') {
-  //   next[otherAxis(nextAxis)] = fromPlaneLocation[detminatorAxis]
-  // }
-  // // TODO: same axis, diff. directions
-  // else if (location.facing === 'v' && next.facing === '^') {
-  //   next[otherAxis(nextAxis)] =
-  //     PLANE_SIZE - 1 - fromPlaneLocation[detminatorAxis]
-  // }
-  // // TODO: diff. axis, same directions
-  // else if (location.facing === '^' && next.facing === '>') {
-  //   next[otherAxis(nextAxis)] =
-  //     PLANE_SIZE - 1 - fromPlaneLocation[detminatorAxis]
-  // }
-
-  console.log('NEXT')
-  console.log(next)
-
   const nextGridLocation = planeLocationToGridLocation(nextPlane, next)
-
-  console.log('plane')
-  console.log(nextPlane)
-
-  console.log('PLANE SIZE')
-  console.log(PLANE_SIZE)
-
-  console.log('next FINAL')
-  console.log(nextGridLocation)
-
   return nextGridLocation
 }
 
