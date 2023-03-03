@@ -18,7 +18,9 @@
     "1337",
     "leet"
   ],
-  "author": "Andre Brdoch",
+  "author": {
+    "name": "Andre Brdoch"
+  },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/andre-brdoch/advent-of-code-2022/issues"
