@@ -48,9 +48,7 @@ async function toFile(fileName: string, data: string): Promise<void> {
   await fs.writeFile(file, data)
 }
 
-const solutionModule = await import(
-  `./day-${dayFormatted}/solution-${dayFormatted}.js`
-)
+const solutionModule = await import(`./day-${dayFormatted}/index.js`)
 const inputs = cliInput ?? (await getInputFile())
 
 const { answer1, answer2, visualFile, visualData } =

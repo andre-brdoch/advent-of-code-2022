@@ -409,6 +409,7 @@ function stringifyTurn(turn: Turn): string {
   return str
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function stringifySequence(sequence: Sequence): string {
   return sequence.map(stringifyTurn).join('\n')
 }
