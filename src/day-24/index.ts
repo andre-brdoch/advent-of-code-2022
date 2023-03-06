@@ -39,8 +39,7 @@ export default (async function solution(input) {
   combinedPaths.forEach((coordinate, turn) => {
     const gridThatTurn = memoizedMoveBlizzards(turn)
     gridThatTurn[coordinate.y][coordinate.x] = 'E'
-    logger.log(`\nEnd of turn ${turn}`)
-    logger.log(stringifyGrid(gridThatTurn))
+    logger.log(`\nEnd of turn ${turn}\n${stringifyGrid(gridThatTurn)}`)
   })
 
   const answer1 = path1.length - 1

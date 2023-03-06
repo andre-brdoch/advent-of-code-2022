@@ -1,35 +1,40 @@
 import { SolutionFn } from '../types'
 import { Cell, CaveGrid, Coordinates, Axis, Path } from './types'
+import { Logger } from '../utils/Logger.js'
 
 const SAND_START: Coordinates = { x: 500, y: 0 }
+
+const loggers = [
+  new Logger({ outputName: 'output-1.txt' }),
+  new Logger({ outputName: 'output-2.txt' }),
+]
+let logger = loggers[0]
 
 export default (async function solution(input) {
   const cornerPaths = parsePaths(input)
 
   const answer1 = getAnswer1(cornerPaths, SAND_START)
+  logger = loggers[1]
   const answer2 = getAnswer2(cornerPaths, SAND_START)
 
-  return { answer1, answer2 }
+  return {
+    answer1,
+    answer2,
+    visuals: loggers.slice(0, 1).map(l => l.getVisual()),
+  }
 } satisfies SolutionFn)
 
 function getAnswer1(cornerPaths: Path[], sandStart: Coordinates): number {
   const cave = new Cave(cornerPaths, sandStart)
-  console.log('\nbefore answering 1:')
-  console.log(cave.toString())
+  logger.log(cave.toString())
   const result = cave.fillSand()
-  console.log('\nafter answering 1:')
-  console.log(cave.toString())
-  console.log('-----')
   return result
 }
 
 function getAnswer2(cornerPaths: Path[], sandStart: Coordinates): number {
   const cave = new Cave(cornerPaths, sandStart, true)
-  console.log('\nbefore answering 2:')
-  console.log(cave.toString())
+  logger.log(cave.toString())
   const result = cave.fillSand()
-  console.log('\nafter answering 2:')
-  console.log(cave.toString())
   return result
 }
 
@@ -73,6 +78,7 @@ class Cave {
       return false
     }
     this.grid[target.x][target.y] = 'o'
+    logger.log(`${this.toString()}\n\n`)
     return true
   }
 
@@ -147,7 +153,7 @@ class Cave {
   public toString(): string {
     let string = ''
     for (let i = 0; i < this.grid[0].length; i++) {
-      string += '\n'
+      if (string.length) string += '\n'
       for (let j = 0; j < this.grid.length; j++) {
         string += this.grid[j][i] + ' '
       }
