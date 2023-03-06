@@ -13,7 +13,8 @@ import {
   NextOptionsCache,
 } from './types'
 
-const logger = new Logger()
+const loggers = [new Logger({ outputName: 'output.txt' })]
+const logger = loggers[0]
 
 const START_ROBOTS = [createRobot('ore')]
 
@@ -29,7 +30,7 @@ export default (async function solution(input) {
   const timer2 = performance.now()
   logger.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
 
-  return { answer1, answer2 }
+  return { answer1, answer2, visuals: loggers.slice(1).map(l => l.getVisual()) }
 } satisfies SolutionFn)
 
 function getAnswer2(input: string): number {
@@ -53,6 +54,11 @@ function findBestSequence(
   startingRobots: Robot[],
   maxTurns: number
 ): Sequence {
+  const logger = new Logger({
+    outputName: `output-${maxTurns}-turns-bp-${blueprint.id}.txt`,
+  })
+  loggers.push(logger)
+
   const startingTurn: Turn = {
     number: 1,
     finalRobots: startingRobots,
@@ -90,7 +96,9 @@ function findBestSequence(
 
   if (!bestTurn) throw new Error('No best turn determined!')
 
-  return buildSequence(cameFrom, bestTurn)
+  const builtSequence = buildSequence(cameFrom, bestTurn)
+  logger.log(stringifySequence(buildSequence(cameFrom, bestTurn)))
+  return builtSequence
 }
 function getNextTurns(
   blueprint: Blueprint,

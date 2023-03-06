@@ -38,7 +38,7 @@ export default (async function solution(input) {
   return {
     answer1,
     answer2,
-    ...logger.getVisual(),
+    visuals: [logger.getVisual()],
   }
 } satisfies SolutionFn)
 

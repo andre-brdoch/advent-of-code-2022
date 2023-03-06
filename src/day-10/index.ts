@@ -1,7 +1,10 @@
+import { Logger } from '../utils/Logger.js'
 import { SolutionFn } from '../types'
 import { Line, LineAdd, Cycle, Pixel, Screen } from './types'
 
 const GROUP_SIZE = 40
+
+const logger = new Logger()
 
 export default (async function solution(input) {
   console.log(input)
@@ -14,9 +17,14 @@ export default (async function solution(input) {
   const screen = getScreen(cycles)
 
   // see console output for answer 2:
-  console.log(stringifyScreen(screen))
+  logger.log(stringifyScreen(screen))
 
-  return { answer1 }
+  return {
+    answer1,
+    // see terminal for answer 2
+    answer2: 0,
+    visuals: [logger.getVisual()],
+  }
 } satisfies SolutionFn)
 
 function getScreen(cycles: Cycle[]): Screen {

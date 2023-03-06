@@ -11,8 +11,10 @@ import {
   GridArray,
   Axis,
 } from './types'
+import { Logger } from '../utils/Logger.js'
 
 const CHECK_AFTER = 10
+const logger = new Logger()
 
 const VECTORS: { [key: string]: Coordinate } = {
   N: { x: 0, y: 1 },
@@ -35,8 +37,8 @@ export default (async function solution(input) {
   const grid = parseFile(input)
   const directionPriorities: MainDirections[] = ['N', 'S', 'W', 'E']
 
-  console.log('\n\n=== Initial State ===')
-  console.log(stringifyGrid(grid))
+  logger.log('\n\n=== Initial State ===')
+  logger.log(stringifyGrid(grid))
 
   moveElves(grid, directionPriorities, CHECK_AFTER)
 
@@ -46,7 +48,7 @@ export default (async function solution(input) {
   const turns = moveElves(grid, directionPriorities, null)
   const answer2 = CHECK_AFTER + (turns as number) - 1
 
-  return { answer1, answer2 }
+  return { answer1, answer2, visuals: [logger.getVisual()] }
 } satisfies SolutionFn)
 
 function moveElves(
@@ -111,7 +113,7 @@ function moveElves(
     // rotate direction priorities
     directionPriorities.push(directionPriorities.shift() as MainDirections)
 
-    console.log(stringifyGrid(grid))
+    logger.log(stringifyGrid(grid))
   }
   return didFinish ? counter : false
 }

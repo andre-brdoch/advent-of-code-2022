@@ -9,8 +9,14 @@ import {
   xMinMax,
   CombinedSensorOutlinesMap,
 } from './types'
+import { Logger } from '../utils/Logger.js'
 
 const { isTest } = parseArgs()
+const loggers = [
+  new Logger({ outputName: 'output-outline.txt' }),
+  new Logger({ outputName: 'output-filled.txt' }),
+]
+let logger = loggers[0]
 
 const TARGET_Y = isTest ? 10 : 2000000
 const TUNING_FREQUENCY_MODIFIER = 4000000
@@ -32,7 +38,9 @@ export default (async function solution(input) {
   console.log(
     `Finished outlining after ${formatTimeDuration(timer2, timer3)}\n`
   )
-  // console.log(cave.stringifyGrid('outlines', false))
+  logger.log(cave.stringifyGrid('outlines', false))
+  logger = loggers[1]
+  logger.log(cave.stringifyGrid('full', false))
 
   console.log(`Start counting empty cells in row ${TARGET_Y}...`)
 
@@ -51,7 +59,7 @@ export default (async function solution(input) {
   const timer5 = performance.now()
   console.log(`Total processing time: ${formatTimeDuration(timer1, timer5)}\n`)
 
-  return { answer1, answer2 }
+  return { answer1, answer2, visuals: loggers.map(l => l.getVisual()) }
 } satisfies SolutionFn)
 
 class Cave {
