@@ -1,7 +1,3 @@
-export interface Solution12 {
-  answer1: number
-  answer2: number
-}
 export interface Square {
   elevation: string
   elevationNum: number

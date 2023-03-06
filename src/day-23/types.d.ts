@@ -1,7 +1,3 @@
-export interface Solution23 {
-  answer1: number
-  answer2: number
-}
 export interface Coordinate {
   x: number
   y: number

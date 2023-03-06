@@ -1,0 +1,40 @@
+
+== Minute 1 ==
+1 ore robot collects 1 ore; You now have 1 ore.
+
+== Minute 5 ==
+Spends 4 ore to start building a clay robot.
+1 ore robot collects 1 ore; You now have 1 ore.
+The new clay robot is ready; You now have 1 of them.
+
+== Minute 9 ==
+Spends 4 ore to start building a clay robot.
+1 ore robot collects 1 ore; You now have 1 ore.
+1 clay robot collects 1 clay; You now have 4 clay.
+The new clay robot is ready; You now have 2 of them.
+
+== Minute 13 ==
+Spends 4 ore and 10 clay to start building a obsidian robot.
+1 ore robot collects 1 ore; You now have 1 ore.
+2 clay robots collect 2 clay; You now have 2 clay.
+The new obsidian robot is ready; You now have 1 of them.
+
+== Minute 18 ==
+Spends 4 ore and 10 clay to start building a obsidian robot.
+1 ore robot collects 1 ore; You now have 2 ore.
+2 clay robots collect 2 clay; You now have 2 clay.
+1 obsidian robot collects 1 obsidian; You now have 5 obsidian.
+The new obsidian robot is ready; You now have 2 of them.
+
+== Minute 20 ==
+Spends 2 ore and 7 obsidian to start building a geode robot.
+1 ore robot collects 1 ore; You now have 2 ore.
+2 clay robots collect 2 clay; You now have 6 clay.
+2 obsidian robots collect 2 obsidian; You now have 2 obsidian.
+The new geode robot is ready; You now have 1 of them.
+
+== Minute 24 ==
+1 ore robot collects 1 ore; You now have 6 ore.
+2 clay robots collect 2 clay; You now have 14 clay.
+2 obsidian robots collect 2 obsidian; You now have 10 obsidian.
+1 geode robot collects 1 geode; You now have 4 geode.

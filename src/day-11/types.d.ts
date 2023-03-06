@@ -1,7 +1,3 @@
-export interface Solution11 {
-  answer1: number
-  answer2: number
-}
 export interface MonkeyParsed {
   name: string
   items: number[]

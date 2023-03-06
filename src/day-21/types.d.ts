@@ -1,7 +1,3 @@
-export interface Solution21 {
-  answer1: number
-  answer2: number
-}
 export interface Humanoid {
   name: Name
   number?: number

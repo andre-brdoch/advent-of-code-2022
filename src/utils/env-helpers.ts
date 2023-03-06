@@ -1,41 +1,28 @@
-interface Flags {
-  isTest?: boolean
-  // test file name
-  file?: string
-  // input passed directly via CLI
-  cliInput?: string
-  visualize?: boolean
-  noLog?: boolean
-}
-interface Args extends Flags {
-  day: number
-}
+import { CliFlags, EnvArgs } from '../types'
 
-export function parseArgs(): Args {
+export function parseArgs(): EnvArgs {
   const args = process.argv
-  const flagMap: Flags = args
+  const flagMap: CliFlags = args
     .map(str => str.match(/^--(\w+)=(.+)$/))
     .filter(match => match !== null)
-    .reduce((result, match) => {
-      const [, name, value] = match as RegExpMatchArray
-      const convertedValue =
-        value === 'true' ? true : value === 'false' ? false : value
-      return {
-        ...result,
-        [name]: convertedValue,
+    .reduce(
+      (result, match) => {
+        const [, name, value] = match as RegExpMatchArray
+        const convertedValue =
+          value === 'true' ? true : value === 'false' ? false : value
+        return {
+          ...result,
+          [name]: convertedValue,
+        }
+      },
+      {
+        env: 'test',
       }
-    }, {})
+    )
   const result = {
     day: Number(args[2]),
     ...flagMap,
-  }
-  if (flagMap.file?.includes('test')) {
-    result.isTest = true
+    isTest: flagMap.env?.includes('test'),
   }
   return result
-}
-
-export function isTest(): boolean {
-  const [, , , mode] = process.argv
-  return mode === 'test'
 }

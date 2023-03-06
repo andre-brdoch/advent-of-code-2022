@@ -1,7 +1,3 @@
-export interface Solution19 {
-  answer1: number
-  answer2: number
-}
 export type Material = 'ore' | 'clay' | 'obsidian' | 'geode'
 export type Cost = [Material, number]
 export interface Robot {

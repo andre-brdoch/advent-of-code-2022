@@ -1,7 +1,3 @@
-export interface Solution14 {
-  answer1: number
-  answer2: number
-}
 export type Air = '.'
 export type Rock = '#'
 export type Sand = 'o'

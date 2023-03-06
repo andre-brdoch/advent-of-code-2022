@@ -1,7 +1,3 @@
-export interface Solution8 {
-  answer1: number
-  answer2: number
-}
 export interface Tree {
   size: number
   hidden?: boolean

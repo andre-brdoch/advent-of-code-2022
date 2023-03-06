@@ -1,7 +1,3 @@
-export interface Solution16 {
-  answer1: number
-  answer2: number
-}
 export interface DistanceMap {
   [key: string]: number
 }

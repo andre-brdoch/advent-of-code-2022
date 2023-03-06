@@ -2,8 +2,10 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from './utils/env-helpers.js'
+import { SolutionFn } from './types.js'
 
-const { day, file, cliInput, isTest, visualize } = parseArgs()
+const args = parseArgs()
+const { day, env, isTest, visualize } = args
 
 if (!day) {
   throw new Error('No day selected')
@@ -14,23 +16,21 @@ const __dirname = path.dirname(__filename)
 
 const dayFormatted = String(day).padStart(2, '0')
 
-async function getInputFile(): Promise<string | undefined> {
-  try {
-    const filePath = path.join(__dirname, `./day-${dayFormatted}/${file}`)
-    const input = await fs.readFile(filePath, 'utf8')
-    return input
-  }
-  catch (err) {
-    return undefined
-  }
+async function getInputFile(): Promise<string> {
+  const filePath = path.join(
+    __dirname,
+    `./day-${dayFormatted}/${env}/input.txt`
+  )
+  const input = await fs.readFile(filePath, 'utf8')
+  return input
 }
 
 function printAnswers(answer1: unknown, answer2: unknown): void {
-  console.log(`Solution 1 for day ${day} is:`)
+  console.log(`\nSolution 1 for day ${day} is:`)
   console.log(answer1, isTest ? '(TEST)' : '')
 
   if (answer2 !== undefined) {
-    console.log('...and solution 2 is:')
+    console.log('\n...and solution 2 is:')
     console.log(answer2, isTest ? '(TEST)' : '')
   }
 }
@@ -40,7 +40,7 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 async function toFile(fileName: string, data: string): Promise<void> {
-  const dir = path.join(__dirname, `./day-${dayFormatted}/output`)
+  const dir = path.join(__dirname, `./day-${dayFormatted}/${env}`)
   if (!(await fileExists(dir))) {
     await fs.mkdir(dir)
   }
@@ -48,19 +48,18 @@ async function toFile(fileName: string, data: string): Promise<void> {
   await fs.writeFile(file, data)
 }
 
-const solutionModule = await import(
-  `./day-${dayFormatted}/solution-${dayFormatted}.js`
-)
-const inputs = cliInput ?? (await getInputFile())
+const solutionModule = await import(`./day-${dayFormatted}/index.js`)
+const inputs = await getInputFile()
+const solutionFn = solutionModule.default as SolutionFn
 
-const { answer1, answer2, visualFile, visualData } =
-  await solutionModule.default(inputs, {
-    isTest,
-    visualize,
-  })
+const { answer1, answer2, visuals } = await solutionFn(inputs, args)
 
 printAnswers(answer1, answer2)
 
-if (visualize && visualFile && visualData) {
-  await toFile(visualFile, visualData)
+if (visualize && visuals?.length) {
+  await Promise.all(
+    visuals
+      .flatMap(v => (v !== null ? [v] : []))
+      .map(v => toFile(v.file, v.data))
+  )
 }

@@ -1,6 +1,3 @@
-export interface Solution10 {
-  answer1: number
-}
 export type Command = 'addx' | 'noop'
 export interface Line {
   command: Command
