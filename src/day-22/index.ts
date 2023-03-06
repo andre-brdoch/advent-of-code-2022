@@ -10,7 +10,7 @@ import {
   stringifyGrid,
 } from './utils.js'
 import { VECTORS } from './constants.js'
-import { SolutionFn } from '../types.js'
+import { SolutionFn } from '../types'
 import {
   Facing,
   PlayerLocation,
@@ -69,8 +69,7 @@ function getPathFromInstructions(
   die?: Die
 ): Path {
   let path = [getStartLocation(grid)]
-  logger.log('===== Start position =====')
-  logger.log(stringifyGrid(grid, path))
+  logger.log(`===== Start position =====\n${stringifyGrid(grid, path)}`)
 
   instructions.forEach((instruction, i) => {
     if (typeof instruction === 'number') {
@@ -78,8 +77,9 @@ function getPathFromInstructions(
       path = move(grid, path, instruction, die)
 
       if (i === instructions.length - 1) {
-        logger.log(stringifyInstructions(instruction))
-        logger.log(stringifyGrid(grid, path))
+        logger.log(
+          `${stringifyInstructions(instruction)}\n${stringifyGrid(grid, path)}`
+        )
       }
     }
     else {
@@ -87,12 +87,11 @@ function getPathFromInstructions(
       rotate(path[path.length - 1], instruction)
 
       logger.log(
-        stringifyInstructions(
+        `${stringifyInstructions(
           instructions[i - 1] as MoveInstruction,
           instruction
-        )
+        )}\n${stringifyGrid(grid, path)}`
       )
-      logger.log(stringifyGrid(grid, path))
     }
   })
   return path
