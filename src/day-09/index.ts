@@ -134,6 +134,7 @@ function addPositions(a: Position, b: Position): Position {
 
 // === Visualize ===
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function stringifyAllRopeTurns(
   ropeMovement: RopeMovement,
   untilTurn: number | undefined = undefined
@@ -253,14 +254,6 @@ function getExtremeCoordinate(
   return positions
     .map(position => position[axis])
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
-}
-
-function wait(time: number): Promise<void> {
-  return new Promise<void>(resolve => {
-    setTimeout(() => {
-      resolve()
-    }, time)
-  })
 }
 
 // === Typescript helpers ===
