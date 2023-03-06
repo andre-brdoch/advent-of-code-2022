@@ -10,6 +10,7 @@ import {
   stringifyGrid,
 } from './utils.js'
 import { VECTORS } from './constants.js'
+import { Solution } from '../types.js'
 import {
   Solution22,
   Facing,
@@ -21,16 +22,21 @@ import {
   MoveInstruction,
 } from './types'
 
-const logger = new Logger()
+const loggers = [
+  new Logger({ outputName: 'output-1.txt' }),
+  new Logger({ outputName: 'output-2.txt' }),
+]
+let logger = loggers[0]
 
-export default async function solution(input: string): Promise<Solution22> {
+export default async function solution(input: string): Solution {
   const answer1 = getAnswer1(input)
+  logger = loggers[1]
   const answer2 = getAnswer2(input)
 
   return {
     answer1,
     answer2,
-    ...logger.getVisual(),
+    visuals: loggers.map(l => l.getVisual()),
   }
 }
 

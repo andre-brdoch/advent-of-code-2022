@@ -1,23 +1,30 @@
 import { Logger } from '../utils/Logger.js'
 
-import { Solution20, Item, Sequence } from './types'
+import { Solution } from '../types.js'
+import { Item, Sequence } from './types'
 
 const DECRYPTION_KEY = 811589153
 
-const logger = new Logger()
+const loggers = [
+  new Logger({ outputName: 'output-1.txt' }),
+  new Logger({ outputName: 'output-2.txt' }),
+]
+let logger = loggers[0]
 
-export default async function solution(input: string): Promise<Solution20> {
+export default async function solution(input: string): Solution {
   logger.log('START')
   const items = parseItems(input)
   printItems(items)
 
   const answer1 = getAnswer1(items)
+  logger = loggers[1]
+  logger.log('START')
   const answer2 = getAnswer2(items)
 
   return {
     answer1,
     answer2,
-    ...logger.getVisual(),
+    visuals: loggers.map(l => l.getVisual()),
   }
 }
 

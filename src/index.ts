@@ -57,5 +57,9 @@ const { answer1, answer2, visuals } = await solutionFn(inputs, args)
 printAnswers(answer1, answer2)
 
 if (visualize && visuals?.length) {
-  await Promise.all(visuals.map(v => toFile(v.file, v.data)))
+  await Promise.all(
+    visuals
+      .flatMap(v => (v !== null ? [v] : []))
+      .map(v => toFile(v.file, v.data))
+  )
 }

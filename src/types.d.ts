@@ -17,6 +17,6 @@ interface Output {
 export type Solution = Promise<{
   answer1: number | string
   answer2: number | string
-  visuals?: Output[]
+  visuals?: (Output | null)[]
 }>
 export type SolutionFn = (input: string, args: EnvArgs) => Solution
