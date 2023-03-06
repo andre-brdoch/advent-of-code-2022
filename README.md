@@ -1,4 +1,4 @@
-![advent of code logo](./aoc.jpg)
+![advent of code logo](./images/header.jpg)
 
 ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐
 
@@ -28,19 +28,19 @@ For many days, there are also automatically generated outputs, visualizing the p
 npm i
 
 # Run day 1
-npm run day 1
+npm run day 1 -- --env=prod
 
 # Run day 1 in watch mode
-npm run watch-day 1
+npm run watch-day 1 -- --env=prod
 
 # Run day 1 with test inputs
 npm run day 1 -- --env=test
 
 # Print visualizations
-npm run day 1 -- --visualize=true
+npm run day 1 -- --env=prod --visualize=true
 
 # Surpress terminal logs
-npm run day 1 -- --noLog=true
+npm run day 1 -- --env=prod --noLog=true
 ```
 
 🎅 🎄 🎁 🎅 🎄 🎁 🎅 🎄 🎁 🎅 🎄 🎁 🎅 🎄 🎁 🎅 🎄 🎁
