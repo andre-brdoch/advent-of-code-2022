@@ -55,11 +55,11 @@ async function toFile(fileName: string, data: string): Promise<void> {
 const solutionModule = await import(`./day-${dayFormatted}/index.js`)
 const inputs = await getInputFile()
 
-const { answer1, answer2, visualFile, visualData } =
-  await solutionModule.default(inputs, args)
+const { answer1, answer2, visuals } = await solutionModule.default(inputs, args)
 
 printAnswers(answer1, answer2)
 
-if (visualize && visualFile && visualData) {
-  await toFile(visualFile, visualData)
+if (visualize && visuals?.length) {
+  // @ts-ignore
+  await Promise.all(visuals.map(v => toFile(v.file, v.data)))
 }

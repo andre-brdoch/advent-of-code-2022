@@ -3,11 +3,13 @@ import { parseArgs } from './env-helpers.js'
 export class Logger {
   private disabled: boolean
   private fullLog: string
+  private outputName: string
 
-  constructor() {
+  constructor({ outputName = 'output.txt' } = {}) {
     const { noLog } = parseArgs()
     this.disabled = !!noLog
     this.fullLog = ''
+    this.outputName = outputName
   }
 
   public log(...inputs: unknown[]): void {
@@ -28,18 +30,16 @@ export class Logger {
     return this.fullLog
   }
 
-  public getVisual(fileName = 'output.txt'):
-    | {
-        visualFile: string
-        visualData: string
-      }
-    | Record<string, never> {
+  public getVisual(fileName?: string): {
+    file: string
+    data: string
+  } | null {
     const { visualize } = parseArgs()
     return visualize
       ? {
-        visualFile: fileName,
-        visualData: this.fullLog,
+        file: fileName || this.outputName,
+        data: this.fullLog,
       }
-      : {}
+      : null
   }
 }
