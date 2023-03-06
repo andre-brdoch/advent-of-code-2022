@@ -1,5 +1,8 @@
 import { SolutionFn } from '../types'
 import { Direction, Motion, Position, Axis, RopeMovement } from './types'
+import { parseArgs } from '../utils/env-helpers.js'
+
+const { noLog, visualize } = parseArgs()
 
 export default (async function solution(input) {
   const motions = parseHeadMotions(input)
@@ -132,21 +135,11 @@ function addPositions(a: Position, b: Position): Position {
 // === Visualize ===
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function animateRope(
-  ropeMovement: RopeMovement,
-  delay: number
-): Promise<void> {
-  const outputs = stringifyAllRopeTurns(ropeMovement).split('\n\n')
-  for (const output of outputs) {
-    await wait(delay)
-    console.log(output)
-  }
-}
-
 function stringifyAllRopeTurns(
   ropeMovement: RopeMovement,
   untilTurn: number | undefined = undefined
 ): string {
+  if (noLog && !visualize) return ''
   return ropeMovement[0]
     .slice(0, untilTurn)
     .map((_, i) => `TURN ${i}:${stringifyRopeAtTurn(ropeMovement, i)}`)
@@ -158,6 +151,7 @@ function strinfigyRopePerMotion(
   ropeMovement: RopeMovement,
   motions: Motion[]
 ): string {
+  if (noLog && !visualize) return ''
   let turn = 0
   let string = ''
   motions.forEach(motion => {
@@ -170,6 +164,7 @@ function strinfigyRopePerMotion(
 }
 
 function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
+  if (noLog && !visualize) return ''
   const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
   const grid = getGrid(normalizedRopeMovement)
   const currentKnotPositions = normalizedRopeMovement.map(
@@ -190,6 +185,7 @@ function stringifyRopeAtTurn(ropeMovement: RopeMovement, turn: number): string {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function stringifyKnotMovement(ropeMovement: RopeMovement, i: number): string {
+  if (noLog && !visualize) return ''
   const { normalizedRopeMovement } = normalizeRopeMovement(ropeMovement)
   const positions = normalizedRopeMovement[i]
   const grid = getGrid(normalizedRopeMovement)
@@ -203,6 +199,7 @@ function stringifyKnotMovement(ropeMovement: RopeMovement, i: number): string {
 }
 
 function stringifyGrid(grid: string[][]): string {
+  if (noLog && !visualize) return ''
   let string = ''
   const gridRotated = grid.map(row => row.slice().reverse())
   for (let i = 0; i < grid[0].length; i++) {
@@ -215,6 +212,7 @@ function stringifyGrid(grid: string[][]): string {
 }
 
 function stringifyPosition(position: Position): string {
+  if (noLog && !visualize) return ''
   return `${position.x}/${position.y}`
 }
 
@@ -256,14 +254,6 @@ function getExtremeCoordinate(
   return positions
     .map(position => position[axis])
     .sort((a, b) => (type === 'min' ? a - b : b - a))[0]
-}
-
-function wait(time: number): Promise<void> {
-  return new Promise<void>(resolve => {
-    setTimeout(() => {
-      resolve()
-    }, time)
-  })
 }
 
 // === Typescript helpers ===
