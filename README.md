@@ -11,8 +11,10 @@ My solutions for all 25 problems of the [2022 Advent of Code](https://adventofco
 - Typescript
 - 0 dependencies used for solving the problems, only for tooling
 
-## Highlights
+## Showcase
 
+![day 14](./images/day-14.gif)
+![day 22](./images/day-22.gif)
 ![day 24](./images/day-24.gif)
 
 ## Getting started
