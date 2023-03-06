@@ -2,13 +2,13 @@ import { parseArgs } from './env-helpers.js'
 
 export class Logger {
   private disabled: boolean
-  private fullLog: string
+  private entries: unknown[]
   private outputName: string
 
   constructor({ outputName = 'output.txt' } = {}) {
     const { noLog } = parseArgs()
     this.disabled = !!noLog
-    this.fullLog = ''
+    this.entries = []
     this.outputName = outputName
   }
 
@@ -17,17 +17,26 @@ export class Logger {
       console.log(...inputs)
     }
 
-    if (this.fullLog.length) this.fullLog += '\n'
-    this.fullLog += inputs
+    // if (this.fullLog.length) this.fullLog += '\n'
+    const entry = inputs
       .map(input => {
         if (typeof input === 'string') return input
         else return input?.toString?.() ?? ''
       })
       .join(' ')
+    this.entries.push(entry)
   }
 
   public getFullLog(): string {
-    return this.fullLog
+    return this.entries.join('\n')
+  }
+
+  public async animate(): Promise<void> {
+    for (const entry of this.entries) {
+      // wait
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 300))
+      console.log(entry)
+    }
   }
 
   public getVisual(fileName?: string): {
@@ -38,7 +47,7 @@ export class Logger {
     return visualize
       ? {
         file: fileName || this.outputName,
-        data: this.fullLog,
+        data: this.getFullLog(),
       }
       : null
   }
