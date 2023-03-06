@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from './utils/env-helpers.js'
+import { SolutionFn } from './types.js'
 
 const args = parseArgs()
 const { day, env, isTest, visualize } = args
@@ -15,18 +16,13 @@ const __dirname = path.dirname(__filename)
 
 const dayFormatted = String(day).padStart(2, '0')
 
-async function getInputFile(): Promise<string | undefined> {
-  try {
-    const filePath = path.join(
-      __dirname,
-      `./day-${dayFormatted}/${env}/input.txt`
-    )
-    const input = await fs.readFile(filePath, 'utf8')
-    return input
-  }
-  catch (err) {
-    return undefined
-  }
+async function getInputFile(): Promise<string> {
+  const filePath = path.join(
+    __dirname,
+    `./day-${dayFormatted}/${env}/input.txt`
+  )
+  const input = await fs.readFile(filePath, 'utf8')
+  return input
 }
 
 function printAnswers(answer1: unknown, answer2: unknown): void {
@@ -54,12 +50,12 @@ async function toFile(fileName: string, data: string): Promise<void> {
 
 const solutionModule = await import(`./day-${dayFormatted}/index.js`)
 const inputs = await getInputFile()
+const solutionFn = solutionModule.default as SolutionFn
 
-const { answer1, answer2, visuals } = await solutionModule.default(inputs, args)
+const { answer1, answer2, visuals } = await solutionFn(inputs, args)
 
 printAnswers(answer1, answer2)
 
 if (visualize && visuals?.length) {
-  // @ts-ignore
   await Promise.all(visuals.map(v => toFile(v.file, v.data)))
 }

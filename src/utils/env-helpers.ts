@@ -1,17 +1,8 @@
-interface Flags {
-  isTest?: boolean
-  // environment folder name
-  env: string
-  visualize?: boolean
-  noLog?: boolean
-}
-interface Args extends Flags {
-  day: number
-}
+import { CliFlags, EnvArgs } from '../types'
 
-export function parseArgs(): Args {
+export function parseArgs(): EnvArgs {
   const args = process.argv
-  const flagMap: Flags = args
+  const flagMap: CliFlags = args
     .map(str => str.match(/^--(\w+)=(.+)$/))
     .filter(match => match !== null)
     .reduce(
@@ -31,9 +22,7 @@ export function parseArgs(): Args {
   const result = {
     day: Number(args[2]),
     ...flagMap,
-  }
-  if (flagMap.env?.includes('test')) {
-    result.isTest = true
+    isTest: flagMap.env?.includes('test'),
   }
   return result
 }
