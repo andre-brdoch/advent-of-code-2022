@@ -12,6 +12,9 @@ import {
   Axis,
 } from './types'
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
+
+const { noLog, visualize } = parseArgs()
 
 const CHECK_AFTER = 10
 const logger = new Logger()
@@ -203,6 +206,7 @@ function arrifyGrid(grid: Grid): GridArray {
 }
 
 function stringifyGrid(grid: Grid): string {
+  if (noLog && !visualize) return ''
   const elves = getAllElfLocations(grid)
   const xMin = getExtremeCoordinate(elves, 'x', 'min')
   const xMax = getExtremeCoordinate(elves, 'x', 'max')

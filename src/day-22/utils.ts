@@ -1,4 +1,5 @@
 import { INITIAL_FACING } from './constants.js'
+import { parseArgs } from '../utils/env-helpers.js'
 import {
   Coordinate,
   PlayerLocation,
@@ -12,6 +13,8 @@ import {
   Coordinate3D,
   Facing,
 } from './types'
+
+const { noLog, visualize } = parseArgs()
 
 export function coordinatesOverlap(
   a: Coordinate | Coordinate3D,
@@ -90,6 +93,7 @@ export function planesToGrid(planes: Plane[]): (Plane | null)[][] {
 }
 
 export function stringifyPlanes(planes: Plane[]): string {
+  if (noLog && !visualize) return ''
   const planeGrid = planesToGrid(planes)
   return planeGrid
     .map(row => row.map(plane => plane?.name ?? ' ').join(' '))
@@ -99,6 +103,7 @@ export function stringifyPlanes(planes: Plane[]): string {
 }
 
 export function stringifyGrid(grid: Grid, path: Path): string {
+  if (noLog && !visualize) return ''
   const gridCopy = grid.slice().map(column => column.slice())
   path.forEach(player => {
     gridCopy[player.y][player.x].type = player.facing
@@ -117,6 +122,7 @@ export function stringifyInstructions(
   moveInstruction: MoveInstruction,
   rotateInstruction: RotateInstruction | undefined = undefined
 ): string {
+  if (noLog && !visualize) return ''
   let str = `Move ${moveInstruction}`
   if (rotateInstruction) {
     str += `, rotate to the ${rotateInstruction === 'R' ? 'right' : 'left'}`

@@ -1,4 +1,5 @@
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
 import { SolutionFn } from '../types.js'
 import {
   JetPattern,
@@ -14,6 +15,8 @@ import {
   Segment,
   CycleDetector,
 } from './types'
+
+const { noLog, visualize } = parseArgs()
 
 // piece coordinates, width and height will never change per stone shape,
 // therefore save in constant to avoid unnecessary computations
@@ -315,6 +318,7 @@ function stringifyGrid(
   grid: Grid,
   fallingStone: Stone | undefined = undefined
 ): string {
+  if (noLog && !visualize) return ''
   let string = '\n\n'
   for (let y = grid.length - 1; y >= 0; y--) {
     const wallMarker = y === 0 ? '+' : '|'

@@ -11,7 +11,7 @@ import {
 } from './types'
 import { Logger } from '../utils/Logger.js'
 
-const { isTest } = parseArgs()
+const { isTest, noLog, visualize } = parseArgs()
 const loggers = [
   new Logger({ outputName: 'output-outline.txt' }),
   new Logger({ outputName: 'output-filled.txt' }),
@@ -253,6 +253,7 @@ class Cave {
     mode: 'full' | 'outlines' = 'full',
     withBoundaries = false
   ): string {
+    if (noLog && !visualize) return ''
     const grid =
       mode === 'outlines'
         ? this.getOutlineGrid(withBoundaries)

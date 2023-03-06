@@ -1,4 +1,5 @@
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
 import { SolutionFn } from '../types.js'
 import {
   Material,
@@ -12,6 +13,8 @@ import {
   CameFrom,
   NextOptionsCache,
 } from './types'
+
+const { noLog, visualize } = parseArgs()
 
 const loggers = [new Logger({ outputName: 'output.txt' })]
 const logger = loggers[0]
@@ -385,6 +388,7 @@ function createRobot(material: Material): Robot {
 }
 
 function stringifyTurn(turn: Turn): string {
+  if (noLog && !visualize) return ''
   const { finalRobots, finalStock, buy, number } = turn
   let str = `\n== Minute ${number} ==`
   if (buy) {
@@ -419,6 +423,7 @@ function stringifyTurn(turn: Turn): string {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function stringifySequence(sequence: Sequence): string {
+  if (noLog && !visualize) return ''
   return sequence.map(stringifyTurn).join('\n')
 }
 

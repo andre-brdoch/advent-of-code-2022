@@ -1,4 +1,5 @@
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
 import { SolutionFn } from '../types.js'
 import {
   Coordinate,
@@ -8,6 +9,8 @@ import {
   Grid,
   CameFromByTurn,
 } from './types'
+
+const { noLog, visualize } = parseArgs()
 
 const logger = new Logger()
 
@@ -223,6 +226,7 @@ function isBlizzard(cell: Cell): cell is Blizzard {
 }
 
 function stringifyGrid(grid: Grid): string {
+  if (noLog && !visualize) return ''
   let string = '\n'
   for (let x = 0; x < grid.length; x++) {
     for (let y = 0; y < grid[0].length; y++) {

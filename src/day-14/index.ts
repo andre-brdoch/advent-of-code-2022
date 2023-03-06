@@ -1,8 +1,11 @@
 import { SolutionFn } from '../types'
 import { Cell, CaveGrid, Coordinates, Axis, Path } from './types'
 import { Logger } from '../utils/Logger.js'
+import { parseArgs } from '../utils/env-helpers.js'
 
 const SAND_START: Coordinates = { x: 500, y: 0 }
+
+const { noLog, visualize } = parseArgs()
 
 const loggers = [
   new Logger({ outputName: 'output-1.txt' }),
@@ -151,6 +154,7 @@ class Cave {
   }
 
   public toString(): string {
+    if (noLog && !visualize) return ''
     let string = ''
     for (let i = 0; i < this.grid[0].length; i++) {
       if (string.length) string += '\n'
