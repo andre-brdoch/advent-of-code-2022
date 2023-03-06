@@ -1,7 +1,6 @@
 import { Logger } from '../utils/Logger.js'
-
+import { SolutionFn } from '../types.js'
 import {
-  Solution17,
   JetPattern,
   Direction,
   Axis,
@@ -33,7 +32,7 @@ const STONE_AMOUNT_PT_2 = 1000000000000
 
 const logger = new Logger()
 
-export default async function solution(input: string): Promise<Solution17> {
+export default (async function solution(input) {
   const answer1 = getAnswer1(input)
   const answer2 = getAnswer2(input)
   return {
@@ -41,7 +40,7 @@ export default async function solution(input: string): Promise<Solution17> {
     answer2,
     ...logger.getVisual(),
   }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(input: string): number {
   const jetPatternQueue = parseJetPatterns(input)

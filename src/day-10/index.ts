@@ -1,10 +1,10 @@
-import { Solution10, Line, LineAdd, Cycle, Pixel, Screen } from './types'
+import { SolutionFn } from '../types'
+import { Line, LineAdd, Cycle, Pixel, Screen } from './types'
 
 const GROUP_SIZE = 40
 
-export default async function solution(input: string): Promise<Solution10> {
+export default (async function solution(input) {
   console.log(input)
-  console.log('----')
 
   const parsed = parseLines(input)
   const cycles = getCycles(parsed)
@@ -17,7 +17,7 @@ export default async function solution(input: string): Promise<Solution10> {
   console.log(stringifyScreen(screen))
 
   return { answer1 }
-}
+} satisfies SolutionFn)
 
 function getScreen(cycles: Cycle[]): Screen {
   const rows: Screen = []

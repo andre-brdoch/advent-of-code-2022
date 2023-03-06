@@ -1,7 +1,3 @@
-export interface Solution9 {
-  answer1: number
-  answer2: number
-}
 export type Direction = 'U' | 'R' | 'D' | 'L'
 export interface Motion {
   direction: Direction

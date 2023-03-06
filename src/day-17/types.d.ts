@@ -1,7 +1,3 @@
-export interface Solution17 {
-  answer1: number
-  answer2: number
-}
 export type JetPattern = '<' | '>'
 export type Direction = JetPattern | 'v'
 export type Axis = 'x' | 'y'

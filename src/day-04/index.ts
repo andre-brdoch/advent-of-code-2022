@@ -1,13 +1,14 @@
-import { Solution4, Range, Pair } from './types'
+import { SolutionFn } from '../types.js'
+import { Range, Pair } from './types'
 
-export default async function solution(input: string): Promise<Solution4> {
+export default (async function solution(input) {
   const pairs = parsePairs(input)
 
   const answer1 = countFullyOverlappingPairs(pairs)
   const answer2 = countOverlappingPairs(pairs)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function countFullyOverlappingPairs(pairs: Pair[]): number {
   return pairs.filter(pair => pairFullyOverlaps(pair)).length

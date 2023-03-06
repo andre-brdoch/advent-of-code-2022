@@ -1,6 +1,5 @@
 import { Logger } from '../utils/Logger.js'
-
-import { Solution } from '../types.js'
+import { SolutionFn } from '../types.js'
 import { Item, Sequence } from './types'
 
 const DECRYPTION_KEY = 811589153
@@ -11,7 +10,7 @@ const loggers = [
 ]
 let logger = loggers[0]
 
-export default async function solution(input: string): Solution {
+export default (async function solution(input) {
   logger.log('START')
   const items = parseItems(input)
   printItems(items)
@@ -26,7 +25,7 @@ export default async function solution(input: string): Solution {
     answer2,
     visuals: loggers.map(l => l.getVisual()),
   }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(items: Sequence): number {
   const mixed = mixItems(items)

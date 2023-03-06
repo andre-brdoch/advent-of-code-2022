@@ -1,14 +1,19 @@
-import { Solution25, Snafu } from './types'
+import { SolutionFn } from '../types'
+import { Snafu } from './types'
 
-export default async function solution(input: string): Promise<Solution25> {
+export default (async function solution(input) {
   const snafus = parseSnafus(input)
   const decimals = snafus.map(toDecimal)
   const decimalSum = decimals.reduce((result, n) => result + n, 0)
 
   const answer1 = toSnafu(decimalSum)
 
-  return { answer1 }
-}
+  return {
+    answer1,
+    // nothing needed to be done for pt 2 :)
+    answer2: 0,
+  }
+} satisfies SolutionFn)
 
 function toSnafu(number: number): Snafu {
   let counter = 0

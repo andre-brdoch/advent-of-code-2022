@@ -10,9 +10,8 @@ import {
   stringifyGrid,
 } from './utils.js'
 import { VECTORS } from './constants.js'
-import { Solution } from '../types.js'
+import { SolutionFn } from '../types.js'
 import {
-  Solution22,
   Facing,
   PlayerLocation,
   Path,
@@ -28,7 +27,7 @@ const loggers = [
 ]
 let logger = loggers[0]
 
-export default async function solution(input: string): Solution {
+export default (async function solution(input) {
   const answer1 = getAnswer1(input)
   logger = loggers[1]
   const answer2 = getAnswer2(input)
@@ -38,7 +37,7 @@ export default async function solution(input: string): Solution {
     answer2,
     visuals: loggers.map(l => l.getVisual()),
   }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(input: string): number {
   const { grid, instructions } = parseInput(input)

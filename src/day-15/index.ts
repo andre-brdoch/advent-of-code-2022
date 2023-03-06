@@ -1,7 +1,6 @@
 import { parseArgs } from '../utils/env-helpers.js'
-
+import { SolutionFn } from '../types.js'
 import {
-  Solution15,
   Coordinate,
   Axis,
   Sensor,
@@ -19,7 +18,7 @@ const BOUNDARIES: Boundaries = isTest
   ? { min: 0, max: 20 }
   : { min: 0, max: 4000000 }
 
-export default async function solution(input: string): Promise<Solution15> {
+export default (async function solution(input) {
   const timer1 = performance.now()
   const sensors = parseSensors(input)
   const cave = new Cave(sensors)
@@ -53,7 +52,7 @@ export default async function solution(input: string): Promise<Solution15> {
   console.log(`Total processing time: ${formatTimeDuration(timer1, timer5)}\n`)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 class Cave {
   public sensors: Sensor[]

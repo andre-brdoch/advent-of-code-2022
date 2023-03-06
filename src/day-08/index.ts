@@ -1,6 +1,7 @@
-import { Solution8, Tree, AnalyzedTree } from './types'
+import { SolutionFn } from '../types'
+import { Tree, AnalyzedTree } from './types'
 
-export default async function solution(input: string): Promise<Solution8> {
+export default (async function solution(input) {
   const rows = parseFile(input)
   const columns = getColumnsFromRows(rows)
   addStatsToTrees(rows, columns)
@@ -9,7 +10,7 @@ export default async function solution(input: string): Promise<Solution8> {
   const answer2 = getMostScenicTree(rows as AnalyzedTree[][]).scenicScore
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getMostScenicTree(rows: AnalyzedTree[][]): AnalyzedTree {
   const sorted = rows.flat().sort((a, b) => b.scenicScore - a.scenicScore)

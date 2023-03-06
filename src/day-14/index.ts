@@ -1,15 +1,16 @@
-import { Solution14, Cell, CaveGrid, Coordinates, Axis, Path } from './types'
+import { SolutionFn } from '../types'
+import { Cell, CaveGrid, Coordinates, Axis, Path } from './types'
 
 const SAND_START: Coordinates = { x: 500, y: 0 }
 
-export default async function solution(input: string): Promise<Solution14> {
+export default (async function solution(input) {
   const cornerPaths = parsePaths(input)
 
   const answer1 = getAnswer1(cornerPaths, SAND_START)
   const answer2 = getAnswer2(cornerPaths, SAND_START)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(cornerPaths: Path[], sandStart: Coordinates): number {
   const cave = new Cave(cornerPaths, sandStart)

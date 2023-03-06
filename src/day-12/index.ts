@@ -4,8 +4,8 @@
  * less options for the final fields, narrowing down options.
  */
 
+import { SolutionFn } from '../types'
 import {
-  Solution12,
   Square,
   Coordinates,
   Map,
@@ -16,12 +16,12 @@ import {
 
 const ASCII_OFFSET_A = 96
 
-export default async function solution(input: string): Promise<Solution12> {
+export default (async function solution(input) {
   const map = parseMap(input)
   const answer1 = getAnswer1(map)
   const answer2 = getAnswer2(map)
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(map: Map): number {
   const flatMap = map.flat()

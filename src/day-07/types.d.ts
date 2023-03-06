@@ -1,7 +1,3 @@
-export interface Solution7 {
-  answer1: number
-  answer2: number
-}
 type LineType = 'command' | 'dir' | 'file'
 export type Command = 'cd' | 'ls'
 export interface Line {

@@ -1,9 +1,3 @@
-export interface Solution24 {
-  answer1: number
-  answer2: number
-  visualFile?: string
-  visualData?: string
-}
 export interface Coordinate {
   x: number
   y: number

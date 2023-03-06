@@ -1,21 +1,15 @@
-import {
-  Solution13,
-  Value,
-  ValueList,
-  Packet,
-  Group,
-  CompareResult,
-} from './types'
+import { SolutionFn } from '../types'
+import { Value, ValueList, Packet, Group, CompareResult } from './types'
 
 const DIVIDER_1 = [[2]]
 const DIVIDER_2 = [[6]]
 
-export default async function solution(input: string): Promise<Solution13> {
+export default (async function solution(input) {
   const answer1 = getAnswer1(input)
   const answer2 = getAnswer2(input)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(input: string): number {
   const groups = parseFile(input, true)

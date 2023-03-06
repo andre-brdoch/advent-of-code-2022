@@ -1,5 +1,5 @@
+import { SolutionFn } from '../types'
 import {
-  Solution23,
   Coordinate,
   MainDirections,
   Direction,
@@ -31,7 +31,7 @@ const DIRECTION_ARCS: { [key: string]: Direction[] } = {
   E: ['NE', 'E', 'SE'],
 }
 
-export default async function solution(input: string): Promise<Solution23> {
+export default (async function solution(input) {
   const grid = parseFile(input)
   const directionPriorities: MainDirections[] = ['N', 'S', 'W', 'E']
 
@@ -47,7 +47,7 @@ export default async function solution(input: string): Promise<Solution23> {
   const answer2 = CHECK_AFTER + (turns as number) - 1
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function moveElves(
   grid: Grid,

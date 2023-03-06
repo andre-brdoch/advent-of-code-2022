@@ -1,19 +1,13 @@
-import {
-  Solution9,
-  Direction,
-  Motion,
-  Position,
-  Axis,
-  RopeMovement,
-} from './types'
+import { SolutionFn } from '../types'
+import { Direction, Motion, Position, Axis, RopeMovement } from './types'
 
-export default async function solution(input: string): Promise<Solution9> {
+export default (async function solution(input) {
   const motions = parseHeadMotions(input)
   const answer1 = getAnswer1(motions)
   const answer2 = getAnswer2(motions)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(headMotions: Motion[]): number {
   const ropeMovement = moveRope(headMotions, 2)

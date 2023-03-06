@@ -1,8 +1,9 @@
-import { Solution18, Coordinate, Cube, Axis, Grid, Boundaries } from './types'
+import { SolutionFn } from '../types'
+import { Coordinate, Cube, Axis, Grid, Boundaries } from './types'
 
 const ALL_AXES: Axis[] = ['x', 'y', 'z']
 
-export default async function solution(input: string): Promise<Solution18> {
+export default (async function solution(input) {
   const cubes = parseCubes(input)
   const boundaries = getBoundingCube(cubes)
   const grid = buildGrid(cubes, boundaries)
@@ -12,7 +13,7 @@ export default async function solution(input: string): Promise<Solution18> {
   const answer2 = getSurfaceArea(grid, boundaries, 'outer')
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function submergeInWater(grid: Grid, boundaries: Boundaries): void {
   let unknownCubes = getUnknownCubes(grid)

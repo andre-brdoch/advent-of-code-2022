@@ -1,6 +1,6 @@
 import { Logger } from '../utils/Logger.js'
+import { SolutionFn } from '../types.js'
 import {
-  Solution19,
   Material,
   Cost,
   Robot,
@@ -20,7 +20,7 @@ const START_ROBOTS = [createRobot('ore')]
 const MATERIALS_PRIORITIZED: Material[] = ['geode', 'obsidian', 'clay', 'ore']
 const BEST_MATERIAL = MATERIALS_PRIORITIZED[0]
 
-export default async function solution(input: string): Promise<Solution19> {
+export default (async function solution(input) {
   const timer1 = performance.now()
 
   const answer1 = getAnswer1(input)
@@ -30,7 +30,7 @@ export default async function solution(input: string): Promise<Solution19> {
   logger.log(`Done after ${formatTimeDuration(timer1, timer2)}\n`)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer2(input: string): number {
   const bps = parseBlueprints(input)

@@ -1,5 +1,5 @@
+import { SolutionFn } from '../types.js'
 import {
-  Solution7,
   Command,
   Line,
   LineDir,
@@ -15,7 +15,7 @@ import {
 const DISK_SIZE = 70000000
 const UPDATE_SIZE = 30000000
 
-export default async function solution(inputsFile: string): Promise<Solution7> {
+export default (async function solution(inputsFile) {
   const lines = parseFile(inputsFile)
   const tree = buildTree(lines)
   addSizesToDirectories(tree)
@@ -26,7 +26,7 @@ export default async function solution(inputsFile: string): Promise<Solution7> {
   const answer2 = dirToDelete.size
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function buildTree(lines: Line[]): Dir {
   const tree: Dir = { name: '/', children: [] }

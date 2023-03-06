@@ -1,7 +1,6 @@
 import { Logger } from '../utils/Logger.js'
-
+import { SolutionFn } from '../types.js'
 import {
-  Solution16,
   DistanceMap,
   PotentialMap,
   ValveParsed,
@@ -17,7 +16,7 @@ const START_NAME = 'AA'
 
 const logger = new Logger()
 
-export default async function solution(input: string): Promise<Solution16> {
+export default (async function solution(input) {
   const timer1 = performance.now()
 
   const valves = parseValves(input)
@@ -28,7 +27,7 @@ export default async function solution(input: string): Promise<Solution16> {
   console.log(`Solved in: ${formatTimeDuration(timer1, timer2)}\n`)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer2(valves: Valve[]): number {
   const maxTurns = 26

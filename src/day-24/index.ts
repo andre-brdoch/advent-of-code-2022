@@ -1,7 +1,6 @@
 import { Logger } from '../utils/Logger.js'
-
+import { SolutionFn } from '../types.js'
 import {
-  Solution24,
   Coordinate,
   TimedCoordinate,
   Blizzard,
@@ -19,7 +18,7 @@ const VECTORS = {
   '<': { x: -1, y: 0 },
 }
 
-export default async function solution(input: string): Promise<Solution24> {
+export default (async function solution(input) {
   const grid = parseGrid(input)
   logger.log('Initial blizzards')
   logger.log(stringifyGrid(grid))
@@ -52,7 +51,7 @@ export default async function solution(input: string): Promise<Solution24> {
     answer2,
     ...logger.getVisual(),
   }
-}
+} satisfies SolutionFn)
 
 function findPath(
   grid: Grid,

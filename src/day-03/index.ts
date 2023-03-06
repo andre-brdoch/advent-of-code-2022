@@ -1,14 +1,15 @@
-import { Answer1, Answer2, Solution3 } from './types'
+import { SolutionFn } from '../types.js'
+import { Answer1, Answer2 } from './types'
 
 const LOWER_A_ASCII_CODE = 97
 const UPPER_A_ASCII_CODE = 65
 const ALPHABET_NUMBERS = 26
 
-export default async function solution(input: string): Promise<Solution3> {
+export default (async function solution(input) {
   const answer1 = getAnswer1(input)
   const answer2 = getAnswer2(input)
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(input: string): Answer1 {
   const bags = parseBags(input)

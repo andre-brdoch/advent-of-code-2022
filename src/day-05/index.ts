@@ -1,6 +1,7 @@
-import { Solution5, Stack, Instruction } from './types'
+import { SolutionFn } from '../types.js'
+import { Stack, Instruction } from './types'
 
-export default async function solution(input: string): Promise<Solution5> {
+export default (async function solution(input) {
   const { stacks, instructions } = parseFile(input)
   const newStacks9000 = moveStacks(stacks, instructions)
   const newStacks9001 = moveStacks(stacks, instructions, true)
@@ -8,7 +9,7 @@ export default async function solution(input: string): Promise<Solution5> {
   const answer2 = getTopCrates(newStacks9001).join('')
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function moveStacks(
   stacks: Stack[],

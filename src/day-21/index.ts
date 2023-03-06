@@ -1,9 +1,10 @@
-import { Solution21, Humanoid, Name, Operator, Formula } from './types'
+import { SolutionFn } from '../types'
+import { Humanoid, Name, Operator, Formula } from './types'
 
 const MONKEY_BOSS = 'root'
 const POOR_HUMAN = 'humn'
 
-export default async function solution(input: string): Promise<Solution21> {
+export default (async function solution(input) {
   const humanoidsPt1 = parseHumanoids(input)
   const answer1 = resolveNumbersTill(MONKEY_BOSS, humanoidsPt1)
 
@@ -11,7 +12,7 @@ export default async function solution(input: string): Promise<Solution21> {
   const answer2 = await screamProperNumber(humanoidsPt2)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 async function screamProperNumber(humanoids: Humanoid[]): Promise<number> {
   let resolve: (monkey: Humanoid) => void

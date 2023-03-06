@@ -1,11 +1,12 @@
-import { Solution11, MonkeyParsed, Monkey, ManageFrustrationFn } from './types'
+import { SolutionFn } from '../types'
+import { MonkeyParsed, Monkey, ManageFrustrationFn } from './types'
 
-export default async function solution(input: string): Promise<Solution11> {
+export default (async function solution(input) {
   const answer1 = getAnswer1(input)
   const answer2 = getAnswer2(input)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(input: string): number {
   const monkeys = parseMonkeys(input)

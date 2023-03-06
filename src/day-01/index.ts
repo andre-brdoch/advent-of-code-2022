@@ -1,12 +1,12 @@
-import { Solution1 } from './types'
+import { SolutionFn } from '../types.js'
 
-export default async function solution(inputsFile: string): Promise<Solution1> {
+export default (async function solution(inputsFile) {
   const bags = parseFile(inputsFile)
   const totalCaloriesByBag = bags.map(bag => getSum(bag))
   const answer1 = getSum(getNHighestNumbers(totalCaloriesByBag, 1))
   const answer2 = getSum(getNHighestNumbers(totalCaloriesByBag, 3))
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function parseFile(file: string): number[][] {
   return file

@@ -1,4 +1,5 @@
-import { Solution2, Sign, Option, Outcome, Map } from './types'
+import { SolutionFn } from '../types.js'
+import { Sign, Option, Outcome, Map } from './types'
 
 const enemyOptionsMap: Map<Option> = {
   A: 'Rock',
@@ -36,13 +37,13 @@ const pointsMap: Map<number> = {
   loss: 0,
 }
 
-export default async function (input: string): Promise<Solution2> {
+export default (async function (input) {
   const signPairs = parseFile(input)
   const answer1 = getAnswer1(signPairs)
   const answer2 = getAnswer2(signPairs)
 
   return { answer1, answer2 }
-}
+} satisfies SolutionFn)
 
 function getAnswer1(signPairs: Sign[][]): number {
   const optionPairs = signsToOptions(signPairs)

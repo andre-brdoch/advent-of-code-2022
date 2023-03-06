@@ -1,11 +1,11 @@
-import { Solution6 } from './types'
+import { SolutionFn } from '../types.js'
 
-export default async function solution(code: string): Promise<Solution6> {
+export default (async function solution(code) {
   return {
     answer1: countTillMarker(code, 4),
     answer2: countTillMarker(code, 14),
   }
-}
+} satisfies SolutionFn)
 
 function countTillMarker(code: string, markerLength: number): number {
   let candidates: string[] = []
