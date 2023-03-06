@@ -2,6 +2,7 @@ import { parseArgs } from './env-helpers.js'
 
 export class Logger {
   private disabled: boolean
+  private visualize: boolean
   private entries: unknown[]
   private outputName: string
 
@@ -10,9 +11,13 @@ export class Logger {
     this.disabled = !!noLog
     this.entries = []
     this.outputName = outputName
+    const { visualize } = parseArgs()
+    this.visualize = !!visualize
   }
 
   public log(...inputs: unknown[]): void {
+    if (this.disabled && !this.visualize) return
+
     if (!this.disabled) {
       console.log(...inputs)
     }
@@ -43,8 +48,7 @@ export class Logger {
     file: string
     data: string
   } | null {
-    const { visualize } = parseArgs()
-    return visualize
+    return this.visualize
       ? {
         file: fileName || this.outputName,
         data: this.getFullLog(),
