@@ -17,7 +17,7 @@ My solutions for all 25 problems of the [2022 Advent of Code](https://adventofco
 ![day 22](./images/day-22.gif)
 ![day 24](./images/day-24.gif)
 
-For many days, there are also automatically generated outputs, visualizing the problem along the way. Have a look into the respective environment folders, for example [/day-22/test/output-1.txt](https://github.com/andre-brdoch/advent-of-code-2022/blob/animate/src/day-22/test/output-1.txt).
+For many days, there are also automatically generated outputs, visualizing the problem along the way. Have a look into the respective environment folders, for example [/day-22/test/output-1.txt](https://github.com/andre-brdoch/advent-of-code-2022/blob/main/src/day-22/test/output-1.txt).
 
 ## Getting started
 
